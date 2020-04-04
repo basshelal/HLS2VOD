@@ -1,40 +1,11 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
-
-var app = require('./app');
-var debug = require('debug')('newsstreamdownloader:server');
-var http = require('http');
-
-/**
- * Get port from environment and store in Express.
- */
-
-var port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
-
-/**
- * Create HTTP server.
- */
-
-var server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-
-/**
- * Normalize a port into a number, string, or false.
- */
+let app = require('./app');
+let debug = require('debug')('newsstreamdownloader:server');
+let http = require('http');
 
 function normalizePort(val) {
-    var port = parseInt(val, 10);
+    let port = parseInt(val, 10);
 
     if (isNaN(port)) {
         // named pipe
@@ -49,16 +20,19 @@ function normalizePort(val) {
     return false;
 }
 
-/**
- * Event listener for HTTP server "error" event.
- */
+let port = normalizePort(process.env.PORT || '42069');
+app.set('port', port);
 
-function onError(error) {
+let server = http.createServer(app);
+
+server.listen(port);
+
+server.on('error', (error) => {
     if (error.syscall !== 'listen') {
         throw error;
     }
 
-    var bind = typeof port === 'string'
+    let bind = typeof port === 'string'
         ? 'Pipe ' + port
         : 'Port ' + port;
 
@@ -75,16 +49,27 @@ function onError(error) {
         default:
             throw error;
     }
-}
+});
 
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-    var addr = server.address();
-    var bind = typeof addr === 'string'
+server.on('listening', () => {
+    let addr = server.address();
+    let bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
     debug('Listening on ' + bind);
-}
+});
+
+// Our code below
+
+/*
+ * Look for libraries that can help us with any of this!
+ *
+ * 1. Given a URL, we need to find the HLS streams's .m3u8 file
+ *     the extension can provide us with the code that does this
+ * 2. The playlist.m3u8 file will contain more m3u8 files for each version of the stream,
+ *     from lowest to highest quality, read this playlist.m3u8 file to get the info
+ * 3. Each m3u8 file will now contain URLs to a few videos representing "chunks" of the stream
+ *     these will be in .ts format and typically 2 to 5 seconds each, download these as they come
+ * 4. The m3u8 will be constantly changing so we need to listen to those changes somehow
+ *
+ */
