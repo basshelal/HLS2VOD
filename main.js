@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var downloader_1 = require("./downloader");
 var app = require('./app');
 var debug = require('debug')('newsstreamdownloader:server');
 var http = require('http');
+var nodeFetch = require("node-fetch");
 function normalizePort(val) {
     var port = parseInt(val, 10);
     if (isNaN(port)) {
@@ -82,13 +84,12 @@ var alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlis
 // This is good, it works, downloads the ts videos and all we need to provide it is the m3u8 url
 // but there is no flexibility or control! I think it merges at the end of the stream which isn't great
 // I think this is good for a fork! If we want to do this ourselves we can use the code from this library!
-var node_hls_downloader_1 = require("node-hls-downloader");
-node_hls_downloader_1.download({
+downloader_1.download({
     quality: "best",
     concurrency: 25,
     mergeUsingFfmpeg: true,
     segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
     mergedSegmentsFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\merged.ts",
     outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
-    streamUrl: myTwitchUrl
+    streamUrl: alHiwarUrl
 });

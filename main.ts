@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
-let app = require('./app');
-let debug = require('debug')('newsstreamdownloader:server');
-let http = require('http');
+import {download} from "./downloader";
+
+const app = require('./app');
+const debug = require('debug')('newsstreamdownloader:server');
+const http = require('http');
+const nodeFetch = require("node-fetch");
 
 function normalizePort(val) {
     let port = parseInt(val, 10);
@@ -99,8 +102,6 @@ const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playl
 // but there is no flexibility or control! I think it merges at the end of the stream which isn't great
 // I think this is good for a fork! If we want to do this ourselves we can use the code from this library!
 
-import {download} from "node-hls-downloader";
-
 download({
     quality: "best",
     concurrency: 25,
@@ -108,5 +109,5 @@ download({
     segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
     mergedSegmentsFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\merged.ts",
     outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
-    streamUrl: myTwitchUrl
+    streamUrl: alHiwarUrl
 });

@@ -7,10 +7,12 @@
   },
   "dependencies": {
     "@types/node": "^13.11.0",
+    "@types/node-fetch": "^2.5.5",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
     "morgan": "~1.9.1",
+    "node-fetch": "^2.6.0",
     "node-hls-downloader": "^1.2.0"
   }
 }
