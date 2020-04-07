@@ -5,7 +5,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             resolve(value);
         });
     }
-
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) {
             try {
@@ -110,13 +109,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", {value: true});
 var cp = require("child_process");
 var fs = require("fs");
-
 function spawnFfmpeg(argss) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) {
                 console.log("Spawning FFMPEG", "ffmpeg", argss.join(" "));
-                var ffmpeg = cp.spawn("ffmpeg", argss);
+                var ffmpeg = cp.spawn("ffmpeg\\bin\\ffmpeg", argss);
                 ffmpeg.on("message", function (msg) {
                     return console.log("ffmpeg message:", msg);
                 });
@@ -143,6 +141,7 @@ function spawnFfmpeg(argss) {
     });
 }
 
+exports.spawnFfmpeg = spawnFfmpeg;
 function mergeChunks(segments, outputFile) {
     return __awaiter(this, void 0, void 0, function () {
         var segmentsFile, inputStr, mergeArgs;
@@ -172,9 +171,7 @@ function mergeChunks(segments, outputFile) {
         });
     });
 }
-
 exports.mergeChunks = mergeChunks;
-
 function transmuxTsToMp4(inputFile, outputFile) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -195,5 +192,4 @@ function transmuxTsToMp4(inputFile, outputFile) {
         });
     });
 }
-
 exports.transmuxTsToMp4 = transmuxTsToMp4;

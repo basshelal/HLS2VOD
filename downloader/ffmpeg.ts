@@ -1,11 +1,11 @@
 import * as cp from "child_process";
 import * as fs from "fs";
 
-async function spawnFfmpeg(argss: string[]): Promise<void> {
+export async function spawnFfmpeg(argss: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
         console.log("Spawning FFMPEG", "ffmpeg", argss.join(" "));
 
-        const ffmpeg = cp.spawn("ffmpeg", argss);
+        const ffmpeg = cp.spawn("ffmpeg\\bin\\ffmpeg", argss);
         ffmpeg.on("message", (msg) => console.log("ffmpeg message:", msg));
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg);

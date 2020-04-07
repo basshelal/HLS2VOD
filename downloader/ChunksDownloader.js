@@ -42,7 +42,7 @@ var path = require("path");
 var url_1 = require("url");
 var http_1 = require("./http");
 var ChunksDownloader = /** @class */ (function () {
-    function ChunksDownloader(playlistUrl, concurrency, fromEnd, segmentDirectory, timeoutDuration, playlistRefreshInterval, httpHeaders) {
+    function ChunksDownloader(playlistUrl, concurrency, fromEnd, segmentDirectory, timeoutDuration, playlistRefreshInterval, httpHeaders, onDownloadSegment) {
         if (timeoutDuration === void 0) { timeoutDuration = 60; }
         if (playlistRefreshInterval === void 0) { playlistRefreshInterval = 5; }
         this.playlistUrl = playlistUrl;
@@ -52,6 +52,7 @@ var ChunksDownloader = /** @class */ (function () {
         this.timeoutDuration = timeoutDuration;
         this.playlistRefreshInterval = playlistRefreshInterval;
         this.httpHeaders = httpHeaders;
+        this.onDownloadSegment = onDownloadSegment;
         this.queue = new p_queue_1.default({
             concurrency: this.concurrency,
         });
@@ -114,12 +115,16 @@ var ChunksDownloader = /** @class */ (function () {
             });
         });
     };
-    ChunksDownloader.prototype.timeout = function () {
+    ChunksDownloader.prototype.stop = function () {
         console.log("No new segment for a while, stopping");
         if (this.refreshHandle) {
             clearTimeout(this.refreshHandle);
         }
         this.resolve();
+    };
+    ChunksDownloader.prototype.timeout = function () {
+        console.log("No new segment for a while, stopping");
+        this.stop();
     };
     ChunksDownloader.prototype.loadPlaylist = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -152,7 +157,8 @@ var ChunksDownloader = /** @class */ (function () {
                     case 1:
                         // Download file
                         _a.sent();
-                        console.log("Received:", segmentUrl);
+                        console.log("Downloaded:", segmentUrl);
+                        this.onDownloadSegment();
                         return [2 /*return*/];
                 }
             });

@@ -37,25 +37,24 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs-extra");
-var os = require("os");
 var path = require("path");
 var ChunksDownloader_1 = require("./ChunksDownloader");
 var ffmpeg_1 = require("./ffmpeg");
 var stream_1 = require("./stream");
-var StreamChooser_js_1 = require("./StreamChooser.js");
+var StreamChooser_1 = require("./StreamChooser");
 function download(config) {
     return __awaiter(this, void 0, void 0, function () {
-        var runId, mergedSegmentsFile, segmentsDir, streamChooser, playlistUrl, chunksDownloader, segments, mergeFunction;
+        var runId, segmentsDir, mergedSegmentsFile, streamChooser, playlistUrl;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     runId = Date.now();
-                    mergedSegmentsFile = config.mergedSegmentsFile || os.tmpdir() + "/hls-downloader/" + runId + ".ts";
-                    segmentsDir = config.segmentsDir || os.tmpdir() + "/hls-downloader/" + runId + "/";
+                    segmentsDir = config.segmentsDir + ("/" + runId + "/") || "./segments/" + runId + "/";
+                    mergedSegmentsFile = segmentsDir + "merged.ts";
                     // Create target directory
                     fs.mkdirpSync(path.dirname(mergedSegmentsFile));
                     fs.mkdirpSync(segmentsDir);
-                    streamChooser = new StreamChooser_js_1.StreamChooser(config.streamUrl, config.httpHeaders);
+                    streamChooser = new StreamChooser_1.StreamChooser(config.streamUrl, config.httpHeaders);
                     return [4 /*yield*/, streamChooser.load()];
                 case 1:
                     if (!(_a.sent())) {
@@ -65,19 +64,61 @@ function download(config) {
                     if (!playlistUrl) {
                         return [2 /*return*/];
                     }
-                    chunksDownloader = new ChunksDownloader_1.ChunksDownloader(playlistUrl, config.concurrency || 1, config.fromEnd || 1, segmentsDir, undefined, undefined, config.httpHeaders);
-                    return [4 /*yield*/, chunksDownloader.start()];
+                    // Start download
+                    exports.downloader = new ChunksDownloader_1.ChunksDownloader(playlistUrl, config.concurrency || 1, config.fromEnd || 1, segmentsDir, undefined, undefined, config.httpHeaders, function () {
+                    });
+                    return [4 /*yield*/, exports.downloader.start()];
                 case 2:
                     _a.sent();
-                    segments = fs.readdirSync(segmentsDir).map(function (f) { return segmentsDir + f; });
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+
+function mergeAll_() {
+    return __awaiter(this, void 0, void 0, function () {
+        var segmentsDir, mergedSegmentsFile, segments;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    segmentsDir = exports.downloader.segmentDirectory;
+                    mergedSegmentsFile = segmentsDir + "merged.ts";
+                    segments = fs.readdirSync(segmentsDir).map(function (f) {
+                        return segmentsDir + f;
+                    });
+                    segments.sort();
+                    console.log(segments);
+                    // Merge TS files
+                    return [4 /*yield*/, stream_1.mergeFiles(segments, mergedSegmentsFile)];
+                case 1:
+                    // Merge TS files
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+
+exports.mergeAll_ = mergeAll_;
+
+function mergeAll(config, segmentsDir, mergedSegmentsFile) {
+    return __awaiter(this, void 0, void 0, function () {
+        var segments, mergeFunction;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    segments = fs.readdirSync(segmentsDir).map(function (f) {
+                        return segmentsDir + f;
+                    });
                     segments.sort();
                     mergeFunction = config.mergeUsingFfmpeg ? ffmpeg_1.mergeChunks : stream_1.mergeFiles;
                     return [4 /*yield*/, mergeFunction(segments, mergedSegmentsFile)];
-                case 3:
+                case 1:
                     _a.sent();
                     // Transmux
                     return [4 /*yield*/, ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, config.outputFile)];
-                case 4:
+                case 2:
                     // Transmux
                     _a.sent();
                     // Delete temporary files
@@ -88,4 +129,20 @@ function download(config) {
         });
     });
 }
-exports.download = download;
+
+// Node HLS Downloader
+// https://www.npmjs.com/package/node-hls-downloader
+// This is good, it works, downloads the ts videos and all we need to provide it is the m3u8 url
+// but there is no flexibility or control! I think it merges at the end of the stream which isn't great
+// I think this is good for a fork! If we want to do this ourselves we can use the code from this library!
+function startDownloader(url) {
+    download({
+        quality: "best",
+        concurrency: 25,
+        segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
+        outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
+        streamUrl: url
+    });
+}
+
+exports.startDownloader = startDownloader;

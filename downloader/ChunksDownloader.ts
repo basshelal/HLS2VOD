@@ -17,10 +17,11 @@ export class ChunksDownloader {
         private playlistUrl: string,
         private concurrency: number,
         private fromEnd: number,
-        private segmentDirectory: string,
+        public segmentDirectory: string,
         private timeoutDuration: number = 60,
         private playlistRefreshInterval: number = 5,
         private httpHeaders?: HttpHeaders,
+        private onDownloadSegment?: () => void
     ) {
         this.queue = new PQueue({
             concurrency: this.concurrency,
@@ -73,12 +74,17 @@ export class ChunksDownloader {
         this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000);
     }
 
-    private timeout(): void {
+    stop() {
         console.log("No new segment for a while, stopping");
         if (this.refreshHandle) {
             clearTimeout(this.refreshHandle);
         }
         this.resolve!();
+    }
+
+    private timeout(): void {
+        console.log("No new segment for a while, stopping");
+        this.stop();
     }
 
     private async loadPlaylist(): Promise<m3u8.Manifest> {
@@ -100,6 +106,7 @@ export class ChunksDownloader {
 
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename), this.httpHeaders);
-        console.log("Received:", segmentUrl);
+        console.log("Downloaded:", segmentUrl);
+        this.onDownloadSegment();
     }
 }
