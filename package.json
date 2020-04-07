@@ -6,13 +6,17 @@
     "start": "node main.js"
   },
   "dependencies": {
+    "@types/fs-extra": "^8.0.1",
     "@types/node": "^13.11.0",
-    "@types/node-fetch": "^2.5.5",
+    "axios": "^0.19.2",
+    "commander": "^4.1.1",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
+    "fs-extra": "^8.1.0",
+    "m3u8-parser": "^4.4.0",
     "morgan": "~1.9.1",
-    "node-fetch": "^2.6.0",
-    "node-hls-downloader": "^1.2.0"
+    "node-hls-downloader": "^1.2.0",
+    "p-queue": "^6.2.1"
   }
 }

@@ -75,7 +75,6 @@ function download(config) {
         });
     });
 }
-
 function mergeAll_() {
     return __awaiter(this, void 0, void 0, function () {
         var segmentsDir, mergedSegmentsFile, segments;
@@ -99,9 +98,7 @@ function mergeAll_() {
         });
     });
 }
-
 exports.mergeAll_ = mergeAll_;
-
 function mergeAll(config, segmentsDir, mergedSegmentsFile) {
     return __awaiter(this, void 0, void 0, function () {
         var segments, mergeFunction;
@@ -129,12 +126,6 @@ function mergeAll(config, segmentsDir, mergedSegmentsFile) {
         });
     });
 }
-
-// Node HLS Downloader
-// https://www.npmjs.com/package/node-hls-downloader
-// This is good, it works, downloads the ts videos and all we need to provide it is the m3u8 url
-// but there is no flexibility or control! I think it merges at the end of the stream which isn't great
-// I think this is good for a fork! If we want to do this ourselves we can use the code from this library!
 function startDownloader(url) {
     download({
         quality: "best",
@@ -144,5 +135,4 @@ function startDownloader(url) {
         streamUrl: url
     });
 }
-
 exports.startDownloader = startDownloader;
