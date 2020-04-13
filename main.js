@@ -49,8 +49,7 @@ server.on('listening', function () {
         : 'port ' + addr.port;
     debug('Listening on ' + bind);
 });
-var stdin = process.openStdin();
-stdin.on('data', function (input) {
+process.openStdin().on('data', function (input) {
     console.log(input.toString());
     if (input.toString().trim() == "stop") {
         console.log("Stopping!");
@@ -62,4 +61,4 @@ stdin.on('data', function (input) {
 });
 var alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 var alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
-downloader_1.startDownloader(alArabyUrl);
+//startDownloader(alArabyUrl);

@@ -140,7 +140,6 @@ function spawnFfmpeg(argss) {
         });
     });
 }
-
 exports.spawnFfmpeg = spawnFfmpeg;
 function mergeChunks(segments, outputFile) {
     return __awaiter(this, void 0, void 0, function () {
