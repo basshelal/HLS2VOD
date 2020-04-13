@@ -1,12 +1,9 @@
 import * as fs from "fs-extra";
 import * as path from "path";
-import {ChunksDownloader} from "./ChunksDownloader";
-import {IConfig as IIConfig} from "./Config";
+import {ChunksDownloader, IConfig} from "./ChunksDownloader";
 import {mergeChunks, transmuxTsToMp4} from "./ffmpeg";
 import {mergeFiles} from "./stream";
 import {StreamChooser} from "./StreamChooser";
-
-export type IConfig = IIConfig;
 
 export let downloader: ChunksDownloader;
 
@@ -37,9 +34,7 @@ async function download(config: IConfig): Promise<void> {
         segmentsDir,
         undefined,
         undefined,
-        config.httpHeaders,
-        () => {
-        }
+        config.httpHeaders
     );
     await downloader.start();
 }
@@ -57,7 +52,8 @@ export async function mergeAll_(): Promise<void> {
     // Merge TS files
     await mergeFiles(segments, mergedSegmentsFile);
 
-    return;
+    // Transmux
+    await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
 }
 
 async function mergeAll(config: IConfig, segmentsDir: string, mergedSegmentsFile: string) {

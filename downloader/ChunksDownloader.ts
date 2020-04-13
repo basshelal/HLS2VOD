@@ -20,8 +20,7 @@ export class ChunksDownloader {
         public segmentDirectory: string,
         private timeoutDuration: number = 60,
         private playlistRefreshInterval: number = 5,
-        private httpHeaders?: HttpHeaders,
-        private onDownloadSegment?: () => void
+        private httpHeaders?: HttpHeaders
     ) {
         this.queue = new PQueue({
             concurrency: this.concurrency,
@@ -107,6 +106,17 @@ export class ChunksDownloader {
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename), this.httpHeaders);
         console.log("Downloaded:", segmentUrl);
-        this.onDownloadSegment();
     }
+}
+
+export interface IConfig {
+    mergeUsingFfmpeg?: boolean;
+    concurrency?: number;
+    fromEnd?: number;
+    quality?: "worst" | "best" | number;
+    streamUrl: string;
+    segmentsDir?: string;
+    mergedSegmentsFile?: string;
+    outputFile: string;
+    httpHeaders?: HttpHeaders;
 }
