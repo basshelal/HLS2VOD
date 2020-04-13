@@ -1,6 +1,4 @@
-#!/usr/bin/env node
-
-import {downloader, mergeAll_} from "./downloader";
+import {downloader, mergeAll_, startDownloader} from "./downloader";
 
 const app = require('./app');
 const debug = require('debug')('newsstreamdownloader:server');
@@ -76,4 +74,4 @@ process.openStdin().on('data', (input: string) => {
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 
-//startDownloader(alArabyUrl);
+startDownloader(alArabyUrl);

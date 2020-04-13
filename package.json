@@ -1,9 +1,10 @@
 {
   "name": "newsstreamdownloader",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
+  "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "electron ."
   },
   "dependencies": {
     "@types/fs-extra": "^8.0.1",
@@ -18,5 +19,8 @@
     "morgan": "~1.9.1",
     "node-hls-downloader": "^1.2.0",
     "p-queue": "^6.2.1"
+  },
+  "devDependencies": {
+    "electron": "^8.2.2"
   }
 }
