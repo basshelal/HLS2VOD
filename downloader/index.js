@@ -4,18 +4,16 @@ const fs = require("fs-extra");
 const path = require("path");
 const m3u8 = require("m3u8-parser");
 const ffmpeg_1 = require("./ffmpeg");
-const stream_1 = require("./stream");
 const p_queue_1 = require("p-queue");
 const url_1 = require("url");
 const http_1 = require("./http");
 exports.downloaders = [];
 class ChunksDownloader {
-    constructor(playlistUrl, segmentDirectory, timeoutDuration = 60, playlistRefreshInterval = 2, httpHeaders) {
+    constructor(playlistUrl, segmentDirectory, timeoutDuration = 60, playlistRefreshInterval = 2) {
         this.playlistUrl = playlistUrl;
         this.segmentDirectory = segmentDirectory;
         this.timeoutDuration = timeoutDuration;
         this.playlistRefreshInterval = playlistRefreshInterval;
-        this.httpHeaders = httpHeaders;
         this.queue = new p_queue_1.default();
     }
     start() {
@@ -31,6 +29,46 @@ class ChunksDownloader {
             clearTimeout(this.refreshHandle);
         }
         this.resolve();
+    }
+    async mergeAll() {
+        let segmentsDir = this.segmentDirectory;
+        let mergedSegmentsFile = segmentsDir + "merged.ts";
+        // Get all segments
+        const segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        segments.sort();
+        // Merge TS files
+        await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
+        // Transmux
+        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+        // Delete ts files
+        fs.remove(mergedSegmentsFile);
+        segments.forEach(it => fs.remove(it));
+    }
+    async merge(fromChunkName, toChunkName) {
+        let segmentsDir = this.segmentDirectory;
+        let mergedSegmentsFile = segmentsDir + "merged.ts";
+        // Get all segments
+        let segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        segments.sort();
+        fromChunkName = segmentsDir + fromChunkName;
+        if (!toChunkName)
+            toChunkName = segments[segments.length - 1];
+        else
+            toChunkName = segmentsDir + toChunkName;
+        let firstSegmentIndex = segments.indexOf(fromChunkName);
+        let lastSegmentIndex = segments.indexOf(toChunkName);
+        if (firstSegmentIndex === -1 || lastSegmentIndex === -1)
+            return;
+        if (lastSegmentIndex < segments.length)
+            lastSegmentIndex += 1;
+        segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
+        // Merge TS files
+        await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
+        // Transmux
+        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+        // Delete ts files
+        fs.remove(mergedSegmentsFile);
+        segments.forEach(it => fs.remove(it));
     }
     async refreshPlayList() {
         const playlist = await this.loadPlaylist();
@@ -71,7 +109,7 @@ class ChunksDownloader {
         this.stop();
     }
     async loadPlaylist() {
-        const response = await http_1.get(this.playlistUrl, this.httpHeaders);
+        const response = await http_1.get(this.playlistUrl);
         const parser = new m3u8.Parser();
         parser.push(response);
         parser.end();
@@ -83,8 +121,10 @@ class ChunksDownloader {
         let filename = question > 0 ? segmentUrl.substr(0, question) : segmentUrl;
         const slash = filename.lastIndexOf("/");
         filename = filename.substr(slash + 1);
+        if (!this.firstChunkName)
+            this.firstChunkName = filename;
         // Download file
-        await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename), this.httpHeaders);
+        await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
     }
 }
@@ -143,34 +183,6 @@ class StreamChooser {
     }
 }
 exports.StreamChooser = StreamChooser;
-async function mergeAll() {
-    let segmentsDir = exports.downloader.segmentDirectory;
-    let mergedSegmentsFile = segmentsDir + "merged.ts";
-    // Get all segments
-    const segments = fs.readdirSync(segmentsDir).map((f) => segmentsDir + f);
-    segments.sort();
-    // Merge TS files
-    await stream_1.mergeFiles(segments, mergedSegmentsFile);
-    // Transmux
-    await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
-    // Delete temporary files
-    //fs.remove(segmentsDir);
-    //fs.remove(mergedSegmentsFile);
-}
-exports.mergeAll = mergeAll;
-async function mergeAll_(config, segmentsDir, mergedSegmentsFile) {
-    // Get all segments
-    const segments = fs.readdirSync(segmentsDir).map((f) => segmentsDir + f);
-    segments.sort();
-    // Merge TS files
-    const mergeFunction = config.mergeUsingFfmpeg ? ffmpeg_1.mergeChunks : stream_1.mergeFiles;
-    await mergeFunction(segments, mergedSegmentsFile);
-    // Transmux
-    await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, config.outputFile);
-    // Delete temporary files
-    fs.remove(segmentsDir);
-    fs.remove(mergedSegmentsFile);
-}
 async function startDownloader(url) {
     let config = {
         quality: "best",
@@ -194,7 +206,11 @@ async function startDownloader(url) {
         return;
     }
     // Start download
-    exports.downloader = new ChunksDownloader(playlistUrl, segmentsDir);
-    return await exports.downloader.start();
+    let downloader = new ChunksDownloader(playlistUrl, segmentsDir);
+    exports.downloaders.push(downloader);
+    return await downloader.start();
 }
 exports.startDownloader = startDownloader;
+class Show {
+}
+exports.Show = Show;

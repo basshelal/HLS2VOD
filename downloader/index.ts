@@ -1,13 +1,10 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as m3u8 from "m3u8-parser";
-import {mergeChunks, transmuxTsToMp4} from "./ffmpeg";
-import {mergeFiles} from "./stream";
+import {mergeFiles, transmuxTsToMp4} from "./ffmpeg";
 import PQueue from "p-queue";
 import {URL} from "url";
 import {download, get, HttpHeaders} from "./http";
-
-export let downloader: ChunksDownloader;
 
 export const downloaders: Array<ChunksDownloader> = [];
 
@@ -20,12 +17,13 @@ export class ChunksDownloader {
     private timeoutHandle?: NodeJS.Timeout;
     private refreshHandle?: NodeJS.Timeout;
 
+    private firstChunkName: string;
+
     constructor(
         public playlistUrl: string,
         public segmentDirectory: string,
         private timeoutDuration: number = 60,
-        private playlistRefreshInterval: number = 2,
-        private httpHeaders?: HttpHeaders
+        private playlistRefreshInterval: number = 2
     ) {
         this.queue = new PQueue();
     }
@@ -45,6 +43,57 @@ export class ChunksDownloader {
             clearTimeout(this.refreshHandle);
         }
         this.resolve!();
+    }
+
+    public async mergeAll(): Promise<void> {
+        let segmentsDir = this.segmentDirectory;
+        let mergedSegmentsFile: string = segmentsDir + "merged.ts";
+
+        // Get all segments
+        const segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        segments.sort();
+
+        // Merge TS files
+        await mergeFiles(segments, mergedSegmentsFile);
+
+        // Transmux
+        await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+
+        // Delete ts files
+        fs.remove(mergedSegmentsFile);
+        segments.forEach(it => fs.remove(it))
+    }
+
+    public async merge(fromChunkName: string, toChunkName?: string): Promise<void> {
+        let segmentsDir = this.segmentDirectory;
+        let mergedSegmentsFile: string = segmentsDir + "merged.ts";
+
+        // Get all segments
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        segments.sort();
+
+        fromChunkName = segmentsDir + fromChunkName;
+        if (!toChunkName) toChunkName = segments[segments.length - 1];
+        else toChunkName = segmentsDir + toChunkName;
+
+        let firstSegmentIndex: number = segments.indexOf(fromChunkName);
+        let lastSegmentIndex: number = segments.indexOf(toChunkName);
+
+        if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return;
+
+        if (lastSegmentIndex < segments.length) lastSegmentIndex += 1;
+
+        segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
+
+        // Merge TS files
+        await mergeFiles(segments, mergedSegmentsFile);
+
+        // Transmux
+        await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+
+        // Delete ts files
+        fs.remove(mergedSegmentsFile);
+        segments.forEach(it => fs.remove(it))
     }
 
     private async refreshPlayList(): Promise<void> {
@@ -90,7 +139,7 @@ export class ChunksDownloader {
     }
 
     private async loadPlaylist(): Promise<m3u8.Manifest> {
-        const response = await get(this.playlistUrl, this.httpHeaders);
+        const response = await get(this.playlistUrl);
 
         const parser = new m3u8.Parser();
         parser.push(response);
@@ -106,8 +155,10 @@ export class ChunksDownloader {
         const slash = filename.lastIndexOf("/");
         filename = filename.substr(slash + 1);
 
+        if (!this.firstChunkName) this.firstChunkName = filename;
+
         // Download file
-        await download(segmentUrl, path.join(this.segmentDirectory, filename), this.httpHeaders);
+        await download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
     }
 }
@@ -188,42 +239,6 @@ export interface IConfig {
     httpHeaders?: HttpHeaders;
 }
 
-export async function mergeAll(): Promise<void> {
-    let segmentsDir = downloader.segmentDirectory;
-    let mergedSegmentsFile: string = segmentsDir + "merged.ts";
-
-    // Get all segments
-    const segments = fs.readdirSync(segmentsDir).map((f) => segmentsDir + f);
-    segments.sort();
-
-    // Merge TS files
-    await mergeFiles(segments, mergedSegmentsFile);
-
-    // Transmux
-    await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
-
-    // Delete temporary files
-    //fs.remove(segmentsDir);
-    //fs.remove(mergedSegmentsFile);
-}
-
-async function mergeAll_(config: IConfig, segmentsDir: string, mergedSegmentsFile: string) {
-    // Get all segments
-    const segments = fs.readdirSync(segmentsDir).map((f) => segmentsDir + f);
-    segments.sort();
-
-    // Merge TS files
-    const mergeFunction = config.mergeUsingFfmpeg ? mergeChunks : mergeFiles;
-    await mergeFunction(segments, mergedSegmentsFile);
-
-    // Transmux
-    await transmuxTsToMp4(mergedSegmentsFile, config.outputFile);
-
-    // Delete temporary files
-    fs.remove(segmentsDir);
-    fs.remove(mergedSegmentsFile);
-}
-
 export async function startDownloader(url: string): Promise<void> {
     let config: IConfig = {
         quality: "best",
@@ -250,9 +265,23 @@ export async function startDownloader(url: string): Promise<void> {
     }
 
     // Start download
-    downloader = new ChunksDownloader(
+    let downloader = new ChunksDownloader(
         playlistUrl,
         segmentsDir
     );
+    downloaders.push(downloader);
     return await downloader.start();
 }
+
+export type Date = { day: Day, time: Time };
+export type Day = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+export type Time = { hour: number, minute: number };
+
+export class Show {
+    name: string;
+    date: Date;
+    startChunkName: string;
+    endChunkName: string;
+}
+
+export type Schedule = Array<Show>;

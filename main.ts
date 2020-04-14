@@ -1,11 +1,13 @@
-import {downloader, mergeAll, startDownloader} from "./downloader";
+import {ChunksDownloader, downloaders, startDownloader} from "./downloader";
 import * as electron from "electron";
 
 function stop() {
-    if (downloader) {
+    let promises: Array<Promise<void>> = [];
+    downloaders.forEach((downloader: ChunksDownloader) => {
         downloader.stop();
-        mergeAll().then(() => electron.app.quit());
-    } else electron.app.quit()
+        promises.push(downloader.mergeAll());
+    });
+    Promise.all(promises).then(electron.app.quit)
 }
 
 
@@ -21,6 +23,8 @@ function createWindow() {
 
     window.loadFile('layouts/main.html');
 }
+
+electron.app.allowRendererProcessReuse = true;
 
 electron.app.whenReady().then(createWindow);
 

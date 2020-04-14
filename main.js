@@ -3,12 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const downloader_1 = require("./downloader");
 const electron = require("electron");
 function stop() {
-    if (downloader_1.downloader) {
-        downloader_1.downloader.stop();
-        downloader_1.mergeAll().then(() => electron.app.quit());
-    }
-    else
-        electron.app.quit();
+    let promises = [];
+    downloader_1.downloaders.forEach((downloader) => {
+        downloader.stop();
+        promises.push(downloader.mergeAll());
+    });
+    Promise.all(promises).then(electron.app.quit);
 }
 function createWindow() {
     let window = new electron.BrowserWindow({
@@ -21,6 +21,7 @@ function createWindow() {
     });
     window.loadFile('layouts/main.html');
 }
+electron.app.allowRendererProcessReuse = true;
 electron.app.whenReady().then(createWindow);
 electron.app.on('window-all-closed', stop);
 let currentDownloading = [];
