@@ -47,8 +47,8 @@ electron.ipcMain.on('invokeAction', (event, data) => {
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
-stream_1.scheduleFromJson("res/schedule.json").then(schedule => {
-    console.log(schedule);
+stream_1.Schedule.fromJson("res/schedule.json").then(schedule => {
+    console.log(JSON.stringify(schedule, null, 2));
     console.log(schedule[0]);
     console.log(schedule.length);
     console.log(schedule[0].date);
@@ -58,7 +58,7 @@ stream_1.scheduleFromJson("res/schedule.json").then(schedule => {
     let show = schedule[1];
     utils_1.print(show.date.time.hour);
     utils_1.print(show.date.time.minute);
-    let scheduledTime = new Date(2020, 3, 15, show.date.time.hour, show.date.time.minute);
+    let scheduledTime = show.getActualDate();
     utils_1.print(scheduledTime.getHours());
     utils_1.print(scheduledTime.getSeconds());
     let dateTimeFormat = DateTimeFormat("en-GB", {
@@ -67,4 +67,8 @@ stream_1.scheduleFromJson("res/schedule.json").then(schedule => {
     });
     utils_1.print(dateTimeFormat.format(now));
     utils_1.print(dateTimeFormat.format(scheduledTime));
+    utils_1.print(show.hasStarted());
+    let finishDate = new Date();
+    finishDate.setHours(12, 41);
+    utils_1.print(show.hasFinished(finishDate, 30));
 });
