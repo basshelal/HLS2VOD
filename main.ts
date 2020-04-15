@@ -62,7 +62,7 @@ const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playl
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
 
-Schedule.fromJson("res/schedule.json").then(schedule => {
+Schedule.fromCSV("res/schedule.csv").then(schedule => {
     console.log(JSON.stringify(schedule, null, 2))
     console.log(schedule[0])
     console.log(schedule.length)
@@ -89,8 +89,4 @@ Schedule.fromJson("res/schedule.json").then(schedule => {
     let finishDate = new Date()
     finishDate.setHours(12, 41)
     print(show.hasFinished(finishDate, 30))
-});
-
-Schedule.fromCSV("res/schedule.csv").then(schedule => {
-    console.log(JSON.stringify(schedule, null, 2))
 });

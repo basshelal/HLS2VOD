@@ -9,7 +9,8 @@ export class Stream {
     private downloader: ChunksDownloader
     private mergerTimeOut: Timeout
     private currentShow: Show
-    private otherShow: Show
+    private prevShow: Show
+    private nextShow: Show
 
     constructor(
         public name: string,
@@ -17,16 +18,37 @@ export class Stream {
         public schedule: Schedule,
         public offsetSeconds: number = 30
     ) {
+        // get the current show based on the time now
+        // prev show is null
+        // next show is what is next in the schedule
+
+        // in the interval we need to check if next show
+        //  has started with the offset
+        //  if it has that means the current show is about to end
+        //  start recording the next show, take note of the segment where the change happens
+        //  because we want the merge to delete as much as possible while still keeping the files needed
+        //  for the next show
+
+        // once the current show has truly ended (including offset)
+        // merge all the files that it uses but only delete from its start segment to the start segment of the next show
+        // even though the merge is a bit more than that because we need some of the segments later
+
         this.mergerTimeOut = setInterval(() => {
             console.log("Checking!")
         }, 1000)
     }
 
+    public startDownloading() {
+    }
+
+    public stopDownloading() {
+    }
+
+    public mergeShow() {
+    }
 }
 
-export type DayTime = { day: Day, time: Time };
 export type Day = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-export type Time = { hour: number, minute: number };
 export type Schedule = Array<Show>;
 
 export const Schedule = {

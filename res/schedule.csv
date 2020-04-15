@@ -1,2 +1,25 @@
-name, day, hour, minute
-Show #0, Monday, 15, 30
+name,       day,        hour,   minute
+Show #0,    Monday,     00,     00
+Show #1,    Monday,     01,     00
+Show #2,    Monday,     02,     00
+Show #3,    Monday,     03,     00
+Show #4,    Monday,     04,     00
+Show #5,    Monday,     05,     00
+Show #6,    Monday,     06,     00
+Show #7,    Monday,     07,     00
+Show #8,    Monday,     08,     00
+Show #9,    Monday,     09,     00
+Show #10,   Monday,     10,     00
+Show #11,   Monday,     11,     00
+Show #12,   Monday,     12,     00
+Show #13,   Monday,     13,     00
+Show #14,   Monday,     14,     00
+Show #15,   Monday,     15,     00
+Show #16,   Monday,     16,     00
+Show #17,   Monday,     17,     00
+Show #18,   Monday,     18,     00
+Show #19,   Monday,     19,     00
+Show #20,   Monday,     20,     00
+Show #21,   Monday,     21,     00
+Show #21,   Monday,     22,     00
+Show #22,   Monday,     23,     00
