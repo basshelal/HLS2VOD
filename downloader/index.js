@@ -127,6 +127,10 @@ class ChunksDownloader {
         await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
     }
+    finishAllInQueue() {
+        // stop adding anything to the queue
+        // whatever is still in the queue should be resolved asap
+    }
 }
 exports.ChunksDownloader = ChunksDownloader;
 class StreamChooser {
@@ -211,6 +215,10 @@ async function startDownloader(url) {
     return await downloader.start();
 }
 exports.startDownloader = startDownloader;
-class Show {
+async function stopAllDownloaders() {
+    return Promise.all(exports.downloaders.map(downloader => {
+        downloader.stop();
+        return downloader.mergeAll();
+    })).then();
 }
-exports.Show = Show;
+exports.stopAllDownloaders = stopAllDownloaders;

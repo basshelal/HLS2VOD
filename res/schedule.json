@@ -1,13 +1,22 @@
 [
   {
     "name": "Show #0",
-    "startDate": {
+    "date": {
       "day": "Monday",
-      "time": "00:00"
-    },
-    "endDate": {
+      "time": {
+        "hour": "00",
+        "minute": "00"
+      }
+    }
+  },
+  {
+    "name": "Show #1",
+    "date": {
       "day": "Monday",
-      "time": "01:00"
+      "time": {
+        "hour": "01",
+        "minute": "00"
+      }
     }
   }
 ]

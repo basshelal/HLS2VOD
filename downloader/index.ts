@@ -161,6 +161,11 @@ export class ChunksDownloader {
         await download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
     }
+
+    private finishAllInQueue() {
+        // stop adding anything to the queue
+        // whatever is still in the queue should be resolved asap
+    }
 }
 
 export class StreamChooser {
@@ -273,15 +278,10 @@ export async function startDownloader(url: string): Promise<void> {
     return await downloader.start();
 }
 
-export type Date = { day: Day, time: Time };
-export type Day = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-export type Time = { hour: number, minute: number };
-
-export class Show {
-    name: string;
-    date: Date;
-    startChunkName: string;
-    endChunkName: string;
+export async function stopAllDownloaders(): Promise<void> {
+    return Promise.all(
+        downloaders.map(downloader => {
+            downloader.stop();
+            return downloader.mergeAll();
+        })).then();
 }
-
-export type Schedule = Array<Show>;
