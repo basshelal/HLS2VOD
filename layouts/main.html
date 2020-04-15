@@ -3,12 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Main</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
 
-<button id="alJazeera">AlJazeera</button>
-<button id="alHiwar">AlHiwar</button>
-<button id="alAraby">AlAraby</button>
+<div class="container center nav-wrapper">
+    <h1>News Stream Downloader</h1>
+
+    <button class="waves-effect waves-light btn pink darken-4" id="alJazeera">AlJazeera</button>
+    <button class="waves-effect waves-light btn pink darken-4" id="alHiwar">AlHiwar</button>
+    <button class="waves-effect waves-light btn pink darken-4" id="alAraby">AlAraby</button>
+
+    <div class="row">
+        <form class="col s12">
+            <div class="row">
+                <div class="input-field col s12">
+                    <textarea class="materialize-textarea" id="addPlayListURLTextArea"></textarea>
+                    <label for="addPlayListURLTextArea">m3u8 Playlist URL</label>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
 </body>
 <script src="main.js"></script>

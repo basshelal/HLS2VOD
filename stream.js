@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
+const csv = require("csvtojson");
 class Stream {
     constructor(name, playlistUrl, schedule, offsetSeconds = 30) {
         this.name = name;
@@ -16,34 +17,43 @@ exports.Stream = Stream;
 exports.Schedule = {
     fromJson(jsonFilePath) {
         return scheduleFromJson(jsonFilePath);
+    },
+    fromCSV(csvFilePath) {
+        return scheduleFromCsv(csvFilePath);
     }
 };
+function getScheduleFromFileData(data) {
+    if (Array.isArray(data)) {
+        return data.map(it => new Show(it.name, it.day.toLowerCase(), it.hour, it.minute));
+    }
+    else
+        return [];
+}
 async function scheduleFromJson(jsonFilePath) {
     return new Promise((resolve, reject) => {
         fs.readFile(jsonFilePath, ((error, data) => {
             if (error)
                 reject(error);
-            else {
-                let result = [];
-                let array = JSON.parse(data.toString());
-                if (Array.isArray(array)) {
-                    result = array.map(it => new Show(it.name, it.date));
-                }
-                resolve(result);
-            }
+            else
+                resolve(getScheduleFromFileData(JSON.parse(data.toString())));
         }));
     });
 }
+async function scheduleFromCsv(csvFilePath) {
+    return new Promise(resolve => csv().fromFile(csvFilePath).then(data => resolve(getScheduleFromFileData(data))));
+}
 class Show {
-    constructor(name, date, startChunkName, endChunkName) {
+    constructor(name, day, hour, minute, startChunkName, endChunkName) {
         this.name = name;
-        this.date = date;
+        this.day = day;
+        this.hour = hour;
+        this.minute = minute;
         this.startChunkName = startChunkName;
         this.endChunkName = endChunkName;
     }
     getActualDate() {
         let now = new Date();
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), this.date.time.hour, this.date.time.minute);
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), this.hour, this.minute);
     }
     hasStarted(offsetSeconds) {
         let offsetMillis = offsetSeconds ? offsetSeconds * 1000 : 0;

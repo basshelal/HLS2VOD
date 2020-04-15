@@ -1,25 +1,28 @@
 import {startDownloader, stopAllDownloaders} from "./downloader";
 import * as electron from "electron";
-import {Schedule, Show} from "./stream";
+import {Schedule} from "./stream";
 import {print} from "./utils";
 import DateTimeFormat = Intl.DateTimeFormat;
+import BrowserWindow = electron.BrowserWindow;
 
 function stop() {
     stopAllDownloaders().then(electron.app.quit)
 }
 
+let browserWindow: BrowserWindow;
+
 function createWindow() {
-    let window = new electron.BrowserWindow({
+    browserWindow = new BrowserWindow({
         center: true,
-        width: 800,
-        height: 600,
+        width: 1000,
+        height: 700,
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true
         }
     });
 
-    window.loadFile('layouts/main.html');
+    browserWindow.loadFile('layouts/main.html');
 }
 
 electron.app.allowRendererProcessReuse = true;
@@ -51,6 +54,10 @@ electron.ipcMain.on('invokeAction', (event, data) => {
     }
 });
 
+electron.ipcMain.on("devTools", (event, data) => {
+    browserWindow.webContents.toggleDevTools()
+})
+
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
@@ -59,13 +66,13 @@ Schedule.fromJson("res/schedule.json").then(schedule => {
     console.log(JSON.stringify(schedule, null, 2))
     console.log(schedule[0])
     console.log(schedule.length)
-    console.log(schedule[0].date)
-    console.log(schedule[0].date.day)
-    console.log(schedule[0].date.time)
+    console.log(schedule[0].day)
+    console.log(schedule[0].hour)
+    console.log(schedule[0].minute)
     let now = new Date()
-    let show = schedule[1] as Show
-    print(show.date.time.hour)
-    print(show.date.time.minute)
+    let show = schedule[1]
+    print(show.hour)
+    print(show.minute)
     let scheduledTime = show.getActualDate()
 
     print(scheduledTime.getHours())
@@ -82,4 +89,8 @@ Schedule.fromJson("res/schedule.json").then(schedule => {
     let finishDate = new Date()
     finishDate.setHours(12, 41)
     print(show.hasFinished(finishDate, 30))
+});
+
+Schedule.fromCSV("res/schedule.csv").then(schedule => {
+    console.log(JSON.stringify(schedule, null, 2))
 });
