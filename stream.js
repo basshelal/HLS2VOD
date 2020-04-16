@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const csv = require("csvtojson");
+const moment = require("moment");
 class Stream {
     // TODO what do we do if there's no schedule?? Just download all?
     constructor(name, playlistUrl, schedule, offsetSeconds = 30) {
@@ -45,29 +46,11 @@ class Stream {
     stopDownloading() {
     }
     mergeCurrentShow() {
-        // TODO ensure that the show finished!
         this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
     }
 }
 exports.Stream = Stream;
-function dayToIndex(day) {
-    switch (day) {
-        case "sunday":
-            return 0;
-        case "monday":
-            return 1;
-        case "tuesday":
-            return 2;
-        case "wednesday":
-            return 3;
-        case "thursday":
-            return 4;
-        case "friday":
-            return 5;
-        case "saturday":
-            return 6;
-    }
-}
+const Days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 exports.Schedule = {
     fromJson(jsonFilePath) {
         return scheduleFromJson(jsonFilePath);
@@ -104,6 +87,9 @@ class Show {
         this.hour = hour;
         this.minute = minute;
     }
+    toString() {
+        return JSON.stringify(this, null, 2);
+    }
 }
 exports.Show = Show;
 class ScheduledShow extends Show {
@@ -132,17 +118,41 @@ class ScheduledShow extends Show {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset);
     }
     static fromSchedule(show, schedule, offsetSeconds) {
-        // TODO we're not considering day of the week yet!
-        //  the main problem is we need to figure out which day number it is for any given day of the week
         let offsetMillis = offsetSeconds * 1000;
         let now = new Date();
-        let startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), show.hour, show.minute).valueOf();
+        let todayDayIndex = now.getDay();
+        let showDayIndex = Days.indexOf(show.day);
+        let newTime = now;
+        if (showDayIndex > todayDayIndex) {
+            let differenceDays = showDayIndex - todayDayIndex;
+            newTime = moment().add(differenceDays, "days").toDate();
+        }
+        if (showDayIndex < todayDayIndex) {
+            let differenceDays = todayDayIndex - showDayIndex;
+            let offset = Days.length - differenceDays;
+            newTime = moment().add(offset, "days").toDate();
+        }
+        let startTime = new Date(newTime.getFullYear(), newTime.getMonth(), newTime.getDate(), show.hour, show.minute).valueOf();
         let offsetStartTime = startTime - offsetMillis;
-        let thisIndex = schedule.indexOf(show);
-        let nextIndex = thisIndex == schedule.length - 1 ? 0 : thisIndex + 1;
-        let nextShow = schedule[nextIndex];
-        let endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextShow.hour, nextShow.minute).valueOf();
+        let thisShowIndex = schedule.indexOf(show);
+        let nextShowIndex = thisShowIndex == schedule.length - 1 ? 0 : thisShowIndex + 1;
+        let nextShow = schedule[nextShowIndex];
+        let nextShowDayIndex = Days.indexOf(nextShow.day);
+        let nextShowTime = now;
+        if (nextShowDayIndex > todayDayIndex) {
+            let differenceDays = nextShowDayIndex - todayDayIndex;
+            nextShowTime = moment().add(differenceDays, "days").toDate();
+        }
+        if (nextShowDayIndex < todayDayIndex) {
+            let differenceDays = todayDayIndex - nextShowDayIndex;
+            let offset = Days.length - differenceDays;
+            nextShowTime = moment().add(offset, "days").toDate();
+        }
+        let endTime = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf();
         let offsetEndTime = endTime + offsetMillis;
         return new ScheduledShow(show, startTime, offsetStartTime, endTime, offsetEndTime);
+    }
+    toString() {
+        return JSON.stringify(this, null, 2);
     }
 }

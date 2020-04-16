@@ -18,6 +18,7 @@
     "fs-extra": "^8.1.0",
     "m3u8-parser": "^4.4.0",
     "materialize-css": "^1.0.0-rc.2",
+    "moment": "^2.24.0",
     "morgan": "~1.9.1",
     "nedb": "^1.8.0",
     "node-hls-downloader": "^1.2.0",
