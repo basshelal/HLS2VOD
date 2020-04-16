@@ -23,7 +23,9 @@ export class Downloader {
         public playlistUrl: string,
         public segmentDirectory: string,
         private timeoutDuration: number = 60,
-        private playlistRefreshInterval: number = 2
+        private playlistRefreshInterval: number = 2,
+        public onDownloadSegment: Function = () => {
+        }
     ) {
         this.queue = new PQueue();
     }
@@ -38,11 +40,11 @@ export class Downloader {
     }
 
     public stop() {
-        console.log("Stopping download!");
+        console.log("Stopping download!")
         if (this.refreshHandle) {
-            clearTimeout(this.refreshHandle);
+            clearTimeout(this.refreshHandle)
         }
-        this.resolve!();
+        this.resolve()
     }
 
     public async mergeAll(): Promise<void> {
@@ -89,7 +91,7 @@ export class Downloader {
         await mergeFiles(segments, mergedSegmentsFile);
 
         // Transmux
-        await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+        await transmuxTsToMp4(mergedSegmentsFile, `${segmentsDir}video${Date.now()}.mp4`);
 
         // Delete ts files
         fs.remove(mergedSegmentsFile);
@@ -179,6 +181,7 @@ export class Downloader {
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
+        this.onDownloadSegment()
     }
 
     private finishAllInQueue() {
@@ -251,19 +254,15 @@ export class StreamChooser {
 }
 
 export interface IConfig {
-    mergeUsingFfmpeg?: boolean;
     quality?: "worst" | "best" | number;
     streamUrl: string;
     segmentsDir?: string;
-    mergedSegmentsFile?: string;
-    outputFile: string;
 }
 
 export async function startDownloader(url: string): Promise<void> {
     let config: IConfig = {
         quality: "best",
         segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
-        outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
         streamUrl: url
     };
     const runId = Date.now();

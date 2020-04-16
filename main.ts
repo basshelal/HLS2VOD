@@ -58,14 +58,15 @@ electron.ipcMain.on("devTools", (event, data) => {
 })
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
+export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
 
 Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
-    let stream = new Stream("test", aljazeeraUrl, schedule)
-    // stream.startDownloading()
+    let stream = new Stream("AlJazeera", aljazeeraUrl, schedule)
+    stream.startDownloading()
 
     print(moment().format(momentFormat))
 })

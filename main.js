@@ -50,12 +50,13 @@ electron.ipcMain.on("devTools", (event, data) => {
     browserWindow.webContents.toggleDevTools();
 });
 exports.momentFormat = "dddd Do MMMM YYYY, HH:mm:ss";
+exports.momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss";
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
 stream_1.Schedule.fromCSV("res/schedule.csv").then((schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
-    let stream = new stream_1.Stream("test", aljazeeraUrl, schedule);
-    // stream.startDownloading()
+    let stream = new stream_1.Stream("AlJazeera", aljazeeraUrl, schedule);
+    stream.startDownloading();
     utils_1.print(moment().format(exports.momentFormat));
 });

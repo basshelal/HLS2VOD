@@ -9,11 +9,13 @@ const url_1 = require("url");
 const http_1 = require("./http");
 exports.downloaders = [];
 class Downloader {
-    constructor(playlistUrl, segmentDirectory, timeoutDuration = 60, playlistRefreshInterval = 2) {
+    constructor(playlistUrl, segmentDirectory, timeoutDuration = 60, playlistRefreshInterval = 2, onDownloadSegment = () => {
+    }) {
         this.playlistUrl = playlistUrl;
         this.segmentDirectory = segmentDirectory;
         this.timeoutDuration = timeoutDuration;
         this.playlistRefreshInterval = playlistRefreshInterval;
+        this.onDownloadSegment = onDownloadSegment;
         this.queue = new p_queue_1.default();
     }
     async start() {
@@ -65,7 +67,7 @@ class Downloader {
         // Merge TS files
         await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
         // Transmux
-        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, `${segmentsDir}video${Date.now()}.mp4`);
         // Delete ts files
         fs.remove(mergedSegmentsFile);
     }
@@ -139,6 +141,7 @@ class Downloader {
         // Download file
         await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
+        this.onDownloadSegment();
     }
     finishAllInQueue() {
         // stop adding anything to the queue
@@ -203,7 +206,6 @@ async function startDownloader(url) {
     let config = {
         quality: "best",
         segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
-        outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
         streamUrl: url
     };
     const runId = Date.now();

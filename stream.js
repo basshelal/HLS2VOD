@@ -5,7 +5,6 @@ const fs = require("fs");
 const fsextra = require("fs-extra");
 const csv = require("csvtojson");
 const moment = require("moment");
-const path = require("path");
 const utils_1 = require("./utils");
 const main_1 = require("./main");
 class Stream {
@@ -20,61 +19,74 @@ class Stream {
         this.name = name;
         this.playlistUrl = playlistUrl;
         this.offsetSeconds = offsetSeconds;
+        this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
         // once the current show has truly ended (including offset)
         // merge all the files that it uses but only delete from its start segment to the start segment of the next show
         // even though the merge is a bit more than that because we need some of the segments later
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
+        this.setCurrentShow();
+        this.mergerTimeOut = setInterval(() => {
+            let now = Date.now();
+            if (now > this.nextImportantTime) {
+                if (this.nextShow.hasStarted(true)) {
+                    utils_1.print("Next show has started!");
+                    utils_1.print(`It is ${this.nextShow}`);
+                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
+                    if (!this.nextShow.startChunkName)
+                        this.nextShow.startChunkName = this.getLatestChunkPath();
+                }
+                if (this.currentShow.hasEnded(true)) {
+                    utils_1.print("Current show has ended!");
+                    utils_1.print(`It is ${this.currentShow}`);
+                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
+                    if (!this.currentShow.endChunkName)
+                        this.currentShow.endChunkName = this.getLatestChunkPath();
+                    this.mergeCurrentShow();
+                    this.setCurrentShow();
+                }
+            }
+        }, 1000);
+    }
+    setCurrentShow() {
         let activeShows = this.shows.filter(it => it.isActive(true));
         console.assert(activeShows.length == 1, `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`);
         this.currentShow = activeShows[0];
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
         this.nextImportantTime = this.nextShow.offsetStartTime;
-        this.mergerTimeOut = setInterval(() => {
-            let now = Date.now();
-            if (now > this.nextImportantTime) {
-                if (this.nextShow.hasStarted()) {
-                    utils_1.print("Next show has started!");
-                    utils_1.print(`It is ${this.nextShow}`);
-                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
-                }
-                if (this.currentShow.hasEnded()) {
-                    utils_1.print("Current show has ended!");
-                    utils_1.print(`It is ${this.currentShow}`);
-                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
-                }
-            }
-        }, 1000);
+        this.currentShow.startChunkName = this.getLatestChunkPath();
+    }
+    getLatestChunkPath() {
+        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + it);
+        segments.sort();
+        return segments[segments.length - 1];
     }
     async startDownloading() {
-        let config = {
-            quality: "best",
-            segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
-            outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
-            streamUrl: this.playlistUrl
-        };
-        const runId = Date.now();
-        const segmentsDir = config.segmentsDir + `/${runId}/` || `./segments/${runId}/`;
-        const mergedSegmentsFile = segmentsDir + "merged.ts";
+        this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
+        const runId = moment().format(main_1.momentFormatSafe);
+        const segmentsDir = this.segmentsDirectory + `/${this.name}-${runId}/`;
         // Create target directory
-        fsextra.mkdirpSync(path.dirname(mergedSegmentsFile));
         fsextra.mkdirpSync(segmentsDir);
         // Choose proper stream
-        const streamChooser = new downloader_1.StreamChooser(config.streamUrl);
-        if (!await streamChooser.load()) {
+        const streamChooser = new downloader_1.StreamChooser(this.playlistUrl);
+        if (!await streamChooser.load())
             return;
-        }
-        const playlistUrl = streamChooser.getPlaylistUrl(config.quality);
-        if (!playlistUrl) {
+        const playlistUrl = streamChooser.getPlaylistUrl("best");
+        if (!playlistUrl)
             return;
-        }
         // Start download
         let downloader = new downloader_1.Downloader(playlistUrl, segmentsDir);
+        downloader.onDownloadSegment = () => {
+            if (!this.nextShow.startChunkName)
+                this.nextShow.startChunkName = this.getLatestChunkPath();
+        };
         this.downloader = downloader;
         downloader_1.downloaders.push(downloader);
         this.isDownloading = true;
         return await downloader.start();
     }
-    stopDownloading() {
+    async stopDownloading() {
+        this.downloader.stop();
+        this.downloader.mergeAll();
         this.isDownloading = false;
     }
     mergeCurrentShow() {
