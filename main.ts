@@ -2,6 +2,7 @@ import {startDownloader, stopAllDownloaders} from "./downloader";
 import * as electron from "electron";
 import {Schedule, Stream} from "./stream";
 import {print} from "./utils";
+import moment = require("moment");
 import BrowserWindow = electron.BrowserWindow;
 
 function stop() {
@@ -56,6 +57,7 @@ electron.ipcMain.on("devTools", (event, data) => {
     browserWindow.webContents.toggleDevTools()
 })
 
+export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
@@ -63,6 +65,7 @@ const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
 Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
     let stream = new Stream("test", aljazeeraUrl, schedule)
-    print(stream.currentShow)
-    print(stream.nextShow)
+    // stream.startDownloading()
+
+    print(moment().format(momentFormat))
 })

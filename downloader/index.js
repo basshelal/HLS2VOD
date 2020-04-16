@@ -147,12 +147,11 @@ class Downloader {
 }
 exports.Downloader = Downloader;
 class StreamChooser {
-    constructor(streamUrl, httpHeaders) {
+    constructor(streamUrl) {
         this.streamUrl = streamUrl;
-        this.httpHeaders = httpHeaders;
     }
     async load() {
-        const streams = await http_1.get(this.streamUrl, this.httpHeaders);
+        const streams = await http_1.get(this.streamUrl);
         const parser = new m3u8.Parser();
         parser.push(streams);
         parser.end();
@@ -214,7 +213,7 @@ async function startDownloader(url) {
     fs.mkdirpSync(path.dirname(mergedSegmentsFile));
     fs.mkdirpSync(segmentsDir);
     // Choose proper stream
-    const streamChooser = new StreamChooser(config.streamUrl, config.httpHeaders);
+    const streamChooser = new StreamChooser(config.streamUrl);
     if (!await streamChooser.load()) {
         return;
     }

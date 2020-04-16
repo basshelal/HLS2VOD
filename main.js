@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const downloader_1 = require("./downloader");
 const electron = require("electron");
 const stream_1 = require("./stream");
-var BrowserWindow = electron.BrowserWindow;
 const utils_1 = require("./utils");
+const moment = require("moment");
+var BrowserWindow = electron.BrowserWindow;
 function stop() {
     downloader_1.stopAllDownloaders().then(electron.app.quit);
 }
@@ -48,12 +49,13 @@ electron.ipcMain.on('invokeAction', (event, data) => {
 electron.ipcMain.on("devTools", (event, data) => {
     browserWindow.webContents.toggleDevTools();
 });
+exports.momentFormat = "dddd Do MMMM YYYY, HH:mm:ss";
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
 stream_1.Schedule.fromCSV("res/schedule.csv").then((schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
     let stream = new stream_1.Stream("test", aljazeeraUrl, schedule);
-    utils_1.print(stream.currentShow);
-    utils_1.print(stream.nextShow);
+    // stream.startDownloading()
+    utils_1.print(moment().format(exports.momentFormat));
 });

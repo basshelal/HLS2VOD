@@ -3,13 +3,13 @@ import axios from "axios";
 
 export type HttpHeaders = { [name: string]: string };
 
-export async function get(url: string, headers?: HttpHeaders): Promise<string> {
-    const response = await axios.get(url, {responseType: "text", headers});
+export async function get(url: string): Promise<string> {
+    const response = await axios.get(url, {responseType: "text"});
     return response.data;
 }
 
-export async function download(url: string, file: string, headers?: HttpHeaders): Promise<void> {
-    const response = await axios(url, {responseType: "stream", headers});
+export async function download(url: string, file: string): Promise<void> {
+    const response = await axios(url, {responseType: "stream"});
     const stream = response.data.pipe(fs.createWriteStream(file));
     return new Promise((resolve, reject) => {
         stream.on("finish", resolve);

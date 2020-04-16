@@ -1,19 +1,25 @@
-import {Downloader} from "./downloader";
+import {Downloader, downloaders, IConfig, StreamChooser} from "./downloader";
 import * as fs from "fs";
+import * as fsextra from "fs-extra";
 import * as csv from "csvtojson";
 import * as moment from "moment";
+import * as path from "path";
+import {print} from "./utils";
+import {momentFormat} from "./main";
 import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
 export class Stream {
 
-    private downloader: Downloader
-    private mergerTimeOut: Timeout
-    private shows: Array<ScheduledShow>
-    currentShow: ScheduledShow
-    nextShow: ScheduledShow
+    public downloader: Downloader
+    public mergerTimeOut: Timeout
+    public shows: Array<ScheduledShow>
+    public currentShow: ScheduledShow
+    public nextShow: ScheduledShow
     // the next time of when something important is due to happen like a merge or a start
-    private nextImportantTime: number
+    public nextImportantTime: number
+
+    public isDownloading: boolean
 
     // TODO what do we do if there's no schedule?? Just download all?
 
@@ -44,33 +50,61 @@ export class Stream {
 
         this.nextImportantTime = this.nextShow.offsetStartTime
 
-        this.mergerTimeOut = setInterval(this.onInterval, 1000)
+        this.mergerTimeOut = setInterval(() => {
+            let now: number = Date.now()
+            if (now > this.nextImportantTime) {
+                if (this.nextShow.hasStarted()) {
+                    print("Next show has started!")
+                    print(`It is ${this.nextShow}`)
+                    print(`The time now is ${moment().format(momentFormat)}`)
+                }
+                if (this.currentShow.hasEnded()) {
+                    print("Current show has ended!")
+                    print(`It is ${this.currentShow}`)
+                    print(`The time now is ${moment().format(momentFormat)}`)
+                }
+            }
+        }, 1000)
     }
 
-    public onInterval() {
-        let now: number = Date.now()
-        if (this.nextImportantTime > now) {
-
-            if (this.nextShow.hasStarted()) {
-            }
-            if (this.currentShow.hasEnded()) {
-            }
-
-            // either, the next show has started (with offset)
-            //  or this show has ended (with offset)
-
-            // check why we're here, what has cause this? a start an end or what?
-
-            // importantTime is only a show start (with offset) and a show end (with offset)
-            // with end making that show merged, deleted and change current and next show
-            // start probably does very little tbh
+    public async startDownloading(): Promise<void> {
+        let config: IConfig = {
+            quality: "best",
+            segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
+            outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
+            streamUrl: this.playlistUrl
         }
-    }
+        const runId = Date.now()
+        const segmentsDir: string = config.segmentsDir + `/${runId}/` || `./segments/${runId}/`
+        const mergedSegmentsFile: string = segmentsDir + "merged.ts"
 
-    public startDownloading() {
+        // Create target directory
+        fsextra.mkdirpSync(path.dirname(mergedSegmentsFile))
+        fsextra.mkdirpSync(segmentsDir)
+
+        // Choose proper stream
+        const streamChooser = new StreamChooser(config.streamUrl)
+        if (!await streamChooser.load()) {
+            return
+        }
+        const playlistUrl = streamChooser.getPlaylistUrl(config.quality)
+        if (!playlistUrl) {
+            return
+        }
+
+        // Start download
+        let downloader = new Downloader(
+            playlistUrl,
+            segmentsDir
+        )
+        this.downloader = downloader
+        downloaders.push(downloader)
+        this.isDownloading = true
+        return await downloader.start()
     }
 
     public stopDownloading() {
+        this.isDownloading = false
     }
 
     public mergeCurrentShow() {

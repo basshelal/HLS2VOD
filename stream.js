@@ -1,8 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const downloader_1 = require("./downloader");
 const fs = require("fs");
+const fsextra = require("fs-extra");
 const csv = require("csvtojson");
 const moment = require("moment");
+const path = require("path");
+const utils_1 = require("./utils");
+const main_1 = require("./main");
 class Stream {
     // TODO what do we do if there's no schedule?? Just download all?
     constructor(name, playlistUrl, schedule, offsetSeconds = 30) {
@@ -24,26 +29,53 @@ class Stream {
         this.currentShow = activeShows[0];
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
         this.nextImportantTime = this.nextShow.offsetStartTime;
-        this.mergerTimeOut = setInterval(this.onInterval, 1000);
+        this.mergerTimeOut = setInterval(() => {
+            let now = Date.now();
+            if (now > this.nextImportantTime) {
+                if (this.nextShow.hasStarted()) {
+                    utils_1.print("Next show has started!");
+                    utils_1.print(`It is ${this.nextShow}`);
+                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
+                }
+                if (this.currentShow.hasEnded()) {
+                    utils_1.print("Current show has ended!");
+                    utils_1.print(`It is ${this.currentShow}`);
+                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
+                }
+            }
+        }, 1000);
     }
-    onInterval() {
-        let now = Date.now();
-        if (this.nextImportantTime > now) {
-            if (this.nextShow.hasStarted()) {
-            }
-            if (this.currentShow.hasEnded()) {
-            }
-            // either, the next show has started (with offset)
-            //  or this show has ended (with offset)
-            // check why we're here, what has cause this? a start an end or what?
-            // importantTime is only a show start (with offset) and a show end (with offset)
-            // with end making that show merged, deleted and change current and next show
-            // start probably does very little tbh
+    async startDownloading() {
+        let config = {
+            quality: "best",
+            segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
+            outputFile: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\video.mp4",
+            streamUrl: this.playlistUrl
+        };
+        const runId = Date.now();
+        const segmentsDir = config.segmentsDir + `/${runId}/` || `./segments/${runId}/`;
+        const mergedSegmentsFile = segmentsDir + "merged.ts";
+        // Create target directory
+        fsextra.mkdirpSync(path.dirname(mergedSegmentsFile));
+        fsextra.mkdirpSync(segmentsDir);
+        // Choose proper stream
+        const streamChooser = new downloader_1.StreamChooser(config.streamUrl);
+        if (!await streamChooser.load()) {
+            return;
         }
-    }
-    startDownloading() {
+        const playlistUrl = streamChooser.getPlaylistUrl(config.quality);
+        if (!playlistUrl) {
+            return;
+        }
+        // Start download
+        let downloader = new downloader_1.Downloader(playlistUrl, segmentsDir);
+        this.downloader = downloader;
+        downloader_1.downloaders.push(downloader);
+        this.isDownloading = true;
+        return await downloader.start();
     }
     stopDownloading() {
+        this.isDownloading = false;
     }
     mergeCurrentShow() {
         this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));

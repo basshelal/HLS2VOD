@@ -4,7 +4,7 @@ import * as m3u8 from "m3u8-parser";
 import {mergeFiles, transmuxTsToMp4} from "./ffmpeg";
 import PQueue from "p-queue";
 import {URL} from "url";
-import {download, get, HttpHeaders} from "./http";
+import {download, get} from "./http";
 
 export const downloaders: Array<Downloader> = [];
 
@@ -190,14 +190,11 @@ export class Downloader {
 export class StreamChooser {
     private manifest?: m3u8.Manifest;
 
-    constructor(
-        private streamUrl: string,
-        private httpHeaders?: HttpHeaders,
-    ) {
+    constructor(private streamUrl: string) {
     }
 
     public async load(): Promise<boolean> {
-        const streams = await get(this.streamUrl, this.httpHeaders);
+        const streams = await get(this.streamUrl);
 
         const parser = new m3u8.Parser();
         parser.push(streams);
@@ -260,7 +257,6 @@ export interface IConfig {
     segmentsDir?: string;
     mergedSegmentsFile?: string;
     outputFile: string;
-    httpHeaders?: HttpHeaders;
 }
 
 export async function startDownloader(url: string): Promise<void> {
@@ -279,7 +275,7 @@ export async function startDownloader(url: string): Promise<void> {
     fs.mkdirpSync(segmentsDir);
 
     // Choose proper stream
-    const streamChooser = new StreamChooser(config.streamUrl, config.httpHeaders);
+    const streamChooser = new StreamChooser(config.streamUrl);
     if (!await streamChooser.load()) {
         return;
     }
