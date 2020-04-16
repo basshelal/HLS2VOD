@@ -6,9 +6,9 @@ import PQueue from "p-queue";
 import {URL} from "url";
 import {download, get, HttpHeaders} from "./http";
 
-export const downloaders: Array<ChunksDownloader> = [];
+export const downloaders: Array<Downloader> = [];
 
-export class ChunksDownloader {
+export class Downloader {
     private queue: PQueue;
     private lastSegment?: string;
 
@@ -289,7 +289,7 @@ export async function startDownloader(url: string): Promise<void> {
     }
 
     // Start download
-    let downloader = new ChunksDownloader(
+    let downloader = new Downloader(
         playlistUrl,
         segmentsDir
     );

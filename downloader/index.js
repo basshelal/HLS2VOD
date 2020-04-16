@@ -8,7 +8,7 @@ const p_queue_1 = require("p-queue");
 const url_1 = require("url");
 const http_1 = require("./http");
 exports.downloaders = [];
-class ChunksDownloader {
+class Downloader {
     constructor(playlistUrl, segmentDirectory, timeoutDuration = 60, playlistRefreshInterval = 2) {
         this.playlistUrl = playlistUrl;
         this.segmentDirectory = segmentDirectory;
@@ -145,7 +145,7 @@ class ChunksDownloader {
         // whatever is still in the queue should be resolved asap
     }
 }
-exports.ChunksDownloader = ChunksDownloader;
+exports.Downloader = Downloader;
 class StreamChooser {
     constructor(streamUrl, httpHeaders) {
         this.streamUrl = streamUrl;
@@ -223,7 +223,7 @@ async function startDownloader(url) {
         return;
     }
     // Start download
-    let downloader = new ChunksDownloader(playlistUrl, segmentsDir);
+    let downloader = new Downloader(playlistUrl, segmentsDir);
     exports.downloaders.push(downloader);
     return await downloader.start();
 }

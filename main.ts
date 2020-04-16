@@ -2,6 +2,7 @@ import {startDownloader, stopAllDownloaders} from "./downloader";
 import * as electron from "electron";
 import {Schedule} from "./stream";
 import {print} from "./utils";
+import * as Datastore from "nedb";
 import DateTimeFormat = Intl.DateTimeFormat;
 import BrowserWindow = electron.BrowserWindow;
 
@@ -81,3 +82,5 @@ Schedule.fromCSV("res/schedule.csv").then(schedule => {
 
     print(dateTimeFormat.format(now))
 });
+
+let datastore = new Datastore({filename: "database/data.db", autoload: true})

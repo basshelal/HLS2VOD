@@ -19,10 +19,12 @@
     "m3u8-parser": "^4.4.0",
     "materialize-css": "^1.0.0-rc.2",
     "morgan": "~1.9.1",
+    "nedb": "^1.8.0",
     "node-hls-downloader": "^1.2.0",
     "p-queue": "^6.2.1"
   },
   "devDependencies": {
+    "@types/nedb": "^1.8.9",
     "electron": "^8.2.2"
   }
 }

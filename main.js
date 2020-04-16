@@ -4,6 +4,7 @@ const downloader_1 = require("./downloader");
 const electron = require("electron");
 const stream_1 = require("./stream");
 const utils_1 = require("./utils");
+const Datastore = require("nedb");
 var DateTimeFormat = Intl.DateTimeFormat;
 var BrowserWindow = electron.BrowserWindow;
 function stop() {
@@ -69,3 +70,4 @@ stream_1.Schedule.fromCSV("res/schedule.csv").then(schedule => {
     });
     utils_1.print(dateTimeFormat.format(now));
 });
+let datastore = new Datastore({ filename: "database/data.db", autoload: true });

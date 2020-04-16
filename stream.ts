@@ -1,4 +1,4 @@
-import {ChunksDownloader} from "./downloader";
+import {Downloader} from "./downloader";
 import * as fs from "fs";
 import * as csv from "csvtojson";
 import ErrnoException = NodeJS.ErrnoException;
@@ -6,24 +6,22 @@ import Timeout = NodeJS.Timeout;
 
 export class Stream {
 
-    private downloader: ChunksDownloader
+    private downloader: Downloader
     private mergerTimeOut: Timeout
+    private shows: Array<ScheduledShow>
     private currentShow: ScheduledShow
     private nextShow: ScheduledShow
     // the next time of when something important is due to happen like a merge or a start
     private nextImportantTime: number
-    private shows: Array<ScheduledShow>
+
+    // TODO what do we do if there's no schedule?? Just download all?
 
     constructor(
         public name: string,
         public playlistUrl: string,
-        public schedule: Schedule,
+        schedule: Schedule,
         public offsetSeconds: number = 30
     ) {
-        // get the current show based on the time now
-        // prev show is null
-        // next show is what is next in the schedule
-
         // in the interval we need to check if next show
         //  has started with the offset
         //  if it has that means the current show is about to end
@@ -37,18 +35,28 @@ export class Stream {
 
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds))
 
-        // Set the currentShow, this is the show that has started but has not yet finished
-        // TODO fix this later
-        this.currentShow = this.shows[0]
-        this.nextShow = this.shows[1] // the one after the current
+        let activeShows = this.shows.filter(it => it.isActive(true))
+        console.assert(activeShows.length == 1,
+            `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`)
+        this.currentShow = activeShows[0]
+        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1]
 
-        this.nextImportantTime = this.nextShow.startTime
+        this.nextImportantTime = this.nextShow.offsetStartTime
 
         this.mergerTimeOut = setInterval(this.onInterval, 1000)
     }
 
     public onInterval() {
-        if (this.nextImportantTime > Date.now()) {
+        let now: number = Date.now()
+        if (this.nextImportantTime > now) {
+
+            if (this.nextShow.hasStarted()) {
+            }
+            if (this.currentShow.hasEnded()) {
+            }
+
+            // either, the next show has started (with offset)
+            //  or this show has ended (with offset)
 
             // check why we're here, what has cause this? a start an end or what?
 
@@ -147,6 +155,21 @@ class ScheduledShow extends Show {
         super(show.name, show.day, show.hour, show.minute);
     }
 
+    public hasStarted(withOffset: boolean = true): boolean {
+        let now: number = Date.now()
+        if (withOffset) return now >= this.offsetStartTime
+        else now >= this.startTime
+    }
+
+    public hasEnded(withOffset: boolean = true): boolean {
+        let now: number = Date.now()
+        if (withOffset) return now >= this.offsetEndTime
+        else now >= this.endTime
+    }
+
+    public isActive(withOffset: boolean = true): boolean {
+        return this.hasStarted(withOffset) && !this.hasEnded(withOffset)
+    }
 
     public static fromSchedule(show: Show, schedule: Schedule, offsetSeconds: number): ScheduledShow {
         // TODO we're not considering day of the week yet!

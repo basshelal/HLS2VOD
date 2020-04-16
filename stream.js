@@ -3,33 +3,37 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const csv = require("csvtojson");
 class Stream {
+    // TODO what do we do if there's no schedule?? Just download all?
     constructor(name, playlistUrl, schedule, offsetSeconds = 30) {
-        // get the current show based on the time now
-        // prev show is null
-        // next show is what is next in the schedule
-        this.name = name;
-        this.playlistUrl = playlistUrl;
-        this.schedule = schedule;
-        this.offsetSeconds = offsetSeconds;
         // in the interval we need to check if next show
         //  has started with the offset
         //  if it has that means the current show is about to end
         //  start recording the next show, take note of the segment where the change happens
         //  because we want the merge to delete as much as possible while still keeping the files needed
         //  for the next show
+        this.name = name;
+        this.playlistUrl = playlistUrl;
+        this.offsetSeconds = offsetSeconds;
         // once the current show has truly ended (including offset)
         // merge all the files that it uses but only delete from its start segment to the start segment of the next show
         // even though the merge is a bit more than that because we need some of the segments later
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
-        // Set the currentShow, this is the show that has started but has not yet finished
-        // TODO fix this later
-        this.currentShow = this.shows[0];
-        this.nextShow = this.shows[1]; // the one after the current
-        this.nextImportantTime = this.nextShow.startTime;
+        let activeShows = this.shows.filter(it => it.isActive(true));
+        console.assert(activeShows.length == 1, `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`);
+        this.currentShow = activeShows[0];
+        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
+        this.nextImportantTime = this.nextShow.offsetStartTime;
         this.mergerTimeOut = setInterval(this.onInterval, 1000);
     }
     onInterval() {
-        if (this.nextImportantTime > Date.now()) {
+        let now = Date.now();
+        if (this.nextImportantTime > now) {
+            if (this.nextShow.hasStarted()) {
+            }
+            if (this.currentShow.hasEnded()) {
+            }
+            // either, the next show has started (with offset)
+            //  or this show has ended (with offset)
             // check why we're here, what has cause this? a start an end or what?
             // importantTime is only a show start (with offset) and a show end (with offset)
             // with end making that show merged, deleted and change current and next show
@@ -109,6 +113,23 @@ class ScheduledShow extends Show {
         this.offsetStartTime = offsetStartTime;
         this.endTime = endTime;
         this.offsetEndTime = offsetEndTime;
+    }
+    hasStarted(withOffset = true) {
+        let now = Date.now();
+        if (withOffset)
+            return now >= this.offsetStartTime;
+        else
+            now >= this.startTime;
+    }
+    hasEnded(withOffset = true) {
+        let now = Date.now();
+        if (withOffset)
+            return now >= this.offsetEndTime;
+        else
+            now >= this.endTime;
+    }
+    isActive(withOffset = true) {
+        return this.hasStarted(withOffset) && !this.hasEnded(withOffset);
     }
     static fromSchedule(show, schedule, offsetSeconds) {
         // TODO we're not considering day of the week yet!
