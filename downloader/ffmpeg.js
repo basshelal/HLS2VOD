@@ -56,7 +56,7 @@ async function transmuxTsToMp4(inputFile, outputFile) {
     ]);
 }
 exports.transmuxTsToMp4 = transmuxTsToMp4;
-function copyToStream(inFile, outStream) {
+async function copyToStream(inFile, outStream) {
     return new Promise((resolve, reject) => {
         fs
             .createReadStream(inFile)

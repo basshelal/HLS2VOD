@@ -73,10 +73,6 @@ Schedule.fromCSV("res/schedule.csv").then(schedule => {
     let show = schedule[1]
     print(show.hour)
     print(show.minute)
-    let scheduledTime = show.getActualDate()
-
-    print(scheduledTime.getHours())
-    print(scheduledTime.getSeconds())
 
     let dateTimeFormat = DateTimeFormat("en-GB", {
         weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -84,9 +80,4 @@ Schedule.fromCSV("res/schedule.csv").then(schedule => {
     });
 
     print(dateTimeFormat.format(now))
-    print(dateTimeFormat.format(scheduledTime))
-    print(show.hasStarted())
-    let finishDate = new Date()
-    finishDate.setHours(12, 41)
-    print(show.hasFinished(finishDate, 30))
 });

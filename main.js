@@ -63,17 +63,9 @@ stream_1.Schedule.fromCSV("res/schedule.csv").then(schedule => {
     let show = schedule[1];
     utils_1.print(show.hour);
     utils_1.print(show.minute);
-    let scheduledTime = show.getActualDate();
-    utils_1.print(scheduledTime.getHours());
-    utils_1.print(scheduledTime.getSeconds());
     let dateTimeFormat = DateTimeFormat("en-GB", {
         weekday: "long", year: "numeric", month: "long", day: "numeric",
         hour: "numeric", minute: "numeric", hour12: false
     });
     utils_1.print(dateTimeFormat.format(now));
-    utils_1.print(dateTimeFormat.format(scheduledTime));
-    utils_1.print(show.hasStarted());
-    let finishDate = new Date();
-    finishDate.setHours(12, 41);
-    utils_1.print(show.hasFinished(finishDate, 30));
 });

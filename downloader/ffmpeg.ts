@@ -59,7 +59,7 @@ export async function transmuxTsToMp4(inputFile: string, outputFile: string): Pr
     ]);
 }
 
-function copyToStream(inFile: string, outStream: fs.WriteStream): Promise<void> {
+async function copyToStream(inFile: string, outStream: fs.WriteStream): Promise<void> {
     return new Promise((resolve, reject) => {
         fs
             .createReadStream(inFile)

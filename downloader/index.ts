@@ -28,7 +28,7 @@ export class ChunksDownloader {
         this.queue = new PQueue();
     }
 
-    public start(): Promise<void> {
+    public async start(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -93,6 +93,25 @@ export class ChunksDownloader {
 
         // Delete ts files
         fs.remove(mergedSegmentsFile);
+    }
+
+    public deleteSegments(fromChunkName: string, toChunkNameExclusive: string) {
+        let segmentsDir = this.segmentDirectory;
+
+        // Get all segments
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        segments.sort();
+
+        fromChunkName = segmentsDir + fromChunkName;
+        toChunkNameExclusive = segmentsDir + toChunkNameExclusive;
+
+        let firstSegmentIndex: number = segments.indexOf(fromChunkName);
+        let lastSegmentIndex: number = segments.indexOf(toChunkNameExclusive);
+
+        if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return;
+
+        segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
+
         segments.forEach(it => fs.remove(it))
     }
 

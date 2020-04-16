@@ -16,7 +16,7 @@ class ChunksDownloader {
         this.playlistRefreshInterval = playlistRefreshInterval;
         this.queue = new p_queue_1.default();
     }
-    start() {
+    async start() {
         return new Promise((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -68,6 +68,19 @@ class ChunksDownloader {
         await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
         // Delete ts files
         fs.remove(mergedSegmentsFile);
+    }
+    deleteSegments(fromChunkName, toChunkNameExclusive) {
+        let segmentsDir = this.segmentDirectory;
+        // Get all segments
+        let segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        segments.sort();
+        fromChunkName = segmentsDir + fromChunkName;
+        toChunkNameExclusive = segmentsDir + toChunkNameExclusive;
+        let firstSegmentIndex = segments.indexOf(fromChunkName);
+        let lastSegmentIndex = segments.indexOf(toChunkNameExclusive);
+        if (firstSegmentIndex === -1 || lastSegmentIndex === -1)
+            return;
+        segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
         segments.forEach(it => fs.remove(it));
     }
     async refreshPlayList() {
