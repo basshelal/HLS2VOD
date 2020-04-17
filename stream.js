@@ -8,7 +8,6 @@ const moment = require("moment");
 const utils_1 = require("./utils");
 const main_1 = require("./main");
 class Stream {
-    // TODO what do we do if there's no schedule?? Just download all?
     constructor(name, playlistUrl, schedule, offsetSeconds = 30) {
         // in the interval we need to check if next show
         //  has started with the offset
@@ -47,19 +46,6 @@ class Stream {
             }
         }, 1000);
     }
-    setCurrentShow() {
-        let activeShows = this.shows.filter(it => it.isActive(true));
-        console.assert(activeShows.length == 1, `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`);
-        this.currentShow = activeShows[0];
-        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
-        this.nextImportantTime = this.nextShow.offsetStartTime;
-        this.currentShow.startChunkName = this.getLatestChunkPath();
-    }
-    getLatestChunkPath() {
-        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + it);
-        segments.sort();
-        return segments[segments.length - 1];
-    }
     async startDownloading() {
         this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
         const runId = moment().format(main_1.momentFormatSafe);
@@ -88,6 +74,19 @@ class Stream {
         this.downloader.stop();
         this.downloader.mergeAll();
         this.isDownloading = false;
+    }
+    setCurrentShow() {
+        let activeShows = this.shows.filter(it => it.isActive(true));
+        console.assert(activeShows.length == 1, `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`);
+        this.currentShow = activeShows[0];
+        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
+        this.nextImportantTime = this.nextShow.offsetStartTime;
+        this.currentShow.startChunkName = this.getLatestChunkPath();
+    }
+    getLatestChunkPath() {
+        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + it);
+        segments.sort();
+        return segments[segments.length - 1];
     }
     mergeCurrentShow() {
         this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));

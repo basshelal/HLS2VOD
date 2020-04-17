@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/NewsStreamDownloader.iml" filepath="$PROJECT_DIR$/.idea/NewsStreamDownloader.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/HLS2VOD.iml" filepath="$PROJECT_DIR$/.idea/HLS2VOD.iml" />
     </modules>
   </component>
 </project>

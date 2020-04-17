@@ -21,8 +21,6 @@ export class Stream {
 
     public isDownloading: boolean
 
-    // TODO what do we do if there's no schedule?? Just download all?
-
     constructor(
         public name: string,
         public playlistUrl: string,

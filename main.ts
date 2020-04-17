@@ -51,7 +51,7 @@ electron.ipcMain.on('invokeAction', (event, data) => {
             currentDownloading.push(alArabyUrl)
         }
     }
-});
+})
 
 electron.ipcMain.on("devTools", (event, data) => {
     browserWindow.webContents.toggleDevTools()
