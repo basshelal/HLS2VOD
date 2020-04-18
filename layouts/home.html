@@ -4,37 +4,42 @@
     <meta charset="UTF-8">
     <title>HLS2VOD</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link href="home.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
 
-<div class="container center nav-wrapper">
+<header>
     <h1>HLS 2 VOD</h1>
+</header>
+
+<br>
+
+<div class="container center">
+
+    <div id="addNewStreamDiv">
+        <h4>Add New Stream</h4>
+
+        <div class="row">
+            <p>Here is where information will go</p>
+            <div class="input-field s1 col s4">
+                <textarea class="materialize-textarea" id="streamNameTextArea"></textarea>
+                <label for="streamNameTextArea">Stream Name</label>
+            </div>
+            <div class="input-field col s4">
+                <textarea class="materialize-textarea" id="addPlayListURLTextArea"></textarea>
+                <label for="addPlayListURLTextArea">m3u8 Playlist URL</label>
+            </div>
+            <div class="input-field col s4">
+                <textarea class="materialize-textarea" id="scheduleTextArea"></textarea>
+                <label for="scheduleTextArea">Schedule</label>
+            </div>
+        </div>
+    </div>
 
     <button class="waves-effect waves-light btn pink darken-4" id="alJazeera">AlJazeera</button>
     <button class="waves-effect waves-light btn pink darken-4" id="alHiwar">AlHiwar</button>
     <button class="waves-effect waves-light btn pink darken-4" id="alAraby">AlAraby</button>
-
-    <form class="col s12">
-        <div class="row">
-            <div class="input-field s1 col s12">
-                <textarea class="materialize-textarea" id="streamNameTextArea"></textarea>
-                <label for="streamNameTextArea">Stream Name</label>
-            </div>
-            <div class="input-field col s12">
-                <textarea class="materialize-textarea" id="addPlayListURLTextArea"></textarea>
-                <label for="addPlayListURLTextArea">m3u8 Playlist URL</label>
-            </div>
-            <div class="input-field col s12">
-                <textarea class="materialize-textarea" id="scheduleTextArea"></textarea>
-                <label for="scheduleTextArea">Schedule</label>
-            </div>
-            <div class="input-field col s12">
-                <textarea class="materialize-textarea" id="offsetSecondsTextArea"></textarea>
-                <label for="offsetSecondsTextArea">m3u8 Playlist URL</label>
-            </div>
-        </div>
-    </form>
 </div>
 
 </body>

@@ -19,7 +19,6 @@ class Stream {
         this.playlistUrl = playlistUrl;
         this.schedulePath = schedulePath;
         this.schedule = schedule;
-        this.offsetSeconds = offsetSeconds;
         this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
         // once the current show has truly ended (including offset)
         // merge all the files that it uses but only delete from its start segment to the start segment of the next show
@@ -28,7 +27,7 @@ class Stream {
         this.setCurrentShow();
         this.mergerTimeOut = setInterval(() => {
             let now = Date.now();
-            if (now > this.nextImportantTime) {
+            if (now > this.nextEventTime) {
                 if (this.nextShow.hasStarted(true)) {
                     utils_1.print("Next show has started!");
                     utils_1.print(`It is ${this.nextShow}`);
@@ -82,7 +81,7 @@ class Stream {
         console.assert(activeShows.length == 1, `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`);
         this.currentShow = activeShows[0];
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
-        this.nextImportantTime = this.nextShow.offsetStartTime;
+        this.nextEventTime = this.nextShow.offsetStartTime;
         this.currentShow.startChunkName = this.getLatestChunkPath();
     }
     getLatestChunkPath() {
@@ -163,38 +162,38 @@ class ScheduledShow extends Show {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset);
     }
     static fromSchedule(show, schedule, offsetSeconds) {
-        let offsetMillis = offsetSeconds * 1000;
-        let now = new Date();
-        let todayDayIndex = now.getDay();
-        let showDayIndex = Days.indexOf(show.day);
+        const offsetMillis = offsetSeconds * 1000;
+        const now = new Date();
+        const todayDayIndex = now.getDay();
+        const showDayIndex = Days.indexOf(show.day);
         let newTime = now;
         if (showDayIndex > todayDayIndex) {
-            let differenceDays = showDayIndex - todayDayIndex;
+            const differenceDays = showDayIndex - todayDayIndex;
             newTime = moment().add(differenceDays, "days").toDate();
         }
         if (showDayIndex < todayDayIndex) {
-            let differenceDays = todayDayIndex - showDayIndex;
-            let offset = Days.length - differenceDays;
+            const differenceDays = todayDayIndex - showDayIndex;
+            const offset = Days.length - differenceDays;
             newTime = moment().add(offset, "days").toDate();
         }
-        let startTime = new Date(newTime.getFullYear(), newTime.getMonth(), newTime.getDate(), show.hour, show.minute).valueOf();
-        let offsetStartTime = startTime - offsetMillis;
-        let thisShowIndex = schedule.indexOf(show);
-        let nextShowIndex = thisShowIndex == schedule.length - 1 ? 0 : thisShowIndex + 1;
-        let nextShow = schedule[nextShowIndex];
-        let nextShowDayIndex = Days.indexOf(nextShow.day);
+        const startTime = new Date(newTime.getFullYear(), newTime.getMonth(), newTime.getDate(), show.hour, show.minute).valueOf();
+        const offsetStartTime = startTime - offsetMillis;
+        const thisShowIndex = schedule.indexOf(show);
+        const nextShowIndex = thisShowIndex == schedule.length - 1 ? 0 : thisShowIndex + 1;
+        const nextShow = schedule[nextShowIndex];
+        const nextShowDayIndex = Days.indexOf(nextShow.day);
         let nextShowTime = now;
         if (nextShowDayIndex > todayDayIndex) {
-            let differenceDays = nextShowDayIndex - todayDayIndex;
+            const differenceDays = nextShowDayIndex - todayDayIndex;
             nextShowTime = moment().add(differenceDays, "days").toDate();
         }
         if (nextShowDayIndex < todayDayIndex) {
-            let differenceDays = todayDayIndex - nextShowDayIndex;
-            let offset = Days.length - differenceDays;
+            const differenceDays = todayDayIndex - nextShowDayIndex;
+            const offset = Days.length - differenceDays;
             nextShowTime = moment().add(offset, "days").toDate();
         }
-        let endTime = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf();
-        let offsetEndTime = endTime + offsetMillis;
+        const endTime = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf();
+        const offsetEndTime = endTime + offsetMillis;
         return new ScheduledShow(show, startTime, offsetStartTime, endTime, offsetEndTime);
     }
     toString() {

@@ -4,39 +4,65 @@ import {Stream} from "../stream";
 export const settingsDatabase = new Datastore({filename: "database/settings.db", autoload: true})
 export const streamsDatabase = new Datastore({filename: "database/streams.db", autoload: true})
 
+type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
+
 interface SettingsEntry {
     key: string
     value: string
 }
 
 export const Settings = {
-    async setRootDirectory(newRootDirectory: string): Promise<void> {
-        return new Promise<void>((resolve, reject) =>
-            settingsDatabase.update<SettingsEntry>({key: "rootDirectory"},
-                {key: "rootDirectory", value: newRootDirectory},
-                {},
-                (err: Error, numberOfUpdated: number, upsert: boolean) => {
+    // region outputDirectory
+    async setOutputDirectory(newOutputDirectory: string): Promise<string> {
+        return new Promise<string>((resolve, reject) =>
+            settingsDatabase.update<SettingsEntry>({key: "outputDirectory"},
+                {key: "outputDirectory", value: newOutputDirectory},
+                {upsert: true, returnUpdatedDocs: true},
+                (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
                     if (err) reject(err)
-                    else resolve()
+                    else resolve((affectedDocuments as SettingsEntry).value)
                 }))
     },
-    async getRootDirectory(): Promise<string> {
+    async getOutputDirectory(): Promise<string> {
         return new Promise<string>((resolve, reject) =>
-            settingsDatabase.find<SettingsEntry>({key: "rootDirectory"},
+            settingsDatabase.find<SettingsEntry>({key: "outputDirectory"},
                 (err: Error, documents: Array<SettingsEntry>) => {
                     if (err) reject(err)
                     else if (!documents || documents.length == 0) reject("Documents is null or empty")
                     else resolve(documents[0].value)
                 })
         )
-    }
+    },
+    // endregion outputDirectory
+
+    // region offsetSeconds
+    async setOffsetSeconds(newOffsetSeconds: number): Promise<number> {
+        return new Promise<number>((resolve, reject) =>
+            settingsDatabase.update<SettingsEntry>({key: "offsetSeconds"},
+                {key: "offsetSeconds", value: newOffsetSeconds},
+                {upsert: true, returnUpdatedDocs: true},
+                (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
+                    if (err) reject(err)
+                    else resolve(Number.parseInt((affectedDocuments as SettingsEntry).value))
+                }))
+    },
+    async getOffsetSeconds(): Promise<number> {
+        return new Promise<number>((resolve, reject) =>
+            settingsDatabase.find<SettingsEntry>({key: "offsetSeconds"},
+                (err: Error, documents: Array<SettingsEntry>) => {
+                    if (err) reject(err)
+                    else if (!documents || documents.length == 0) reject("Documents is null or empty")
+                    else resolve(Number.parseInt(documents[0].value))
+                })
+        )
+    },
+    // endregion offsetSeconds
 }
 
 interface StreamEntry {
     name: string,
     playlistUrl: string,
     schedulePath: string,
-    offsetSeconds: number
 }
 
 function streamToStreamEntry(stream: Stream): StreamEntry {
@@ -44,12 +70,11 @@ function streamToStreamEntry(stream: Stream): StreamEntry {
         name: stream.name,
         playlistUrl: stream.playlistUrl,
         schedulePath: stream.schedulePath,
-        offsetSeconds: stream.offsetSeconds
     }
 }
 
 export const Streams = {
-    async addNewStream(stream: Stream): Promise<void> {
+    async addStream(stream: Stream): Promise<void> {
         return new Promise<void>((resolve, reject) =>
             streamsDatabase.update({name: stream.name}, streamToStreamEntry(stream),
                 {upsert: true},
@@ -69,10 +94,23 @@ export const Streams = {
         )
     },
     async deleteStream(stream: Stream): Promise<void> {
-        return null
+        return new Promise<void>((resolve, reject) =>
+            streamsDatabase.remove(streamToStreamEntry(stream), (err: Error, n: number) => {
+                if (err) reject(err)
+                else resolve()
+            })
+        )
     },
     async updateStream(streamName: string, updatedStream: Stream): Promise<StreamEntry> {
-        return null
+        return new Promise<StreamEntry>((resolve, reject) =>
+            streamsDatabase.update({name: streamName}, streamToStreamEntry(updatedStream),
+                {upsert: false, returnUpdatedDocs: true},
+                (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
+                    if (err) reject(err)
+                    else resolve(affectedDocuments as StreamEntry)
+                }
+            )
+        )
     },
     async getStreamByName(streamName: string): Promise<StreamEntry> {
         return new Promise<StreamEntry>((resolve, reject) =>

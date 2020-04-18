@@ -12,15 +12,15 @@ function onReady() {
     electron.app.allowRendererProcessReuse = true
     browserWindow = new BrowserWindow({
         center: true,
-        width: 1000,
-        height: 700,
+        width: 1200,
+        height: 900,
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true
         }
     })
 
-    browserWindow.loadFile('layouts/main.html')
+    browserWindow.loadFile('layouts/home.html')
 }
 
 function onClose() {
@@ -62,12 +62,14 @@ const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playl
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8"
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8"
 
+//TODO make offsetSeconds a global setting!
+
 Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
     let stream = new Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, 30)
     // stream.startDownloading()
 
-    Streams.addNewStream(stream)
+    Streams.addStream(stream)
 
     print(moment().format(momentFormat))
 })

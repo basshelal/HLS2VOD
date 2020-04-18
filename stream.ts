@@ -12,12 +12,11 @@ export class Stream {
 
     private segmentsDirectory: string = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments"
     private downloader: Downloader
-    private mergerTimeOut: Timeout
     private shows: Array<ScheduledShow>
     private currentShow: ScheduledShow
     private nextShow: ScheduledShow
-    // the next time of when something important is due to happen like a merge or a start
-    private nextImportantTime: number
+    private mergerTimeOut: Timeout
+    private nextEventTime: number
 
     public isDownloading: boolean
 
@@ -26,7 +25,7 @@ export class Stream {
         public playlistUrl: string,
         public schedulePath: string,
         public schedule: Schedule,
-        public offsetSeconds: number
+        offsetSeconds: number
     ) {
         // in the interval we need to check if next show
         //  has started with the offset
@@ -45,7 +44,7 @@ export class Stream {
 
         this.mergerTimeOut = setInterval(() => {
             let now: number = Date.now()
-            if (now > this.nextImportantTime) {
+            if (now > this.nextEventTime) {
                 if (this.nextShow.hasStarted(true)) {
                     print("Next show has started!")
                     print(`It is ${this.nextShow}`)
@@ -106,7 +105,7 @@ export class Stream {
         this.currentShow = activeShows[0]
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1]
 
-        this.nextImportantTime = this.nextShow.offsetStartTime
+        this.nextEventTime = this.nextShow.offsetStartTime
 
         this.currentShow.startChunkName = this.getLatestChunkPath()
     }
@@ -128,7 +127,7 @@ export type Day = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "
 
 const Days: Array<Day> = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
-export type Schedule = Array<Show>;
+export type Schedule = Array<Show>
 
 export const Schedule = {
     fromJson(jsonFilePath: string): Promise<Schedule> {
@@ -203,43 +202,43 @@ class ScheduledShow extends Show {
     }
 
     public static fromSchedule(show: Show, schedule: Schedule, offsetSeconds: number): ScheduledShow {
-        let offsetMillis = offsetSeconds * 1000
-        let now: Date = new Date()
+        const offsetMillis = offsetSeconds * 1000
+        const now: Date = new Date()
 
-        let todayDayIndex: number = now.getDay()
-        let showDayIndex: number = Days.indexOf(show.day)
+        const todayDayIndex: number = now.getDay()
+        const showDayIndex: number = Days.indexOf(show.day)
         let newTime: Date = now
         if (showDayIndex > todayDayIndex) {
-            let differenceDays = showDayIndex - todayDayIndex
+            const differenceDays = showDayIndex - todayDayIndex
             newTime = moment().add(differenceDays, "days").toDate()
         }
         if (showDayIndex < todayDayIndex) {
-            let differenceDays = todayDayIndex - showDayIndex
-            let offset = Days.length - differenceDays
+            const differenceDays = todayDayIndex - showDayIndex
+            const offset = Days.length - differenceDays
             newTime = moment().add(offset, "days").toDate()
         }
 
-        let startTime: number = new Date(newTime.getFullYear(), newTime.getMonth(), newTime.getDate(), show.hour, show.minute).valueOf()
-        let offsetStartTime: number = startTime - offsetMillis
+        const startTime: number = new Date(newTime.getFullYear(), newTime.getMonth(), newTime.getDate(), show.hour, show.minute).valueOf()
+        const offsetStartTime: number = startTime - offsetMillis
 
-        let thisShowIndex: number = schedule.indexOf(show)
-        let nextShowIndex: number = thisShowIndex == schedule.length - 1 ? 0 : thisShowIndex + 1
-        let nextShow = schedule[nextShowIndex]
+        const thisShowIndex: number = schedule.indexOf(show)
+        const nextShowIndex: number = thisShowIndex == schedule.length - 1 ? 0 : thisShowIndex + 1
+        const nextShow = schedule[nextShowIndex]
 
-        let nextShowDayIndex: number = Days.indexOf(nextShow.day)
+        const nextShowDayIndex: number = Days.indexOf(nextShow.day)
         let nextShowTime: Date = now
         if (nextShowDayIndex > todayDayIndex) {
-            let differenceDays = nextShowDayIndex - todayDayIndex
+            const differenceDays = nextShowDayIndex - todayDayIndex
             nextShowTime = moment().add(differenceDays, "days").toDate()
         }
         if (nextShowDayIndex < todayDayIndex) {
-            let differenceDays = todayDayIndex - nextShowDayIndex
-            let offset = Days.length - differenceDays
+            const differenceDays = todayDayIndex - nextShowDayIndex
+            const offset = Days.length - differenceDays
             nextShowTime = moment().add(offset, "days").toDate()
         }
 
-        let endTime: number = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf()
-        let offsetEndTime: number = endTime + offsetMillis
+        const endTime: number = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf()
+        const offsetEndTime: number = endTime + offsetMillis
 
         return new ScheduledShow(show, startTime, offsetStartTime, endTime, offsetEndTime)
     }

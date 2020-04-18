@@ -12,14 +12,14 @@ function onReady() {
     electron.app.allowRendererProcessReuse = true;
     browserWindow = new BrowserWindow({
         center: true,
-        width: 1000,
-        height: 700,
+        width: 1200,
+        height: 900,
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true
         }
     });
-    browserWindow.loadFile('layouts/main.html');
+    browserWindow.loadFile('layouts/home.html');
 }
 function onClose() {
     downloader_1.stopAllDownloaders().then(electron.app.quit);
@@ -53,10 +53,11 @@ exports.momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss";
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
+//TODO make offsetSeconds a global setting!
 stream_1.Schedule.fromCSV("res/schedule.csv").then((schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
     let stream = new stream_1.Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, 30);
     // stream.startDownloading()
-    database_1.Streams.addNewStream(stream);
+    database_1.Streams.addStream(stream);
     utils_1.print(moment().format(exports.momentFormat));
 });

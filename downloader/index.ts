@@ -17,8 +17,6 @@ export class Downloader {
     private timeoutHandle?: NodeJS.Timeout;
     private refreshHandle?: NodeJS.Timeout;
 
-    private firstChunkName: string;
-
     constructor(
         public playlistUrl: string,
         public segmentDirectory: string,
@@ -175,8 +173,6 @@ export class Downloader {
         let filename = question > 0 ? segmentUrl.substr(0, question) : segmentUrl;
         const slash = filename.lastIndexOf("/");
         filename = filename.substr(slash + 1);
-
-        if (!this.firstChunkName) this.firstChunkName = filename;
 
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename));

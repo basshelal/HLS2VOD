@@ -4,16 +4,17 @@ const Datastore = require("nedb");
 exports.settingsDatabase = new Datastore({ filename: "database/settings.db", autoload: true });
 exports.streamsDatabase = new Datastore({ filename: "database/streams.db", autoload: true });
 exports.Settings = {
-    async setRootDirectory(newRootDirectory) {
-        return new Promise((resolve, reject) => exports.settingsDatabase.update({ key: "rootDirectory" }, { key: "rootDirectory", value: newRootDirectory }, {}, (err, numberOfUpdated, upsert) => {
+    // region outputDirectory
+    async setOutputDirectory(newOutputDirectory) {
+        return new Promise((resolve, reject) => exports.settingsDatabase.update({ key: "outputDirectory" }, { key: "outputDirectory", value: newOutputDirectory }, { upsert: true, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {
             if (err)
                 reject(err);
             else
-                resolve();
+                resolve(affectedDocuments.value);
         }));
     },
-    async getRootDirectory() {
-        return new Promise((resolve, reject) => exports.settingsDatabase.find({ key: "rootDirectory" }, (err, documents) => {
+    async getOutputDirectory() {
+        return new Promise((resolve, reject) => exports.settingsDatabase.find({ key: "outputDirectory" }, (err, documents) => {
             if (err)
                 reject(err);
             else if (!documents || documents.length == 0)
@@ -21,18 +22,37 @@ exports.Settings = {
             else
                 resolve(documents[0].value);
         }));
-    }
+    },
+    // endregion outputDirectory
+    // region offsetSeconds
+    async setOffsetSeconds(newOffsetSeconds) {
+        return new Promise((resolve, reject) => exports.settingsDatabase.update({ key: "offsetSeconds" }, { key: "offsetSeconds", value: newOffsetSeconds }, { upsert: true, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {
+            if (err)
+                reject(err);
+            else
+                resolve(Number.parseInt(affectedDocuments.value));
+        }));
+    },
+    async getOffsetSeconds() {
+        return new Promise((resolve, reject) => exports.settingsDatabase.find({ key: "offsetSeconds" }, (err, documents) => {
+            if (err)
+                reject(err);
+            else if (!documents || documents.length == 0)
+                reject("Documents is null or empty");
+            else
+                resolve(Number.parseInt(documents[0].value));
+        }));
+    },
 };
 function streamToStreamEntry(stream) {
     return {
         name: stream.name,
         playlistUrl: stream.playlistUrl,
         schedulePath: stream.schedulePath,
-        offsetSeconds: stream.offsetSeconds
     };
 }
 exports.Streams = {
-    async addNewStream(stream) {
+    async addStream(stream) {
         return new Promise((resolve, reject) => exports.streamsDatabase.update({ name: stream.name }, streamToStreamEntry(stream), { upsert: true }, (err, numberOfUpdated, upsert) => {
             if (err)
                 reject(err);
@@ -49,10 +69,20 @@ exports.Streams = {
         }));
     },
     async deleteStream(stream) {
-        return null;
+        return new Promise((resolve, reject) => exports.streamsDatabase.remove(streamToStreamEntry(stream), (err, n) => {
+            if (err)
+                reject(err);
+            else
+                resolve();
+        }));
     },
     async updateStream(streamName, updatedStream) {
-        return null;
+        return new Promise((resolve, reject) => exports.streamsDatabase.update({ name: streamName }, streamToStreamEntry(updatedStream), { upsert: false, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {
+            if (err)
+                reject(err);
+            else
+                resolve(affectedDocuments);
+        }));
     },
     async getStreamByName(streamName) {
         return new Promise((resolve, reject) => exports.streamsDatabase.find({ name: streamName }, (err, documents) => {

@@ -136,8 +136,6 @@ class Downloader {
         let filename = question > 0 ? segmentUrl.substr(0, question) : segmentUrl;
         const slash = filename.lastIndexOf("/");
         filename = filename.substr(slash + 1);
-        if (!this.firstChunkName)
-            this.firstChunkName = filename;
         // Download file
         await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);

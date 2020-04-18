@@ -1,0 +1,26 @@
+header {
+    background-color: #880E4F;
+    text-align: center;
+    box-shadow: 0 12px 12px -1px rgba(0, 0, 0, 0.4);
+}
+
+header > * {
+    margin: 0;
+    padding: 16px;
+    font-family: "Roboto", sans-serif;
+    font-weight: 100;
+    -webkit-text-fill-color: #FFFFFF;
+    font-size: 7rem;
+}
+
+/* label focus color */
+.input-field textarea:focus + label {
+    color: red !important;
+}
+
+/* label underline focus color */
+.input-field textarea:focus {
+    border-bottom: 1px solid red !important;
+    box-shadow: 0 1px 0 0 red !important;
+}
+
