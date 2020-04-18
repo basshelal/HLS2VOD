@@ -9,31 +9,24 @@ const utils_1 = require("./utils");
 const main_1 = require("./main");
 class Stream {
     constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds) {
-        // in the interval we need to check if next show
-        //  has started with the offset
-        //  if it has that means the current show is about to end
-        //  start recording the next show, take note of the segment where the change happens
-        //  because we want the merge to delete as much as possible while still keeping the files needed
-        //  for the next show
         this.name = name;
         this.playlistUrl = playlistUrl;
         this.schedulePath = schedulePath;
         this.schedule = schedule;
         this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
-        // once the current show has truly ended (including offset)
-        // merge all the files that it uses but only delete from its start segment to the start segment of the next show
-        // even though the merge is a bit more than that because we need some of the segments later
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
         this.setCurrentShow();
         this.mergerTimeOut = setInterval(() => {
             let now = Date.now();
             if (now > this.nextEventTime) {
+                // TODO if schedule has changed we should probably re-read it here
                 if (this.nextShow.hasStarted(true)) {
                     utils_1.print("Next show has started!");
                     utils_1.print(`It is ${this.nextShow}`);
                     utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
                     if (!this.nextShow.startChunkName)
                         this.nextShow.startChunkName = this.getLatestChunkPath();
+                    this.nextEventTime = this.currentShow.offsetEndTime;
                 }
                 if (this.currentShow.hasEnded(true)) {
                     utils_1.print("Current show has ended!");
@@ -76,21 +69,24 @@ class Stream {
         this.downloader.mergeAll();
         this.isDownloading = false;
     }
-    setCurrentShow() {
-        let activeShows = this.shows.filter(it => it.isActive(true));
-        console.assert(activeShows.length == 1, `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`);
-        this.currentShow = activeShows[0];
-        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
-        this.nextEventTime = this.nextShow.offsetStartTime;
-        this.currentShow.startChunkName = this.getLatestChunkPath();
+    mergeCurrentShow() {
+        if (this.downloader)
+            this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
     }
     getLatestChunkPath() {
         let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + it);
         segments.sort();
         return segments[segments.length - 1];
     }
-    mergeCurrentShow() {
-        this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
+    setCurrentShow() {
+        let activeShows = this.shows.filter(it => it.isActive(false));
+        console.assert(activeShows.length == 1, `There can only be exactly one show active!
+             Currently shows are ${this.shows.length} and active shows are ${activeShows.length}`);
+        this.currentShow = activeShows[0];
+        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
+        utils_1.print(this.currentShow);
+        this.nextEventTime = this.nextShow.offsetStartTime;
+        this.currentShow.startChunkName = this.getLatestChunkPath();
     }
 }
 exports.Stream = Stream;
@@ -149,14 +145,14 @@ class ScheduledShow extends Show {
         if (withOffset)
             return now >= this.offsetStartTime;
         else
-            now >= this.startTime;
+            return now >= this.startTime;
     }
     hasEnded(withOffset = true) {
         let now = Date.now();
         if (withOffset)
             return now >= this.offsetEndTime;
         else
-            now >= this.endTime;
+            return now >= this.endTime;
     }
     isActive(withOffset = true) {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset);
@@ -197,6 +193,11 @@ class ScheduledShow extends Show {
         return new ScheduledShow(show, startTime, offsetStartTime, endTime, offsetEndTime);
     }
     toString() {
-        return JSON.stringify(this, null, 2);
+        let obj = JSON.parse(JSON.stringify(this, null, 2));
+        obj["startTimeFormatted"] = moment(this.startTime).format(main_1.momentFormat);
+        obj["offsetStartTimeFormatted"] = moment(this.offsetStartTime).format(main_1.momentFormat);
+        obj["endTimeFormatted"] = moment(this.endTime).format(main_1.momentFormat);
+        obj["offsetEndTimeFormatted"] = moment(this.offsetEndTime).format(main_1.momentFormat);
+        return JSON.stringify(obj, null, 2);
     }
 }

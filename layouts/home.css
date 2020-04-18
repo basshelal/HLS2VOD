@@ -1,5 +1,13 @@
+:root {
+    --primary-color: #880E4F;
+    --primary-color-light: #BC477B;
+    --surface-color: #FFFFFF;
+    --text-color: #000000;
+    --link-color: #0069C0;
+}
+
 header {
-    background-color: #880E4F;
+    background-color: var(--primary-color);
     text-align: center;
     box-shadow: 0 12px 12px -1px rgba(0, 0, 0, 0.4);
 }
@@ -15,12 +23,16 @@ header > * {
 
 /* label focus color */
 .input-field textarea:focus + label {
-    color: red !important;
+    color: var(--primary-color-light) !important;
 }
 
 /* label underline focus color */
 .input-field textarea:focus {
-    border-bottom: 1px solid red !important;
-    box-shadow: 0 1px 0 0 red !important;
+    border-bottom: 1px solid var(--primary-color-light) !important;
+    box-shadow: 0 1px 0 0 var(--primary-color-light) !important;
+}
+
+.btn {
+    border-radius: 6px;
 }
 

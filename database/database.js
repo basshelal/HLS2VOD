@@ -4,6 +4,16 @@ const Datastore = require("nedb");
 exports.settingsDatabase = new Datastore({ filename: "database/settings.db", autoload: true });
 exports.streamsDatabase = new Datastore({ filename: "database/streams.db", autoload: true });
 exports.Settings = {
+    async getAllSettings() {
+        return new Promise((resolve, reject) => {
+            exports.settingsDatabase.find({}, (err, documents) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve(documents);
+            });
+        });
+    },
     // region outputDirectory
     async setOutputDirectory(newOutputDirectory) {
         return new Promise((resolve, reject) => exports.settingsDatabase.update({ key: "outputDirectory" }, { key: "outputDirectory", value: newOutputDirectory }, { upsert: true, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {

@@ -12,6 +12,15 @@ interface SettingsEntry {
 }
 
 export const Settings = {
+    async getAllSettings(): Promise<Array<SettingsEntry>> {
+        return new Promise<Array<SettingsEntry>>((resolve, reject) => {
+            settingsDatabase.find({}, (err: Error, documents: Array<SettingsEntry>) => {
+                if (err) reject(err)
+                else resolve(documents)
+            })
+        })
+    },
+
     // region outputDirectory
     async setOutputDirectory(newOutputDirectory: string): Promise<string> {
         return new Promise<string>((resolve, reject) =>

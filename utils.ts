@@ -1,3 +1,3 @@
 export function print(message?: any) {
-    console.log(message);
+    console.log(message.toString())
 }

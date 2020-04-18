@@ -27,16 +27,6 @@ export class Stream {
         public schedule: Schedule,
         offsetSeconds: number
     ) {
-        // in the interval we need to check if next show
-        //  has started with the offset
-        //  if it has that means the current show is about to end
-        //  start recording the next show, take note of the segment where the change happens
-        //  because we want the merge to delete as much as possible while still keeping the files needed
-        //  for the next show
-
-        // once the current show has truly ended (including offset)
-        // merge all the files that it uses but only delete from its start segment to the start segment of the next show
-        // even though the merge is a bit more than that because we need some of the segments later
 
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds))
 
@@ -45,12 +35,14 @@ export class Stream {
         this.mergerTimeOut = setInterval(() => {
             let now: number = Date.now()
             if (now > this.nextEventTime) {
+                // TODO if schedule has changed we should probably re-read it here
                 if (this.nextShow.hasStarted(true)) {
                     print("Next show has started!")
                     print(`It is ${this.nextShow}`)
                     print(`The time now is ${moment().format(momentFormat)}`)
                     if (!this.nextShow.startChunkName)
                         this.nextShow.startChunkName = this.getLatestChunkPath()
+                    this.nextEventTime = this.currentShow.offsetEndTime
                 }
                 if (this.currentShow.hasEnded(true)) {
                     print("Current show has ended!")
@@ -98,16 +90,11 @@ export class Stream {
         this.isDownloading = false
     }
 
-    private setCurrentShow() {
-        let activeShows = this.shows.filter(it => it.isActive(true))
-        console.assert(activeShows.length == 1,
-            `There can only be one show active! Currently shows are ${this.shows}\n\t and active shows are ${activeShows}`)
-        this.currentShow = activeShows[0]
-        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1]
-
-        this.nextEventTime = this.nextShow.offsetStartTime
-
-        this.currentShow.startChunkName = this.getLatestChunkPath()
+    public mergeCurrentShow() {
+        if (this.downloader)
+            this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() =>
+                this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName)
+            )
     }
 
     private getLatestChunkPath(): string {
@@ -116,10 +103,19 @@ export class Stream {
         return segments[segments.length - 1]
     }
 
-    public mergeCurrentShow() {
-        this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() =>
-            this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName)
-        )
+    private setCurrentShow() {
+        let activeShows = this.shows.filter(it => it.isActive(false))
+        console.assert(activeShows.length == 1,
+            `There can only be exactly one show active!
+             Currently shows are ${this.shows.length} and active shows are ${activeShows.length}`)
+        this.currentShow = activeShows[0]
+        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1]
+
+        print(this.currentShow)
+
+        this.nextEventTime = this.nextShow.offsetStartTime
+
+        this.currentShow.startChunkName = this.getLatestChunkPath()
     }
 }
 
@@ -188,13 +184,13 @@ class ScheduledShow extends Show {
     public hasStarted(withOffset: boolean = true): boolean {
         let now: number = Date.now()
         if (withOffset) return now >= this.offsetStartTime
-        else now >= this.startTime
+        else return now >= this.startTime
     }
 
     public hasEnded(withOffset: boolean = true): boolean {
         let now: number = Date.now()
         if (withOffset) return now >= this.offsetEndTime
-        else now >= this.endTime
+        else return now >= this.endTime
     }
 
     public isActive(withOffset: boolean = true): boolean {
@@ -244,6 +240,11 @@ class ScheduledShow extends Show {
     }
 
     toString(): string {
-        return JSON.stringify(this, null, 2)
+        let obj: any = JSON.parse(JSON.stringify(this, null, 2))
+        obj["startTimeFormatted"] = moment(this.startTime).format(momentFormat)
+        obj["offsetStartTimeFormatted"] = moment(this.offsetStartTime).format(momentFormat)
+        obj["endTimeFormatted"] = moment(this.endTime).format(momentFormat)
+        obj["offsetEndTimeFormatted"] = moment(this.offsetEndTime).format(momentFormat)
+        return JSON.stringify(obj, null, 2)
     }
 }
