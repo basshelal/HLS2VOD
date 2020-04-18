@@ -10,22 +10,23 @@ import Timeout = NodeJS.Timeout;
 
 export class Stream {
 
-    public segmentsDirectory: string = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments"
-    public downloader: Downloader
-    public mergerTimeOut: Timeout
-    public shows: Array<ScheduledShow>
-    public currentShow: ScheduledShow
-    public nextShow: ScheduledShow
+    private segmentsDirectory: string = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments"
+    private downloader: Downloader
+    private mergerTimeOut: Timeout
+    private shows: Array<ScheduledShow>
+    private currentShow: ScheduledShow
+    private nextShow: ScheduledShow
     // the next time of when something important is due to happen like a merge or a start
-    public nextImportantTime: number
+    private nextImportantTime: number
 
     public isDownloading: boolean
 
     constructor(
         public name: string,
         public playlistUrl: string,
-        schedule: Schedule,
-        public offsetSeconds: number = 30
+        public schedulePath: string,
+        public schedule: Schedule,
+        public offsetSeconds: number
     ) {
         // in the interval we need to check if next show
         //  has started with the offset

@@ -2,16 +2,13 @@ import {startDownloader, stopAllDownloaders} from "./downloader";
 import * as electron from "electron";
 import {Schedule, Stream} from "./stream";
 import {print} from "./utils";
+import {Streams} from "./database/database";
 import moment = require("moment");
 import BrowserWindow = electron.BrowserWindow;
 
-function stop() {
-    stopAllDownloaders().then(electron.app.quit)
-}
-
 let browserWindow: BrowserWindow
 
-function createWindow() {
+function onReady() {
     electron.app.allowRendererProcessReuse = true
     browserWindow = new BrowserWindow({
         center: true,
@@ -26,11 +23,13 @@ function createWindow() {
     browserWindow.loadFile('layouts/main.html')
 }
 
-electron.app.whenReady().then(createWindow)
+function onClose() {
+    stopAllDownloaders().then(electron.app.quit)
+}
 
-electron.app.on('window-all-closed', stop)
+electron.app.whenReady().then(onReady)
 
-let currentDownloading = []
+electron.app.on('window-all-closed', onClose)
 
 electron.ipcMain.on('invokeAction', (event, data) => {
     if (data === "alJazeera") {
@@ -53,20 +52,22 @@ electron.ipcMain.on('invokeAction', (event, data) => {
     }
 })
 
-electron.ipcMain.on("devTools", (event, data) => {
-    browserWindow.webContents.toggleDevTools()
-})
+electron.ipcMain.on("devTools", () => browserWindow.webContents.toggleDevTools())
+
+let currentDownloading = []
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
-const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
-const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
-const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
+const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8"
+const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8"
+const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8"
 
 Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
-    let stream = new Stream("AlJazeera", aljazeeraUrl, schedule)
-    stream.startDownloading()
+    let stream = new Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, 30)
+    // stream.startDownloading()
+
+    Streams.addNewStream(stream)
 
     print(moment().format(momentFormat))
 })

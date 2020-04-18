@@ -8,7 +8,7 @@ const moment = require("moment");
 const utils_1 = require("./utils");
 const main_1 = require("./main");
 class Stream {
-    constructor(name, playlistUrl, schedule, offsetSeconds = 30) {
+    constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds) {
         // in the interval we need to check if next show
         //  has started with the offset
         //  if it has that means the current show is about to end
@@ -17,6 +17,8 @@ class Stream {
         //  for the next show
         this.name = name;
         this.playlistUrl = playlistUrl;
+        this.schedulePath = schedulePath;
+        this.schedule = schedule;
         this.offsetSeconds = offsetSeconds;
         this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
         // once the current show has truly ended (including offset)
