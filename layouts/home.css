@@ -6,6 +6,11 @@
     --link-color: #0069C0;
 }
 
+/*body {
+    filter: blur(2px);
+    background: rgba(0, 0, 0, 0.4);
+}*/
+
 header {
     background-color: var(--primary-color);
     text-align: center;

@@ -50,7 +50,7 @@ export class Downloader {
         let mergedSegmentsFile: string = segmentsDir + "merged.ts";
 
         // Get all segments
-        const segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        const segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
         segments.sort();
 
         // Merge TS files

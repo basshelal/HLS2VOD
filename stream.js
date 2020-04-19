@@ -8,13 +8,17 @@ const moment = require("moment");
 const utils_1 = require("./utils");
 const main_1 = require("./main");
 class Stream {
-    constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds) {
+    constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
         this.name = name;
         this.playlistUrl = playlistUrl;
         this.schedulePath = schedulePath;
         this.schedule = schedule;
-        this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
+        this.rootDirectory = rootDirectory;
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
+        this.streamDirectory = this.rootDirectory + `/${this.name}`;
+        this.segmentsDirectory = this.streamDirectory + `/segments`;
+        fsextra.mkdirpSync(this.streamDirectory);
+        fsextra.mkdirpSync(this.segmentsDirectory);
         this.setCurrentShow();
         this.mergerTimeOut = setInterval(() => {
             let now = Date.now();
@@ -36,45 +40,47 @@ class Stream {
                         this.currentShow.endChunkName = this.getLatestChunkPath();
                     this.mergeCurrentShow();
                     this.setCurrentShow();
+                    this.currentShow.startChunkName = this.getLatestChunkPath();
                 }
             }
         }, 1000);
     }
-    async startDownloading() {
-        this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments";
-        const runId = moment().format(main_1.momentFormatSafe);
-        const segmentsDir = this.segmentsDirectory + `/${this.name}-${runId}/`;
-        // Create target directory
-        fsextra.mkdirpSync(segmentsDir);
-        // Choose proper stream
-        const streamChooser = new downloader_1.StreamChooser(this.playlistUrl);
-        if (!await streamChooser.load())
-            return;
-        const playlistUrl = streamChooser.getPlaylistUrl("best");
-        if (!playlistUrl)
-            return;
-        // Start download
-        let downloader = new downloader_1.Downloader(playlistUrl, segmentsDir);
-        downloader.onDownloadSegment = () => {
-            if (!this.nextShow.startChunkName)
-                this.nextShow.startChunkName = this.getLatestChunkPath();
-        };
-        this.downloader = downloader;
-        downloader_1.downloaders.push(downloader);
-        this.isDownloading = true;
-        return await downloader.start();
+    static async new(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
+        let stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
+        await stream.initialize();
+        return stream;
     }
-    async stopDownloading() {
-        this.downloader.stop();
-        this.downloader.mergeAll();
-        this.isDownloading = false;
+    initialize() {
+        return this.initializeDownloader();
+    }
+    async startDownloading() {
+        await this.downloader.start();
+        this.isDownloading = true;
     }
     mergeCurrentShow() {
         if (this.downloader)
             this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
     }
+    async stopDownloading() {
+        this.downloader.stop();
+        await this.downloader.mergeAll();
+        this.isDownloading = false;
+    }
+    async initializeDownloader() {
+        const streamChooser = new downloader_1.StreamChooser(this.playlistUrl);
+        if (!await streamChooser.load())
+            throw Error("StreamChooser failed!");
+        const playlistUrl = streamChooser.getPlaylistUrl("best");
+        if (!playlistUrl)
+            throw Error("PlaylistUrl failed!");
+        this.downloader = new downloader_1.Downloader(playlistUrl, this.segmentsDirectory);
+        this.downloader.onDownloadSegment = () => {
+            if (!this.nextShow.startChunkName)
+                this.nextShow.startChunkName = this.getLatestChunkPath();
+        };
+    }
     getLatestChunkPath() {
-        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + it);
+        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it);
         segments.sort();
         return segments[segments.length - 1];
     }
@@ -84,9 +90,8 @@ class Stream {
              Currently shows are ${this.shows.length} and active shows are ${activeShows.length}`);
         this.currentShow = activeShows[0];
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
-        utils_1.print(this.currentShow);
+        utils_1.print(`Current show is:\n${this.currentShow}`);
         this.nextEventTime = this.nextShow.offsetStartTime;
-        this.currentShow.startChunkName = this.getLatestChunkPath();
     }
 }
 exports.Stream = Stream;

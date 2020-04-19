@@ -1,16 +1,17 @@
-import {Downloader, downloaders, StreamChooser} from "./downloader";
+import {Downloader, StreamChooser} from "./downloader";
 import * as fs from "fs";
 import * as fsextra from "fs-extra";
 import * as csv from "csvtojson";
 import * as moment from "moment";
 import {print} from "./utils";
-import {momentFormat, momentFormatSafe} from "./main";
+import {momentFormat} from "./main";
 import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
 export class Stream {
 
-    private segmentsDirectory: string = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments"
+    private streamDirectory: string
+    private segmentsDirectory: string
     private downloader: Downloader
     private shows: Array<ScheduledShow>
     private currentShow: ScheduledShow
@@ -25,10 +26,16 @@ export class Stream {
         public playlistUrl: string,
         public schedulePath: string,
         public schedule: Schedule,
-        offsetSeconds: number
+        offsetSeconds: number,
+        private rootDirectory: string
     ) {
 
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds))
+
+        this.streamDirectory = this.rootDirectory + `/${this.name}`
+        this.segmentsDirectory = this.streamDirectory + `/segments`
+        fsextra.mkdirpSync(this.streamDirectory)
+        fsextra.mkdirpSync(this.segmentsDirectory)
 
         this.setCurrentShow()
 
@@ -52,42 +59,33 @@ export class Stream {
                         this.currentShow.endChunkName = this.getLatestChunkPath()
                     this.mergeCurrentShow()
                     this.setCurrentShow()
+                    this.currentShow.startChunkName = this.getLatestChunkPath()
                 }
             }
         }, 1000)
+
+    }
+
+    public static async new(
+        name: string,
+        playlistUrl: string,
+        schedulePath: string,
+        schedule: Schedule,
+        offsetSeconds: number,
+        rootDirectory: string): Promise<Stream> {
+
+        let stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory)
+        await stream.initialize()
+        return stream
+    }
+
+    public initialize(): Promise<void> {
+        return this.initializeDownloader()
     }
 
     public async startDownloading(): Promise<void> {
-        this.segmentsDirectory = "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments"
-        const runId = moment().format(momentFormatSafe)
-        const segmentsDir: string = this.segmentsDirectory + `/${this.name}-${runId}/`
-
-        // Create target directory
-        fsextra.mkdirpSync(segmentsDir)
-
-        // Choose proper stream
-        const streamChooser = new StreamChooser(this.playlistUrl)
-        if (!await streamChooser.load()) return
-
-        const playlistUrl = streamChooser.getPlaylistUrl("best")
-        if (!playlistUrl) return
-
-        // Start download
-        let downloader = new Downloader(playlistUrl, segmentsDir)
-        downloader.onDownloadSegment = () => {
-            if (!this.nextShow.startChunkName)
-                this.nextShow.startChunkName = this.getLatestChunkPath()
-        }
-        this.downloader = downloader
-        downloaders.push(downloader)
+        await this.downloader.start()
         this.isDownloading = true
-        return await downloader.start()
-    }
-
-    public async stopDownloading() {
-        this.downloader.stop()
-        this.downloader.mergeAll()
-        this.isDownloading = false
     }
 
     public mergeCurrentShow() {
@@ -97,8 +95,28 @@ export class Stream {
             )
     }
 
+    public async stopDownloading() {
+        this.downloader.stop()
+        await this.downloader.mergeAll()
+        this.isDownloading = false
+    }
+
+    private async initializeDownloader(): Promise<void> {
+        const streamChooser = new StreamChooser(this.playlistUrl)
+        if (!await streamChooser.load()) throw Error("StreamChooser failed!")
+
+        const playlistUrl = streamChooser.getPlaylistUrl("best")
+        if (!playlistUrl) throw Error("PlaylistUrl failed!")
+
+        this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
+        this.downloader.onDownloadSegment = () => {
+            if (!this.nextShow.startChunkName)
+                this.nextShow.startChunkName = this.getLatestChunkPath()
+        }
+    }
+
     private getLatestChunkPath(): string {
-        let segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + it)
+        let segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it)
         segments.sort()
         return segments[segments.length - 1]
     }
@@ -111,11 +129,9 @@ export class Stream {
         this.currentShow = activeShows[0]
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1]
 
-        print(this.currentShow)
+        print(`Current show is:\n${this.currentShow}`)
 
         this.nextEventTime = this.nextShow.offsetStartTime
-
-        this.currentShow.startChunkName = this.getLatestChunkPath()
     }
 }
 

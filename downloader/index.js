@@ -36,7 +36,7 @@ class Downloader {
         let segmentsDir = this.segmentDirectory;
         let mergedSegmentsFile = segmentsDir + "merged.ts";
         // Get all segments
-        const segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        const segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
         segments.sort();
         // Merge TS files
         await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
