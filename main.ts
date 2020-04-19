@@ -3,6 +3,7 @@ import * as electron from "electron";
 import {Schedule, Stream} from "./stream";
 import {Streams} from "./database/database";
 import BrowserWindow = electron.BrowserWindow;
+import OnCompletedListenerDetails = electron.OnCompletedListenerDetails;
 
 let browserWindow: BrowserWindow
 
@@ -18,7 +19,13 @@ function onReady() {
         }
     })
     browserWindow.on("close", onClose)
-    browserWindow.loadFile('layouts/home.html')
+    browserWindow.loadFile('layouts/home/home.html')
+
+    electron.session.defaultSession.webRequest.onCompleted(
+        (details: OnCompletedListenerDetails) => {
+            console.log(details.url)
+        })
+
 }
 
 function onClose() {
@@ -60,6 +67,7 @@ electron.ipcMain.on('buttonClick', (event, data) => {
             height: 300,
             autoHideMenuBar: true,
             frame: false,
+            skipTaskbar: true,
             movable: false,
             resizable: false,
             webPreferences: {
@@ -68,7 +76,7 @@ electron.ipcMain.on('buttonClick', (event, data) => {
         })
         addNewStreamWindow.removeMenu()
         addNewStreamWindow.on("blur", () => addNewStreamWindow.close())
-        addNewStreamWindow.loadFile("layouts/add-stream.html")
+        addNewStreamWindow.loadFile("layouts/add_stream/add_stream.html")
     }
 })
 
@@ -90,6 +98,7 @@ Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     // stream.startDownloading()
 
     Streams.addStream(stream)
-    // stream.initialize().then(() => stream.startDownloading())
+    stream.initialize()
+    // .then(() => stream.startDownloading())
     activeStreams.push(stream)
 })

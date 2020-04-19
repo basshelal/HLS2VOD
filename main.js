@@ -18,7 +18,10 @@ function onReady() {
         }
     });
     browserWindow.on("close", onClose);
-    browserWindow.loadFile('layouts/home.html');
+    browserWindow.loadFile('layouts/home/home.html');
+    electron.session.defaultSession.webRequest.onCompleted((details) => {
+        console.log(details.url);
+    });
 }
 function onClose() {
     Promise.all(activeStreams.map(it => it.stopDownloading())).then(electron.app.quit);
@@ -55,6 +58,7 @@ electron.ipcMain.on('buttonClick', (event, data) => {
             height: 300,
             autoHideMenuBar: true,
             frame: false,
+            skipTaskbar: true,
             movable: false,
             resizable: false,
             webPreferences: {
@@ -63,7 +67,7 @@ electron.ipcMain.on('buttonClick', (event, data) => {
         });
         addNewStreamWindow.removeMenu();
         addNewStreamWindow.on("blur", () => addNewStreamWindow.close());
-        addNewStreamWindow.loadFile("layouts/add-stream.html");
+        addNewStreamWindow.loadFile("layouts/add_stream/add_stream.html");
     }
 });
 let activeStreams = [];
@@ -79,6 +83,7 @@ stream_1.Schedule.fromCSV("res/schedule.csv").then((schedule) => {
     let stream = new stream_1.Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, 30, rootDirectory);
     // stream.startDownloading()
     database_1.Streams.addStream(stream);
-    // stream.initialize().then(() => stream.startDownloading())
+    stream.initialize();
+    // .then(() => stream.startDownloading())
     activeStreams.push(stream);
 });

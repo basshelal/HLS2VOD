@@ -7,14 +7,10 @@ import {URL} from "url";
 import {download, get} from "./http";
 import {print} from "../utils";
 
-export const downloaders: Array<Downloader> = [];
-
 export class Downloader {
     private queue: PQueue;
     private lastSegment?: string;
 
-    private resolve?: () => void;
-    private reject?: () => void;
     private timeoutHandle?: NodeJS.Timeout;
     private refreshHandle?: NodeJS.Timeout;
 
@@ -28,12 +24,7 @@ export class Downloader {
     }
 
     public async start(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.resolve = resolve;
-            this.reject = reject;
-
-            this.queue.add(() => this.refreshPlayList());
-        });
+        this.queue.add(() => this.refreshPlayList());
     }
 
     public stop() {
@@ -41,7 +32,6 @@ export class Downloader {
         if (this.refreshHandle) {
             clearTimeout(this.refreshHandle)
         }
-        this.resolve()
     }
 
     public pause() {
@@ -290,14 +280,5 @@ export async function startDownloader(url: string): Promise<void> {
         playlistUrl,
         segmentsDir
     );
-    downloaders.push(downloader);
     return await downloader.start();
-}
-
-export async function stopAllDownloaders(): Promise<void> {
-    return Promise.all(
-        downloaders.map(downloader => {
-            downloader.stop();
-            return downloader.mergeAll();
-        })).then();
 }

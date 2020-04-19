@@ -14,37 +14,14 @@ class Stream {
         this.schedulePath = schedulePath;
         this.schedule = schedule;
         this.rootDirectory = rootDirectory;
+        this.isDownloading = false;
         this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
         this.streamDirectory = this.rootDirectory + `/${this.name}`;
         this.segmentsDirectory = this.streamDirectory + `/segments`;
         fsextra.mkdirpSync(this.streamDirectory);
         fsextra.mkdirpSync(this.segmentsDirectory);
         this.setCurrentShow();
-        this.mergerTimeOut = setInterval(() => {
-            let now = Date.now();
-            if (now > this.nextEventTime) {
-                // TODO if schedule has changed we should probably re-read it here
-                if (this.nextShow.hasStarted(true)) {
-                    this.downloader.pause();
-                    this.nextShow.startChunkName = this.getLastChunkPath();
-                    utils_1.logD("Next show has started!");
-                    utils_1.logD(`It is ${this.nextShow}`);
-                    this.nextEventTime = this.currentShow.offsetEndTime;
-                    this.downloader.resume();
-                }
-                if (this.currentShow.hasEnded(true)) {
-                    this.downloader.pause();
-                    this.currentShow.endChunkName = this.getLastChunkPath();
-                    utils_1.logD("Current show has ended!");
-                    utils_1.logD(`It is ${this.currentShow}`);
-                    this.mergeCurrentShow().then(() => {
-                        this.setCurrentShow();
-                        this.currentShow.startChunkName = this.getFirstChunkPath();
-                        this.downloader.resume();
-                    });
-                }
-            }
-        }, 1000);
+        this.setInterval();
     }
     static async new(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
         let stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
@@ -55,13 +32,17 @@ class Stream {
         return this.initializeDownloader();
     }
     async startDownloading() {
-        await this.downloader.start();
-        this.isDownloading = true;
+        if (!this.isDownloading) {
+            await this.downloader.start();
+            this.isDownloading = true;
+        }
     }
     async stopDownloading() {
-        this.downloader.stop();
-        await this.downloader.mergeAll();
-        this.isDownloading = false;
+        if (this.isDownloading) {
+            this.downloader.stop();
+            await this.downloader.mergeAll();
+            this.isDownloading = false;
+        }
     }
     async mergeCurrentShow() {
         if (!this.currentShow.startChunkName)
@@ -103,6 +84,33 @@ class Stream {
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
         utils_1.logD(`New current show is:\n${this.currentShow}`);
         this.nextEventTime = this.nextShow.offsetStartTime;
+    }
+    setInterval() {
+        this.mergerTimeOut = setInterval(() => {
+            let now = Date.now();
+            if (now > this.nextEventTime) {
+                // TODO if schedule has changed we should probably re-read it here
+                if (this.nextShow.hasStarted(true)) {
+                    this.downloader.pause();
+                    this.nextShow.startChunkName = this.getLastChunkPath();
+                    utils_1.logD("Next show has started!");
+                    utils_1.logD(`It is ${this.nextShow}`);
+                    this.nextEventTime = this.currentShow.offsetEndTime;
+                    this.downloader.resume();
+                }
+                if (this.currentShow.hasEnded(true)) {
+                    this.downloader.pause();
+                    this.currentShow.endChunkName = this.getLastChunkPath();
+                    utils_1.logD("Current show has ended!");
+                    utils_1.logD(`It is ${this.currentShow}`);
+                    this.mergeCurrentShow().then(() => {
+                        this.setCurrentShow();
+                        this.currentShow.startChunkName = this.getFirstChunkPath();
+                        this.downloader.resume();
+                    });
+                }
+            }
+        }, 1000);
     }
 }
 exports.Stream = Stream;

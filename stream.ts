@@ -19,7 +19,7 @@ export class Stream {
     private mergerTimeOut: Timeout
     private nextEventTime: number
 
-    public isDownloading: boolean
+    public isDownloading: boolean = false
 
     constructor(
         public name: string,
@@ -39,32 +39,7 @@ export class Stream {
 
         this.setCurrentShow()
 
-        this.mergerTimeOut = setInterval(() => {
-            let now: number = Date.now()
-            if (now > this.nextEventTime) {
-                // TODO if schedule has changed we should probably re-read it here
-                if (this.nextShow.hasStarted(true)) {
-                    this.downloader.pause()
-                    this.nextShow.startChunkName = this.getLastChunkPath()
-                    logD("Next show has started!")
-                    logD(`It is ${this.nextShow}`)
-                    this.nextEventTime = this.currentShow.offsetEndTime
-                    this.downloader.resume()
-                }
-                if (this.currentShow.hasEnded(true)) {
-                    this.downloader.pause()
-                    this.currentShow.endChunkName = this.getLastChunkPath()
-                    logD("Current show has ended!")
-                    logD(`It is ${this.currentShow}`)
-                    this.mergeCurrentShow().then(() => {
-                            this.setCurrentShow()
-                            this.currentShow.startChunkName = this.getFirstChunkPath()
-                            this.downloader.resume()
-                        }
-                    )
-                }
-            }
-        }, 1000)
+        this.setInterval()
 
     }
 
@@ -85,14 +60,18 @@ export class Stream {
     }
 
     public async startDownloading(): Promise<void> {
-        await this.downloader.start()
-        this.isDownloading = true
+        if (!this.isDownloading) {
+            await this.downloader.start()
+            this.isDownloading = true
+        }
     }
 
     public async stopDownloading() {
-        this.downloader.stop()
-        await this.downloader.mergeAll()
-        this.isDownloading = false
+        if (this.isDownloading) {
+            this.downloader.stop()
+            await this.downloader.mergeAll()
+            this.isDownloading = false
+        }
     }
 
     public async mergeCurrentShow() {
@@ -144,6 +123,35 @@ export class Stream {
         logD(`New current show is:\n${this.currentShow}`)
 
         this.nextEventTime = this.nextShow.offsetStartTime
+    }
+
+    private setInterval() {
+        this.mergerTimeOut = setInterval(() => {
+            let now: number = Date.now()
+            if (now > this.nextEventTime) {
+                // TODO if schedule has changed we should probably re-read it here
+                if (this.nextShow.hasStarted(true)) {
+                    this.downloader.pause()
+                    this.nextShow.startChunkName = this.getLastChunkPath()
+                    logD("Next show has started!")
+                    logD(`It is ${this.nextShow}`)
+                    this.nextEventTime = this.currentShow.offsetEndTime
+                    this.downloader.resume()
+                }
+                if (this.currentShow.hasEnded(true)) {
+                    this.downloader.pause()
+                    this.currentShow.endChunkName = this.getLastChunkPath()
+                    logD("Current show has ended!")
+                    logD(`It is ${this.currentShow}`)
+                    this.mergeCurrentShow().then(() => {
+                            this.setCurrentShow()
+                            this.currentShow.startChunkName = this.getFirstChunkPath()
+                            this.downloader.resume()
+                        }
+                    )
+                }
+            }
+        }, 1000)
     }
 }
 

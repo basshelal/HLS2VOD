@@ -1,4 +1,4 @@
-const database = require("../database/database");
+const database = require("../../database/database");
 const ipc = require("electron").ipcRenderer;
 
 (document.getElementById("alJazeera") as HTMLButtonElement).onclick = () => {
