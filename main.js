@@ -66,7 +66,10 @@ electron.ipcMain.on('buttonClick', (event, data) => {
             }
         });
         addNewStreamWindow.removeMenu();
-        addNewStreamWindow.on("blur", () => addNewStreamWindow.close());
+        addNewStreamWindow.on("blur", () => {
+            browserWindow.webContents.send("modalClosed");
+            addNewStreamWindow.close();
+        });
         addNewStreamWindow.loadFile("layouts/add_stream/add_stream.html");
     }
 });

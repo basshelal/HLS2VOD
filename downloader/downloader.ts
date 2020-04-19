@@ -8,11 +8,11 @@ import {download, get} from "./http";
 import {print} from "../utils";
 
 export class Downloader {
-    private queue: PQueue;
-    private lastSegment?: string;
 
-    private timeoutHandle?: NodeJS.Timeout;
-    private refreshHandle?: NodeJS.Timeout;
+    private queue: PQueue
+    private lastSegment?: string
+    private timeoutHandle?: NodeJS.Timeout
+    private refreshHandle?: NodeJS.Timeout
 
     constructor(
         public playlistUrl: string,
@@ -20,15 +20,14 @@ export class Downloader {
         private timeoutDuration: number = 60,
         private playlistRefreshInterval: number = 2,
     ) {
-        this.queue = new PQueue();
+        this.queue = new PQueue()
     }
 
     public async start(): Promise<void> {
-        this.queue.add(() => this.refreshPlayList());
+        this.queue.add(() => this.refreshPlayList())
     }
 
     public stop() {
-        console.log("Stopping download!")
         if (this.refreshHandle) {
             clearTimeout(this.refreshHandle)
         }
@@ -174,11 +173,6 @@ export class Downloader {
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
-    }
-
-    private finishAllInQueue() {
-        // stop adding anything to the queue
-        // whatever is still in the queue should be resolved asap
     }
 }
 

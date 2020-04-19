@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>HLS2VOD</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <link href="home.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
@@ -18,66 +19,43 @@
 
 <div class="container center">
 
+    <h3>All Streams</h3>
 
-    <!--
-    TODO
-     For display Stream we'd like it to look like this:
-     It should have how long it's been recording for,
-     Also what show it's currently recording, how long left for that show,
-     maybe also what's the next show?
-     A button to the output directory of the stream
-     Stop and start recording
-    -->
+    <div id="allStreamsDiv">
 
-    <div id="displayStreamDiv">
-        <h5>Stream Name</h5>
-        <div class="row">
-            <div class="col s6">
-                <p>Current Show</p>
-            </div>
-            <div class="col s6">
-                <p>Next Show</p>
-            </div>
-            <div class="col s6">
-                <p>Recording...</p>
-            </div>
-            <div class="col s6">
-                <p>Stop start recording Button</p>
-            </div>
-            <div class="col s6">
-                <p>View output Button</p>
-            </div>
-            <div class="col s6">
-                <p>Edit Stream Button</p>
-            </div>
-        </div>
     </div>
 
-
-    <div id="addNewStreamDiv">
-        <h4>Add New Stream</h4>
-
-        <div class="row">
-            <p>Here is where information will go</p>
-            <div class="input-field s1 col s4">
-                <textarea class="materialize-textarea" id="streamNameTextArea"></textarea>
-                <label for="streamNameTextArea">Stream Name</label>
+    <template id="displayStreamTemplate">
+        <div id="displayStreamDiv">
+            <h5 id="streamNameText">Stream Name</h5>
+            <div class="row">
+                <div class="col s6">
+                    <p id="currentShowText">Current Show</p>
+                </div>
+                <div class="col s6">
+                    <p id="nextShowText">Next Show</p>
+                </div>
+                <div class="col s6">
+                    <p id="recordingText">Recording...</p>
+                </div>
+                <div class="col s6">
+                    <p id="recordingButton">Stop start recording Button</p>
+                </div>
+                <div class="col s6">
+                    <p id="outputButton">View output Button</p>
+                </div>
+                <div class="col s6">
+                    <p id="editStreamButton">Edit Stream Button</p>
+                </div>
             </div>
-            <div class="input-field col s4">
-                <textarea class="materialize-textarea" id="addPlayListURLTextArea"></textarea>
-                <label for="addPlayListURLTextArea">m3u8 Playlist URL</label>
-            </div>
-            <div class="input-field col s4">
-                <textarea class="materialize-textarea" id="scheduleTextArea"></textarea>
-                <label for="scheduleTextArea">Schedule</label>
-            </div>
-            <button class="waves-effect waves-light btn pink darken-4" id="addStreamButton">Add Stream</button>
         </div>
-    </div>
+    </template>
 
-    <button class="waves-effect waves-light btn pink darken-4" id="alJazeera">AlJazeera</button>
-    <button class="waves-effect waves-light btn pink darken-4" id="alHiwar">AlHiwar</button>
-    <button class="waves-effect waves-light btn pink darken-4" id="alAraby">AlAraby</button>
+    <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped"
+            data-position="bottom"
+            data-tooltip="Add new Stream" id="addStreamButton">
+        <i class="material-icons">add</i>
+    </button>
 </div>
 
 </body>

@@ -1,18 +1,26 @@
 const database = require("../../database/database");
-const ipc = require("electron").ipcRenderer;
-document.getElementById("alJazeera").onclick = () => {
-    ipc.send('invokeAction', 'alJazeera');
+const electron = require("electron");
+const addStreamButton = document.getElementById("addStreamButton");
+const displayStreamTemplate = document.getElementById("displayStreamTemplate");
+const displayStreamDiv = displayStreamTemplate.content.querySelector("div");
+const allStreamsDiv = document.getElementById("allStreamsDiv");
+addStreamButton.onclick = () => {
+    electron.ipcRenderer.send("buttonClick", "addStream");
+    document.body.classList.add("modalActive");
 };
-document.getElementById("alHiwar").onclick = () => {
-    ipc.send('invokeAction', 'alHiwar');
-};
-document.getElementById("alAraby").onclick = () => {
-    ipc.send('invokeAction', 'alAraby');
-};
-document.getElementById("addStreamButton").onclick = () => {
-    ipc.send("buttonClick", "addStream");
-};
-ipc.on("message", (event, args) => {
-    console.log(args);
+electron.ipcRenderer.on("modalClosed", (event, args) => {
+    document.body.classList.remove("modalActive");
 });
-database.Streams.getAllStreams().then(console.log);
+M.Tooltip.init(document.querySelectorAll('.tooltipped'), {});
+database.Streams.getAllStreams().then(streams => streams.forEach(streamEntry => {
+    const rootDiv = document.importNode(displayStreamDiv, true);
+    const streamNameText = rootDiv.children.namedItem("streamNameText");
+    const currentShowText = rootDiv.children.namedItem("currentShowText");
+    const nextShowText = rootDiv.children.namedItem("nextShowText");
+    const recordingText = rootDiv.children.namedItem("recordingText");
+    const recordingButton = rootDiv.children.namedItem("recordingButton");
+    const outputButton = rootDiv.children.namedItem("outputButton");
+    const editStreamButton = rootDiv.children.namedItem("editStreamButton");
+    streamNameText.textContent = streamEntry.name;
+    allStreamsDiv.append(rootDiv);
+}));

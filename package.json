@@ -9,6 +9,7 @@
   "dependencies": {
     "@types/fs-extra": "^8.0.1",
     "@types/jquery": "^3.3.35",
+    "@types/materialize-css": "^1.0.7",
     "@types/node": "^13.11.0",
     "axios": "^0.19.2",
     "commander": "^4.1.1",

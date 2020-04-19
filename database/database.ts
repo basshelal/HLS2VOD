@@ -6,7 +6,7 @@ export const streamsDatabase = new Datastore({filename: "database/streams.db", a
 
 type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 
-interface SettingsEntry {
+export interface SettingsEntry {
     key: string
     value: string
 }
@@ -68,7 +68,7 @@ export const Settings = {
     // endregion offsetSeconds
 }
 
-interface StreamEntry {
+export interface StreamEntry {
     name: string,
     playlistUrl: string,
     schedulePath: string,

@@ -20,7 +20,6 @@ class Downloader {
         this.queue.add(() => this.refreshPlayList());
     }
     stop() {
-        console.log("Stopping download!");
         if (this.refreshHandle) {
             clearTimeout(this.refreshHandle);
         }
@@ -135,10 +134,6 @@ class Downloader {
         // Download file
         await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
-    }
-    finishAllInQueue() {
-        // stop adding anything to the queue
-        // whatever is still in the queue should be resolved asap
     }
 }
 exports.Downloader = Downloader;
