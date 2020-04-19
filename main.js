@@ -1,11 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const downloader_1 = require("./downloader");
+const downloader_1 = require("./downloader/downloader");
 const electron = require("electron");
 const stream_1 = require("./stream");
-const utils_1 = require("./utils");
 const database_1 = require("./database/database");
-const moment = require("moment");
 var BrowserWindow = electron.BrowserWindow;
 let browserWindow;
 function onReady() {
@@ -83,5 +81,4 @@ stream_1.Schedule.fromCSV("res/schedule.csv").then((schedule) => {
     database_1.Streams.addStream(stream);
     // stream.initialize().then(() => stream.startDownloading())
     activeStreams.push(stream);
-    utils_1.print(moment().format(exports.momentFormat));
 });

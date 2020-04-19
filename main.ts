@@ -1,9 +1,7 @@
-import {startDownloader} from "./downloader";
+import {startDownloader} from "./downloader/downloader";
 import * as electron from "electron";
 import {Schedule, Stream} from "./stream";
-import {print} from "./utils";
 import {Streams} from "./database/database";
-import moment = require("moment");
 import BrowserWindow = electron.BrowserWindow;
 
 let browserWindow: BrowserWindow
@@ -94,6 +92,4 @@ Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     Streams.addStream(stream)
     // stream.initialize().then(() => stream.startDownloading())
     activeStreams.push(stream)
-
-    print(moment().format(momentFormat))
 })

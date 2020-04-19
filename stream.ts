@@ -1,10 +1,10 @@
-import {Downloader, StreamChooser} from "./downloader";
+import {Downloader, StreamChooser} from "./downloader/downloader";
 import * as fs from "fs";
 import * as fsextra from "fs-extra";
 import * as csv from "csvtojson";
 import * as moment from "moment";
-import {print} from "./utils";
-import {momentFormat} from "./main";
+import {logD} from "./utils";
+import {momentFormat, momentFormatSafe} from "./main";
 import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
@@ -44,22 +44,24 @@ export class Stream {
             if (now > this.nextEventTime) {
                 // TODO if schedule has changed we should probably re-read it here
                 if (this.nextShow.hasStarted(true)) {
-                    print("Next show has started!")
-                    print(`It is ${this.nextShow}`)
-                    print(`The time now is ${moment().format(momentFormat)}`)
-                    if (!this.nextShow.startChunkName)
-                        this.nextShow.startChunkName = this.getLatestChunkPath()
+                    this.downloader.pause()
+                    this.nextShow.startChunkName = this.getLastChunkPath()
+                    logD("Next show has started!")
+                    logD(`It is ${this.nextShow}`)
                     this.nextEventTime = this.currentShow.offsetEndTime
+                    this.downloader.resume()
                 }
                 if (this.currentShow.hasEnded(true)) {
-                    print("Current show has ended!")
-                    print(`It is ${this.currentShow}`)
-                    print(`The time now is ${moment().format(momentFormat)}`)
-                    if (!this.currentShow.endChunkName)
-                        this.currentShow.endChunkName = this.getLatestChunkPath()
-                    this.mergeCurrentShow()
-                    this.setCurrentShow()
-                    this.currentShow.startChunkName = this.getLatestChunkPath()
+                    this.downloader.pause()
+                    this.currentShow.endChunkName = this.getLastChunkPath()
+                    logD("Current show has ended!")
+                    logD(`It is ${this.currentShow}`)
+                    this.mergeCurrentShow().then(() => {
+                            this.setCurrentShow()
+                            this.currentShow.startChunkName = this.getFirstChunkPath()
+                            this.downloader.resume()
+                        }
+                    )
                 }
             }
         }, 1000)
@@ -73,7 +75,6 @@ export class Stream {
         schedule: Schedule,
         offsetSeconds: number,
         rootDirectory: string): Promise<Stream> {
-
         let stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory)
         await stream.initialize()
         return stream
@@ -88,17 +89,22 @@ export class Stream {
         this.isDownloading = true
     }
 
-    public mergeCurrentShow() {
-        if (this.downloader)
-            this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() =>
-                this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName)
-            )
-    }
-
     public async stopDownloading() {
         this.downloader.stop()
         await this.downloader.mergeAll()
         this.isDownloading = false
+    }
+
+    public async mergeCurrentShow() {
+        if (!this.currentShow.startChunkName) this.currentShow.startChunkName = this.getFirstChunkPath()
+        if (!this.currentShow.endChunkName) this.currentShow.startChunkName = this.getLastChunkPath()
+        if (this.downloader) {
+            await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName,
+                `${this.streamDirectory}/${this.currentShow.name}`, `${moment().format(momentFormatSafe)}.mp4`
+            ).then(() =>
+                this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName)
+            )
+        }
     }
 
     private async initializeDownloader(): Promise<void> {
@@ -109,16 +115,22 @@ export class Stream {
         if (!playlistUrl) throw Error("PlaylistUrl failed!")
 
         this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
-        this.downloader.onDownloadSegment = () => {
-            if (!this.nextShow.startChunkName)
-                this.nextShow.startChunkName = this.getLatestChunkPath()
-        }
     }
 
-    private getLatestChunkPath(): string {
+    private getFirstChunkPath(): string {
         let segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it)
         segments.sort()
-        return segments[segments.length - 1]
+        let result = segments[0]
+        logD(`First chunk is ${result}`)
+        return result
+    }
+
+    private getLastChunkPath(): string {
+        let segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it)
+        segments.sort()
+        let result = segments[segments.length - 1]
+        logD(`Last chunk is ${result}`)
+        return result
     }
 
     private setCurrentShow() {
@@ -129,7 +141,7 @@ export class Stream {
         this.currentShow = activeShows[0]
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1]
 
-        print(`Current show is:\n${this.currentShow}`)
+        logD(`New current show is:\n${this.currentShow}`)
 
         this.nextEventTime = this.nextShow.offsetStartTime
     }

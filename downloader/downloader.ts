@@ -5,6 +5,7 @@ import {mergeFiles, transmuxTsToMp4} from "./ffmpeg";
 import PQueue from "p-queue";
 import {URL} from "url";
 import {download, get} from "./http";
+import {print} from "../utils";
 
 export const downloaders: Array<Downloader> = [];
 
@@ -22,8 +23,6 @@ export class Downloader {
         public segmentDirectory: string,
         private timeoutDuration: number = 60,
         private playlistRefreshInterval: number = 2,
-        public onDownloadSegment: Function = () => {
-        }
     ) {
         this.queue = new PQueue();
     }
@@ -45,9 +44,17 @@ export class Downloader {
         this.resolve()
     }
 
+    public pause() {
+        this.queue.pause()
+    }
+
+    public resume() {
+        this.queue.start()
+    }
+
     public async mergeAll(): Promise<void> {
         let segmentsDir = this.segmentDirectory;
-        let mergedSegmentsFile: string = segmentsDir + "merged.ts";
+        let mergedSegmentsFile: string = segmentsDir + "/merged.ts";
 
         // Get all segments
         const segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
@@ -64,20 +71,19 @@ export class Downloader {
         segments.forEach(it => fs.remove(it))
     }
 
-    public async merge(fromChunkName: string, toChunkName?: string): Promise<void> {
+    public async merge(fromChunkName: string, toChunkName: string, outputDirectory: string, outputFileName: string): Promise<void> {
         let segmentsDir = this.segmentDirectory;
-        let mergedSegmentsFile: string = segmentsDir + "merged.ts";
+        let mergedSegmentsFile: string = segmentsDir + "/merged.ts";
 
         // Get all segments
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
         segments.sort();
-
-        fromChunkName = segmentsDir + fromChunkName;
-        if (!toChunkName) toChunkName = segments[segments.length - 1];
-        else toChunkName = segmentsDir + toChunkName;
 
         let firstSegmentIndex: number = segments.indexOf(fromChunkName);
         let lastSegmentIndex: number = segments.indexOf(toChunkName);
+
+        print(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`)
+        print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
 
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return;
 
@@ -85,13 +91,14 @@ export class Downloader {
 
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
 
+        fs.mkdirpSync(outputDirectory)
+
         // Merge TS files
         await mergeFiles(segments, mergedSegmentsFile);
 
         // Transmux
-        await transmuxTsToMp4(mergedSegmentsFile, `${segmentsDir}video${Date.now()}.mp4`);
+        await transmuxTsToMp4(mergedSegmentsFile, outputDirectory + "/" + outputFileName);
 
-        // Delete ts files
         fs.remove(mergedSegmentsFile);
     }
 
@@ -99,14 +106,14 @@ export class Downloader {
         let segmentsDir = this.segmentDirectory;
 
         // Get all segments
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + it);
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
         segments.sort();
-
-        fromChunkName = segmentsDir + fromChunkName;
-        toChunkNameExclusive = segmentsDir + toChunkNameExclusive;
 
         let firstSegmentIndex: number = segments.indexOf(fromChunkName);
         let lastSegmentIndex: number = segments.indexOf(toChunkNameExclusive);
+
+        print(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`)
+        print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
 
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return;
 
@@ -177,7 +184,6 @@ export class Downloader {
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename));
         console.log("Downloaded:", segmentUrl);
-        this.onDownloadSegment()
     }
 
     private finishAllInQueue() {

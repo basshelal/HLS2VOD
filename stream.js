@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const downloader_1 = require("./downloader");
+const downloader_1 = require("./downloader/downloader");
 const fs = require("fs");
 const fsextra = require("fs-extra");
 const csv = require("csvtojson");
@@ -25,22 +25,23 @@ class Stream {
             if (now > this.nextEventTime) {
                 // TODO if schedule has changed we should probably re-read it here
                 if (this.nextShow.hasStarted(true)) {
-                    utils_1.print("Next show has started!");
-                    utils_1.print(`It is ${this.nextShow}`);
-                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
-                    if (!this.nextShow.startChunkName)
-                        this.nextShow.startChunkName = this.getLatestChunkPath();
+                    this.downloader.pause();
+                    this.nextShow.startChunkName = this.getLastChunkPath();
+                    utils_1.logD("Next show has started!");
+                    utils_1.logD(`It is ${this.nextShow}`);
                     this.nextEventTime = this.currentShow.offsetEndTime;
+                    this.downloader.resume();
                 }
                 if (this.currentShow.hasEnded(true)) {
-                    utils_1.print("Current show has ended!");
-                    utils_1.print(`It is ${this.currentShow}`);
-                    utils_1.print(`The time now is ${moment().format(main_1.momentFormat)}`);
-                    if (!this.currentShow.endChunkName)
-                        this.currentShow.endChunkName = this.getLatestChunkPath();
-                    this.mergeCurrentShow();
-                    this.setCurrentShow();
-                    this.currentShow.startChunkName = this.getLatestChunkPath();
+                    this.downloader.pause();
+                    this.currentShow.endChunkName = this.getLastChunkPath();
+                    utils_1.logD("Current show has ended!");
+                    utils_1.logD(`It is ${this.currentShow}`);
+                    this.mergeCurrentShow().then(() => {
+                        this.setCurrentShow();
+                        this.currentShow.startChunkName = this.getFirstChunkPath();
+                        this.downloader.resume();
+                    });
                 }
             }
         }, 1000);
@@ -57,14 +58,19 @@ class Stream {
         await this.downloader.start();
         this.isDownloading = true;
     }
-    mergeCurrentShow() {
-        if (this.downloader)
-            this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
-    }
     async stopDownloading() {
         this.downloader.stop();
         await this.downloader.mergeAll();
         this.isDownloading = false;
+    }
+    async mergeCurrentShow() {
+        if (!this.currentShow.startChunkName)
+            this.currentShow.startChunkName = this.getFirstChunkPath();
+        if (!this.currentShow.endChunkName)
+            this.currentShow.startChunkName = this.getLastChunkPath();
+        if (this.downloader) {
+            await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName, `${this.streamDirectory}/${this.currentShow.name}`, `${moment().format(main_1.momentFormatSafe)}.mp4`).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
+        }
     }
     async initializeDownloader() {
         const streamChooser = new downloader_1.StreamChooser(this.playlistUrl);
@@ -74,15 +80,20 @@ class Stream {
         if (!playlistUrl)
             throw Error("PlaylistUrl failed!");
         this.downloader = new downloader_1.Downloader(playlistUrl, this.segmentsDirectory);
-        this.downloader.onDownloadSegment = () => {
-            if (!this.nextShow.startChunkName)
-                this.nextShow.startChunkName = this.getLatestChunkPath();
-        };
     }
-    getLatestChunkPath() {
+    getFirstChunkPath() {
         let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it);
         segments.sort();
-        return segments[segments.length - 1];
+        let result = segments[0];
+        utils_1.logD(`First chunk is ${result}`);
+        return result;
+    }
+    getLastChunkPath() {
+        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it);
+        segments.sort();
+        let result = segments[segments.length - 1];
+        utils_1.logD(`Last chunk is ${result}`);
+        return result;
     }
     setCurrentShow() {
         let activeShows = this.shows.filter(it => it.isActive(false));
@@ -90,7 +101,7 @@ class Stream {
              Currently shows are ${this.shows.length} and active shows are ${activeShows.length}`);
         this.currentShow = activeShows[0];
         this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
-        utils_1.print(`Current show is:\n${this.currentShow}`);
+        utils_1.logD(`New current show is:\n${this.currentShow}`);
         this.nextEventTime = this.nextShow.offsetStartTime;
     }
 }
