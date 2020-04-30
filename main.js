@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const downloader_1 = require("./downloader/downloader");
 const electron = require("electron");
 const stream_1 = require("./stream");
 const database_1 = require("./database/database");
@@ -20,7 +19,7 @@ function onReady() {
     browserWindow.on("close", onClose);
     browserWindow.loadFile('layouts/home/home.html');
     electron.session.defaultSession.webRequest.onCompleted((details) => {
-        console.log(details.url);
+        //console.log(details.url)
     });
 }
 function onClose() {
@@ -28,53 +27,7 @@ function onClose() {
 }
 electron.app.whenReady().then(onReady);
 electron.app.on('window-all-closed', onClose);
-electron.ipcMain.on('invokeAction', (event, data) => {
-    if (data === "alJazeera") {
-        if (!currentDownloading.find(it => it === aljazeeraUrl)) {
-            downloader_1.startDownloader(aljazeeraUrl);
-            currentDownloading.push(aljazeeraUrl);
-        }
-    }
-    if (data === "alHiwar") {
-        if (!currentDownloading.find(it => it === alHiwarUrl)) {
-            downloader_1.startDownloader(alHiwarUrl);
-            currentDownloading.push(alHiwarUrl);
-        }
-    }
-    if (data === "alAraby") {
-        if (!currentDownloading.find(it => it === alArabyUrl)) {
-            downloader_1.startDownloader(alArabyUrl);
-            currentDownloading.push(alArabyUrl);
-        }
-    }
-});
-electron.ipcMain.on('buttonClick', (event, data) => {
-    if (data === "addStream") {
-        browserWindow.webContents.send("message", "ass");
-        const addNewStreamWindow = new BrowserWindow({
-            modal: true,
-            center: true,
-            width: 800,
-            height: 300,
-            autoHideMenuBar: true,
-            frame: false,
-            skipTaskbar: true,
-            movable: false,
-            resizable: false,
-            webPreferences: {
-                nodeIntegration: true
-            }
-        });
-        addNewStreamWindow.removeMenu();
-        addNewStreamWindow.on("blur", () => {
-            browserWindow.webContents.send("modalClosed");
-            addNewStreamWindow.close();
-        });
-        addNewStreamWindow.loadFile("layouts/add_stream/add_stream.html");
-    }
-});
 let activeStreams = [];
-let currentDownloading = [];
 exports.momentFormat = "dddd Do MMMM YYYY, HH:mm:ss";
 exports.momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss";
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";

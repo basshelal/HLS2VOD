@@ -41,3 +41,11 @@ header > * {
     background: rgba(0, 0, 0, 0.6);
 }
 
+.modal {
+    width: 900px !important;
+    height: 400px !important;
+}
+
+.modal-content {
+    width: 90% !important;
+}

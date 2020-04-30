@@ -4,14 +4,8 @@ const addStreamButton = document.getElementById("addStreamButton");
 const displayStreamTemplate = document.getElementById("displayStreamTemplate");
 const displayStreamDiv = displayStreamTemplate.content.querySelector("div");
 const allStreamsDiv = document.getElementById("allStreamsDiv");
-addStreamButton.onclick = () => {
-    electron.ipcRenderer.send("buttonClick", "addStream");
-    document.body.classList.add("modalActive");
-};
-electron.ipcRenderer.on("modalClosed", (event, args) => {
-    document.body.classList.remove("modalActive");
-});
-M.Tooltip.init(document.querySelectorAll('.tooltipped'), {});
+M.Tooltip.init(document.querySelectorAll('.tooltipped'), { inDuration: 500, outDuration: 500 });
+M.Modal.init(document.querySelectorAll('.modal'), { dismissible: true, inDuration: 500, outDuration: 500 });
 database.Streams.getAllStreams().then(streams => streams.forEach(streamEntry => {
     const rootDiv = document.importNode(displayStreamDiv, true);
     const streamNameText = rootDiv.children.namedItem("streamNameText");

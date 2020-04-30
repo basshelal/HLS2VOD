@@ -36,10 +36,12 @@ class Downloader {
         // Get all segments
         const segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
         segments.sort();
+        if (segments.length == 0)
+            return;
         // Merge TS files
         await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
         // Transmux
-        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "video.mp4");
+        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "/video.mp4");
         // Delete ts files
         fs.remove(mergedSegmentsFile);
         segments.forEach(it => fs.remove(it));

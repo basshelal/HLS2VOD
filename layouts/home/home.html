@@ -51,11 +51,56 @@
         </div>
     </template>
 
-    <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped"
+    <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger"
             data-position="bottom"
+            data-target="modal"
             data-tooltip="Add new Stream" id="addStreamButton">
         <i class="material-icons">add</i>
     </button>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content container center" id="addNewStreamDiv">
+        <!--
+        TODO
+         For display Stream we'd like it to look like this:
+         It should have how long it's been recording for,
+         Also what show it's currently recording, how long left for that show,
+         maybe also what's the next show?
+         A button to the output directory of the stream
+         Stop and start recording
+        -->
+
+
+        <h4>Add New Stream</h4>
+
+        <div class="row">
+            <p>Here is where information will go</p>
+            <div class="input-field s1 col s4">
+                <textarea class="materialize-textarea" id="streamNameTextArea"></textarea>
+                <label for="streamNameTextArea">Stream Name</label>
+            </div>
+            <div class="input-field col s4">
+                <textarea class="materialize-textarea" id="addPlayListURLTextArea"></textarea>
+                <label for="addPlayListURLTextArea">m3u8 Playlist URL</label>
+            </div>
+            <div class="input-field col s4">
+                <div class="file-field input-field">
+                    <div class="waves-effect waves-light btn pink darken-4">
+                        <span>Import Schedule</span>
+                        <input accept=".csv" type="file">
+                    </div>
+                    <div class="file-path-wrapper">
+                        <input class="file-path" type="text">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="waves-effect waves-light btn pink darken-4" id="confirmAddStreamButton">
+            Add Stream
+        </button>
+    </div>
 </div>
 
 </body>

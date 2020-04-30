@@ -1,4 +1,3 @@
-import {startDownloader} from "./downloader/downloader";
 import * as electron from "electron";
 import {Schedule, Stream} from "./stream";
 import {Streams} from "./database/database";
@@ -23,9 +22,8 @@ function onReady() {
 
     electron.session.defaultSession.webRequest.onCompleted(
         (details: OnCompletedListenerDetails) => {
-            console.log(details.url)
+            //console.log(details.url)
         })
-
 }
 
 function onClose() {
@@ -36,56 +34,7 @@ electron.app.whenReady().then(onReady)
 
 electron.app.on('window-all-closed', onClose)
 
-electron.ipcMain.on('invokeAction', (event, data) => {
-    if (data === "alJazeera") {
-        if (!currentDownloading.find(it => it === aljazeeraUrl)) {
-            startDownloader(aljazeeraUrl)
-            currentDownloading.push(aljazeeraUrl)
-        }
-    }
-    if (data === "alHiwar") {
-        if (!currentDownloading.find(it => it === alHiwarUrl)) {
-            startDownloader(alHiwarUrl)
-            currentDownloading.push(alHiwarUrl)
-        }
-    }
-    if (data === "alAraby") {
-        if (!currentDownloading.find(it => it === alArabyUrl)) {
-            startDownloader(alArabyUrl)
-            currentDownloading.push(alArabyUrl)
-        }
-    }
-})
-
-electron.ipcMain.on('buttonClick', (event, data) => {
-    if (data === "addStream") {
-        browserWindow.webContents.send("message", "ass")
-        const addNewStreamWindow = new BrowserWindow({
-            modal: true,
-            center: true,
-            width: 800,
-            height: 300,
-            autoHideMenuBar: true,
-            frame: false,
-            skipTaskbar: true,
-            movable: false,
-            resizable: false,
-            webPreferences: {
-                nodeIntegration: true
-            }
-        })
-        addNewStreamWindow.removeMenu()
-        addNewStreamWindow.on("blur", () => {
-            browserWindow.webContents.send("modalClosed")
-            addNewStreamWindow.close()
-        })
-        addNewStreamWindow.loadFile("layouts/add_stream/add_stream.html")
-    }
-})
-
 let activeStreams: Array<Stream> = []
-
-let currentDownloading = []
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
