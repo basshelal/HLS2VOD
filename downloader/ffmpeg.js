@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const cp = require("child_process");
 const fs = require("fs");
+const utils_1 = require("../utils");
 async function spawnFfmpeg(args) {
     return new Promise((resolve, reject) => {
         console.log("Spawning FFMPEG", "ffmpeg", args.join(" "));
@@ -58,8 +59,7 @@ async function transmuxTsToMp4(inputFile, outputFile) {
 exports.transmuxTsToMp4 = transmuxTsToMp4;
 async function copyToStream(inFile, outStream) {
     return new Promise((resolve, reject) => {
-        fs
-            .createReadStream(inFile)
+        fs.createReadStream(inFile)
             .on("error", reject)
             .on("end", resolve)
             .pipe(outStream, { end: false });
@@ -67,14 +67,16 @@ async function copyToStream(inFile, outStream) {
 }
 async function mergeFiles(files, outputFile) {
     const outStream = fs.createWriteStream(outputFile);
-    const ret = new Promise((resolve, reject) => {
-        outStream.on("finish", resolve);
-        outStream.on("error", reject);
+    const promise = new Promise((resolve, reject) => {
+        outStream.on("finish", resolve).on("error", reject);
     });
     for (const file of files) {
+        utils_1.logD(`Copying ${file}`);
         await copyToStream(file, outStream);
+        utils_1.logD(`Finished ${file}`);
     }
     outStream.end();
-    return ret;
+    utils_1.logD("Returning Promise");
+    return promise;
 }
 exports.mergeFiles = mergeFiles;

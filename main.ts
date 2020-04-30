@@ -1,8 +1,11 @@
 import * as electron from "electron";
-import {Schedule, Stream} from "./stream";
+import {newStream, Schedule, Stream} from "./stream";
 import {StreamEntry, Streams} from "./database/database";
+import extensions from "./extensions";
 import moment = require("moment");
 import BrowserWindow = electron.BrowserWindow;
+
+extensions()
 
 let browserWindow: BrowserWindow
 
@@ -47,27 +50,25 @@ const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playl
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8"
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8"
 
-const rootDirectory = "C:/Users/bassh/Desktop/HLS2VOD"
+const rootDirectory = "F:/HLS2VOD"
 const offsetSeconds = 30
 
 async function addStream(streamEntry: StreamEntry) {
     //  const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
     //   const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, rootDirectory)
     const schedule: Schedule = await Schedule.fromCSV("res/schedule.csv")
-    let stream = new Stream(moment().format(momentFormatSafe), aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
+    const stream = await newStream(moment().format(momentFormatSafe), aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
 
     Streams.addStream(stream)
-    stream.initialize()
     activeStreams.push(stream)
 }
 
-Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
-    //console.log(JSON.stringify(schedule, null, 1))
-    let stream = new Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
-    // stream.startDownloading()
-
+async function start() {
+    const schedule = await Schedule.fromCSV("res/largeschedule.csv")
+    const stream = await newStream("AlHiwar", alHiwarUrl, "res/largeschedule.csv", schedule, offsetSeconds, rootDirectory)
     Streams.addStream(stream)
-    stream.initialize()
-    // .then(() => stream.startDownloading())
     activeStreams.push(stream)
-})
+    stream.startDownloading()
+}
+
+start()

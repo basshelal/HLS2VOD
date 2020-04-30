@@ -43,35 +43,38 @@ class Downloader {
         // Transmux
         await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "/video.mp4");
         // Delete ts files
-        fs.remove(mergedSegmentsFile);
-        segments.forEach(it => fs.remove(it));
+        fs.removeSync(mergedSegmentsFile);
+        segments.forEach(it => fs.removeSync(it));
     }
     async merge(fromChunkName, toChunkName, outputDirectory, outputFileName) {
         let segmentsDir = this.segmentDirectory;
-        let mergedSegmentsFile = segmentsDir + "/merged.ts";
+        let mergedSegmentsFile = path.join(segmentsDir, "merged.ts");
         // Get all segments
-        let segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
+        let segments = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it));
         segments.sort();
         let firstSegmentIndex = segments.indexOf(fromChunkName);
         let lastSegmentIndex = segments.indexOf(toChunkName);
         utils_1.print(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`);
         utils_1.print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`);
-        if (firstSegmentIndex === -1 || lastSegmentIndex === -1)
+        if (firstSegmentIndex < 0 || lastSegmentIndex < 0)
             return;
-        if (lastSegmentIndex < segments.length)
+        if (lastSegmentIndex + 1 <= segments.length)
             lastSegmentIndex += 1;
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
         fs.mkdirpSync(outputDirectory);
+        segments.remove(mergedSegmentsFile);
+        utils_1.print(`Merging ${segments}`);
         // Merge TS files
         await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
+        utils_1.print("Finished Merging");
+        utils_1.print(`Transmuxing to mp4`);
         // Transmux
-        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, outputDirectory + "/" + outputFileName);
-        fs.remove(mergedSegmentsFile);
+        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName));
+        fs.removeSync(mergedSegmentsFile);
     }
     deleteSegments(fromChunkName, toChunkNameExclusive) {
         let segmentsDir = this.segmentDirectory;
-        // Get all segments
-        let segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
+        let segments = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it));
         segments.sort();
         let firstSegmentIndex = segments.indexOf(fromChunkName);
         let lastSegmentIndex = segments.indexOf(toChunkNameExclusive);
@@ -80,7 +83,7 @@ class Downloader {
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1)
             return;
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
-        segments.forEach(it => fs.remove(it));
+        segments.forEach(it => fs.removeSync(it));
     }
     async refreshPlayList() {
         const playlist = await this.loadPlaylist();

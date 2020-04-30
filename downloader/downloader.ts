@@ -58,59 +58,66 @@ export class Downloader {
         await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "/video.mp4");
 
         // Delete ts files
-        fs.remove(mergedSegmentsFile);
-        segments.forEach(it => fs.remove(it))
+        fs.removeSync(mergedSegmentsFile);
+        segments.forEach(it => fs.removeSync(it))
     }
 
     public async merge(fromChunkName: string, toChunkName: string, outputDirectory: string, outputFileName: string): Promise<void> {
-        let segmentsDir = this.segmentDirectory;
-        let mergedSegmentsFile: string = segmentsDir + "/merged.ts";
+        let segmentsDir = this.segmentDirectory
+        let mergedSegmentsFile: string = path.join(segmentsDir, "merged.ts")
 
         // Get all segments
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
-        segments.sort();
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
+        segments.sort()
 
-        let firstSegmentIndex: number = segments.indexOf(fromChunkName);
-        let lastSegmentIndex: number = segments.indexOf(toChunkName);
+        let firstSegmentIndex: number = segments.indexOf(fromChunkName)
+        let lastSegmentIndex: number = segments.indexOf(toChunkName)
 
         print(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`)
         print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
 
-        if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return;
+        if (firstSegmentIndex < 0 || lastSegmentIndex < 0) return
 
-        if (lastSegmentIndex < segments.length) lastSegmentIndex += 1;
+        if (lastSegmentIndex + 1 <= segments.length) lastSegmentIndex += 1
 
-        segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
+        segments = segments.slice(firstSegmentIndex, lastSegmentIndex)
 
         fs.mkdirpSync(outputDirectory)
 
+        segments.remove(mergedSegmentsFile)
+
+        print(`Merging ${segments}`)
+
         // Merge TS files
-        await mergeFiles(segments, mergedSegmentsFile);
+        await mergeFiles(segments, mergedSegmentsFile)
+
+        print("Finished Merging")
+
+        print(`Transmuxing to mp4`)
 
         // Transmux
-        await transmuxTsToMp4(mergedSegmentsFile, outputDirectory + "/" + outputFileName);
+        await transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName))
 
-        fs.remove(mergedSegmentsFile);
+        fs.removeSync(mergedSegmentsFile)
     }
 
     public deleteSegments(fromChunkName: string, toChunkNameExclusive: string) {
-        let segmentsDir = this.segmentDirectory;
+        let segmentsDir = this.segmentDirectory
 
-        // Get all segments
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
-        segments.sort();
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
+        segments.sort()
 
-        let firstSegmentIndex: number = segments.indexOf(fromChunkName);
-        let lastSegmentIndex: number = segments.indexOf(toChunkNameExclusive);
+        let firstSegmentIndex: number = segments.indexOf(fromChunkName)
+        let lastSegmentIndex: number = segments.indexOf(toChunkNameExclusive)
 
         print(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`)
         print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
 
-        if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return;
+        if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return
 
-        segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
+        segments = segments.slice(firstSegmentIndex, lastSegmentIndex)
 
-        segments.forEach(it => fs.remove(it))
+        segments.forEach(it => fs.removeSync(it))
     }
 
     private async refreshPlayList(): Promise<void> {

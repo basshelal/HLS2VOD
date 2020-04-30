@@ -1,5 +1,6 @@
 import * as cp from "child_process";
 import * as fs from "fs";
+import {logD} from "../utils";
 
 export async function spawnFfmpeg(args: Array<string>): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -61,23 +62,24 @@ export async function transmuxTsToMp4(inputFile: string, outputFile: string): Pr
 
 async function copyToStream(inFile: string, outStream: fs.WriteStream): Promise<void> {
     return new Promise((resolve, reject) => {
-        fs
-            .createReadStream(inFile)
+        fs.createReadStream(inFile)
             .on("error", reject)
             .on("end", resolve)
-            .pipe(outStream, {end: false});
+            .pipe(outStream, {end: false})
     });
 }
 
-export async function mergeFiles(files: string[], outputFile: string): Promise<void> {
-    const outStream = fs.createWriteStream(outputFile);
-    const ret = new Promise<void>((resolve, reject) => {
-        outStream.on("finish", resolve);
-        outStream.on("error", reject);
-    });
+export async function mergeFiles(files: Array<string>, outputFile: string): Promise<void> {
+    const outStream = fs.createWriteStream(outputFile)
+    const promise = new Promise<void>((resolve, reject) => {
+        outStream.on("finish", resolve).on("error", reject)
+    })
     for (const file of files) {
-        await copyToStream(file, outStream);
+        logD(`Copying ${file}`)
+        await copyToStream(file, outStream)
+        logD(`Finished ${file}`)
     }
-    outStream.end();
-    return ret;
+    outStream.end()
+    logD("Returning Promise")
+    return promise
 }

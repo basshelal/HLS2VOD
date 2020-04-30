@@ -11,3 +11,14 @@ function logD(message, calledFrom = "") {
     ${calledFrom}`);
 }
 exports.logD = logD;
+function logE(message, calledFrom = "") {
+    if (!electron.app.isPackaged)
+        console.error(`${message.toString()}
+    ${calledFrom}`);
+}
+exports.logE = logE;
+function assert(condition, message) {
+    if (!electron.app.isPackaged)
+        console.assert(condition, message);
+}
+exports.assert = assert;

@@ -7,38 +7,53 @@ const csv = require("csvtojson");
 const moment = require("moment");
 const utils_1 = require("./utils");
 const main_1 = require("./main");
+const path = require("path");
+async function newStream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
+    const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
+    await stream.initialize();
+    return stream;
+}
+exports.newStream = newStream;
 class Stream {
     constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
+        this.isRunning = true;
+        this.isDownloading = false;
         this.name = name;
         this.playlistUrl = playlistUrl;
         this.schedulePath = schedulePath;
         this.schedule = schedule;
         this.rootDirectory = rootDirectory;
-        this.isDownloading = false;
-        this.shows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
-        this.streamDirectory = this.rootDirectory + `/${this.name}`;
-        this.segmentsDirectory = this.streamDirectory + `/segments`;
+        this.scheduledShows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
+        this.streamDirectory = path.join(this.rootDirectory, this.name);
+        this.segmentsDirectory = path.join(this.streamDirectory, "segments");
         fsextra.mkdirpSync(this.streamDirectory);
         fsextra.mkdirpSync(this.segmentsDirectory);
         this.setCurrentShow();
         this.setInterval();
     }
-    static async new(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
-        let stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
-        await stream.initialize();
-        return stream;
-    }
     initialize() {
         return this.initializeDownloader();
     }
     async startDownloading() {
-        if (!this.isDownloading) {
+        if (!this.isDownloading && this.downloader) {
             await this.downloader.start();
             this.isDownloading = true;
         }
     }
+    async pauseDownloading() {
+        if (this.isDownloading && this.downloader) {
+            this.downloader.pause();
+            this.isDownloading = false;
+        }
+    }
+    async resumeDownloading() {
+        if (!this.isDownloading && this.downloader) {
+            this.downloader.resume();
+            this.isDownloading = true;
+        }
+    }
     async stopDownloading() {
-        if (this.isDownloading) {
+        if (this.isDownloading && this.downloader) {
             this.downloader.stop();
             await this.downloader.mergeAll();
             this.isDownloading = false;
@@ -48,9 +63,10 @@ class Stream {
         if (!this.currentShow.startChunkName)
             this.currentShow.startChunkName = this.getFirstChunkPath();
         if (!this.currentShow.endChunkName)
-            this.currentShow.startChunkName = this.getLastChunkPath();
+            this.currentShow.endChunkName = this.getLastChunkPath();
         if (this.downloader) {
-            await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName, `${this.streamDirectory}/${this.currentShow.name}`, `${moment().format(main_1.momentFormatSafe)}.mp4`).then(() => this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName));
+            await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName, path.join(this.streamDirectory, this.currentShow.name), `${moment().format(main_1.momentFormatSafe)}.mp4`);
+            this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName);
         }
     }
     async initializeDownloader() {
@@ -63,52 +79,53 @@ class Stream {
         this.downloader = new downloader_1.Downloader(playlistUrl, this.segmentsDirectory);
     }
     getFirstChunkPath() {
-        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it);
+        const segments = fs.readdirSync(this.segmentsDirectory).map(it => path.join(this.segmentsDirectory, it));
         segments.sort();
-        let result = segments[0];
+        const result = segments[0];
         utils_1.logD(`First chunk is ${result}`);
         return result;
     }
     getLastChunkPath() {
-        let segments = fs.readdirSync(this.segmentsDirectory).map(it => this.segmentsDirectory + "/" + it);
+        const segments = fs.readdirSync(this.segmentsDirectory).map(it => path.join(this.segmentsDirectory, it));
         segments.sort();
-        let result = segments[segments.length - 1];
+        const result = segments[segments.length - 1];
         utils_1.logD(`Last chunk is ${result}`);
         return result;
     }
     setCurrentShow() {
-        let activeShows = this.shows.filter(it => it.isActive(false));
-        console.assert(activeShows.length == 1, `There can only be exactly one show active!
-             Currently shows are ${this.shows.length} and active shows are ${activeShows.length}`);
+        const activeShows = this.scheduledShows.filter(it => it.isActive(false));
+        utils_1.assert(activeShows.length == 1, `There can only be exactly one show active!
+             Currently shows are ${this.scheduledShows.length} and active shows are ${activeShows.length}`);
         this.currentShow = activeShows[0];
-        this.nextShow = this.shows[this.shows.indexOf(this.currentShow) + 1];
+        const currentShowIndex = this.scheduledShows.indexOf(this.currentShow);
+        const nextIndex = currentShowIndex + 1 <= this.scheduledShows.length ? currentShowIndex + 1 : 0;
+        this.nextShow = this.scheduledShows[nextIndex];
         utils_1.logD(`New current show is:\n${this.currentShow}`);
         this.nextEventTime = this.nextShow.offsetStartTime;
     }
     setInterval() {
-        this.mergerTimeOut = setInterval(() => {
+        this.mergerTimeOut = setInterval(async () => {
             let now = Date.now();
-            if (now > this.nextEventTime) {
+            if (now > this.nextEventTime && this.isRunning) {
                 // TODO if schedule has changed we should probably re-read it here
+                this.pauseDownloading();
+                this.isRunning = false;
                 if (this.nextShow.hasStarted(true)) {
-                    this.downloader.pause();
-                    this.nextShow.startChunkName = this.getLastChunkPath();
                     utils_1.logD("Next show has started!");
+                    this.nextShow.startChunkName = this.getLastChunkPath();
                     utils_1.logD(`It is ${this.nextShow}`);
                     this.nextEventTime = this.currentShow.offsetEndTime;
-                    this.downloader.resume();
                 }
                 if (this.currentShow.hasEnded(true)) {
-                    this.downloader.pause();
-                    this.currentShow.endChunkName = this.getLastChunkPath();
                     utils_1.logD("Current show has ended!");
+                    this.currentShow.endChunkName = this.getLastChunkPath();
                     utils_1.logD(`It is ${this.currentShow}`);
-                    this.mergeCurrentShow().then(() => {
-                        this.setCurrentShow();
-                        this.currentShow.startChunkName = this.getFirstChunkPath();
-                        this.downloader.resume();
-                    });
+                    await this.mergeCurrentShow();
+                    this.setCurrentShow();
+                    this.currentShow.startChunkName = this.getFirstChunkPath();
                 }
+                this.resumeDownloading();
+                this.isRunning = true;
             }
         }, 1000);
     }
