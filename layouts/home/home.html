@@ -52,7 +52,8 @@
     </template>
 
     <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger"
-            data-position="bottom"
+            data-position="top"
+            style="margin-bottom: 16px"
             data-target="modal"
             data-tooltip="Add new Stream" id="addStreamButton">
         <i class="material-icons">add</i>
@@ -81,14 +82,14 @@
                 <label for="streamNameTextArea">Stream Name</label>
             </div>
             <div class="input-field col s4">
-                <textarea class="materialize-textarea" id="addPlayListURLTextArea"></textarea>
-                <label for="addPlayListURLTextArea">m3u8 Playlist URL</label>
+                <textarea class="materialize-textarea" id="playListURLTextArea"></textarea>
+                <label for="playListURLTextArea">m3u8 Playlist URL</label>
             </div>
             <div class="input-field col s4">
                 <div class="file-field input-field">
                     <div class="waves-effect waves-light btn pink darken-4">
                         <span>Import Schedule</span>
-                        <input accept=".csv" type="file">
+                        <input accept=".csv" id="importScheduleFileInput" type="file">
                     </div>
                     <div class="file-path-wrapper">
                         <input class="file-path" type="text">

@@ -74,18 +74,11 @@ export interface StreamEntry {
     schedulePath: string,
 }
 
-function streamToStreamEntry(stream: Stream): StreamEntry {
-    return {
-        name: stream.name,
-        playlistUrl: stream.playlistUrl,
-        schedulePath: stream.schedulePath,
-    }
-}
 
 export const Streams = {
     async addStream(stream: Stream): Promise<void> {
         return new Promise<void>((resolve, reject) =>
-            streamsDatabase.update({name: stream.name}, streamToStreamEntry(stream),
+            streamsDatabase.update({name: stream.name}, stream.toStreamEntry(),
                 {upsert: true},
                 (err: Error, numberOfUpdated: number, upsert: boolean) => {
                     if (err) reject(err)
@@ -104,7 +97,7 @@ export const Streams = {
     },
     async deleteStream(stream: Stream): Promise<void> {
         return new Promise<void>((resolve, reject) =>
-            streamsDatabase.remove(streamToStreamEntry(stream), (err: Error, n: number) => {
+            streamsDatabase.remove(stream.toStreamEntry(), (err: Error, n: number) => {
                 if (err) reject(err)
                 else resolve()
             })
@@ -112,7 +105,7 @@ export const Streams = {
     },
     async updateStream(streamName: string, updatedStream: Stream): Promise<StreamEntry> {
         return new Promise<StreamEntry>((resolve, reject) =>
-            streamsDatabase.update({name: streamName}, streamToStreamEntry(updatedStream),
+            streamsDatabase.update({name: streamName}, updatedStream.toStreamEntry(),
                 {upsert: false, returnUpdatedDocs: true},
                 (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
                     if (err) reject(err)

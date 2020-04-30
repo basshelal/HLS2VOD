@@ -1,12 +1,12 @@
 import * as electron from "electron";
 import {Schedule, Stream} from "./stream";
-import {Streams} from "./database/database";
+import {StreamEntry, Streams} from "./database/database";
+import moment = require("moment");
 import BrowserWindow = electron.BrowserWindow;
-import OnCompletedListenerDetails = electron.OnCompletedListenerDetails;
 
 let browserWindow: BrowserWindow
 
-function onReady() {
+async function onReady() {
     electron.app.allowRendererProcessReuse = true
     browserWindow = new BrowserWindow({
         center: true,
@@ -20,10 +20,10 @@ function onReady() {
     browserWindow.on("close", onClose)
     browserWindow.loadFile('layouts/home/home.html')
 
-    electron.session.defaultSession.webRequest.onCompleted(
-        (details: OnCompletedListenerDetails) => {
-            //console.log(details.url)
-        })
+    const streams: Array<StreamEntry> = await Streams.getAllStreams()
+    browserWindow.webContents.once("did-finish-load", () => {
+        browserWindow.webContents.send("displayStreams", streams)
+    })
 }
 
 function onClose() {
@@ -34,6 +34,11 @@ electron.app.whenReady().then(onReady)
 
 electron.app.on('window-all-closed', onClose)
 
+electron.ipcMain.handle("addStream", (event, args) => {
+    const streamEntry: StreamEntry = args as StreamEntry
+    addStream(streamEntry)
+})
+
 let activeStreams: Array<Stream> = []
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
@@ -43,10 +48,22 @@ const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8"
 
 const rootDirectory = "C:/Users/bassh/Desktop/HLS2VOD"
+const offsetSeconds = 30
+
+async function addStream(streamEntry: StreamEntry) {
+    //  const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
+    //   const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, rootDirectory)
+    const schedule: Schedule = await Schedule.fromCSV("res/schedule.csv")
+    let stream = new Stream(moment().format(momentFormatSafe), aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
+
+    Streams.addStream(stream)
+    stream.initialize()
+    activeStreams.push(stream)
+}
 
 Schedule.fromCSV("res/schedule.csv").then((schedule: Schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
-    let stream = new Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, 30, rootDirectory)
+    let stream = new Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
     // stream.startDownloading()
 
     Streams.addStream(stream)

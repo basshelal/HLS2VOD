@@ -112,6 +112,13 @@ class Stream {
             }
         }, 1000);
     }
+    toStreamEntry() {
+        return {
+            name: this.name,
+            playlistUrl: this.playlistUrl,
+            schedulePath: this.schedulePath,
+        };
+    }
 }
 exports.Stream = Stream;
 const Days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];

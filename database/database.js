@@ -54,16 +54,9 @@ exports.Settings = {
         }));
     },
 };
-function streamToStreamEntry(stream) {
-    return {
-        name: stream.name,
-        playlistUrl: stream.playlistUrl,
-        schedulePath: stream.schedulePath,
-    };
-}
 exports.Streams = {
     async addStream(stream) {
-        return new Promise((resolve, reject) => exports.streamsDatabase.update({ name: stream.name }, streamToStreamEntry(stream), { upsert: true }, (err, numberOfUpdated, upsert) => {
+        return new Promise((resolve, reject) => exports.streamsDatabase.update({ name: stream.name }, stream.toStreamEntry(), { upsert: true }, (err, numberOfUpdated, upsert) => {
             if (err)
                 reject(err);
             else
@@ -79,7 +72,7 @@ exports.Streams = {
         }));
     },
     async deleteStream(stream) {
-        return new Promise((resolve, reject) => exports.streamsDatabase.remove(streamToStreamEntry(stream), (err, n) => {
+        return new Promise((resolve, reject) => exports.streamsDatabase.remove(stream.toStreamEntry(), (err, n) => {
             if (err)
                 reject(err);
             else
@@ -87,7 +80,7 @@ exports.Streams = {
         }));
     },
     async updateStream(streamName, updatedStream) {
-        return new Promise((resolve, reject) => exports.streamsDatabase.update({ name: streamName }, streamToStreamEntry(updatedStream), { upsert: false, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {
+        return new Promise((resolve, reject) => exports.streamsDatabase.update({ name: streamName }, updatedStream.toStreamEntry(), { upsert: false, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {
             if (err)
                 reject(err);
             else

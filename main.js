@@ -3,9 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron = require("electron");
 const stream_1 = require("./stream");
 const database_1 = require("./database/database");
+const moment = require("moment");
 var BrowserWindow = electron.BrowserWindow;
 let browserWindow;
-function onReady() {
+async function onReady() {
     electron.app.allowRendererProcessReuse = true;
     browserWindow = new BrowserWindow({
         center: true,
@@ -18,8 +19,9 @@ function onReady() {
     });
     browserWindow.on("close", onClose);
     browserWindow.loadFile('layouts/home/home.html');
-    electron.session.defaultSession.webRequest.onCompleted((details) => {
-        //console.log(details.url)
+    const streams = await database_1.Streams.getAllStreams();
+    browserWindow.webContents.once("did-finish-load", () => {
+        browserWindow.webContents.send("displayStreams", streams);
     });
 }
 function onClose() {
@@ -27,6 +29,10 @@ function onClose() {
 }
 electron.app.whenReady().then(onReady);
 electron.app.on('window-all-closed', onClose);
+electron.ipcMain.handle("addStream", (event, args) => {
+    const streamEntry = args;
+    addStream(streamEntry);
+});
 let activeStreams = [];
 exports.momentFormat = "dddd Do MMMM YYYY, HH:mm:ss";
 exports.momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss";
@@ -34,9 +40,19 @@ const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playl
 const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8";
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8";
 const rootDirectory = "C:/Users/bassh/Desktop/HLS2VOD";
+const offsetSeconds = 30;
+async function addStream(streamEntry) {
+    //  const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
+    //   const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, rootDirectory)
+    const schedule = await stream_1.Schedule.fromCSV("res/schedule.csv");
+    let stream = new stream_1.Stream(moment().format(exports.momentFormatSafe), aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory);
+    database_1.Streams.addStream(stream);
+    stream.initialize();
+    activeStreams.push(stream);
+}
 stream_1.Schedule.fromCSV("res/schedule.csv").then((schedule) => {
     //console.log(JSON.stringify(schedule, null, 1))
-    let stream = new stream_1.Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, 30, rootDirectory);
+    let stream = new stream_1.Stream("AlJazeera", aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory);
     // stream.startDownloading()
     database_1.Streams.addStream(stream);
     stream.initialize();

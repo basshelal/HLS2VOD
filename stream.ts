@@ -5,6 +5,7 @@ import * as csv from "csvtojson";
 import * as moment from "moment";
 import {logD} from "./utils";
 import {momentFormat, momentFormatSafe} from "./main";
+import {StreamEntry} from "./database/database";
 import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
@@ -152,6 +153,14 @@ export class Stream {
                 }
             }
         }, 1000)
+    }
+
+    public toStreamEntry(): StreamEntry {
+        return {
+            name: this.name,
+            playlistUrl: this.playlistUrl,
+            schedulePath: this.schedulePath,
+        }
     }
 }
 
