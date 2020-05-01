@@ -156,17 +156,20 @@ export class Stream {
                 this.isRunning = false
                 if (this.nextShow.hasStarted(true)) {
                     logD("Next show has started!")
-                    this.nextShow.startChunkName = this.getLastChunkPath()
+                    if (!this.nextShow.startChunkName)
+                        this.nextShow.startChunkName = this.getLastChunkPath()
                     logD(`It is ${this.nextShow}`)
                     this.nextEventTime = this.currentShow.offsetEndTime
                 }
                 if (this.currentShow.hasEnded(true)) {
                     logD("Current show has ended!")
-                    this.currentShow.endChunkName = this.getLastChunkPath()
+                    if (!this.currentShow.endChunkName)
+                        this.currentShow.endChunkName = this.getLastChunkPath()
                     logD(`It is ${this.currentShow}`)
                     await this.mergeCurrentShow()
                     this.setCurrentShow()
-                    this.currentShow.startChunkName = this.getFirstChunkPath()
+                    if (!this.currentShow.startChunkName)
+                        this.currentShow.startChunkName = this.getFirstChunkPath()
                 }
                 this.resumeDownloading()
                 this.isRunning = true
