@@ -30,7 +30,7 @@ async function onReady() {
 }
 
 function onClose() {
-    Promise.all(activeStreams.map(it => it.stopDownloading())).then(electron.app.quit)
+    //  Promise.all(activeStreams.map(it => it.stopDownloading())).then(electron.app.quit)
 }
 
 electron.app.whenReady().then(onReady)
@@ -42,7 +42,7 @@ electron.ipcMain.handle("addStream", (event, args) => {
     addStream(streamEntry)
 })
 
-let activeStreams: Array<Stream> = []
+const activeStreams: Array<Stream> = []
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
@@ -51,7 +51,7 @@ const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.
 const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8"
 
 const rootDirectory = "F:/HLS2VOD"
-const offsetSeconds = 30
+const offsetSeconds = 120
 
 async function addStream(streamEntry: StreamEntry) {
     //  const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
@@ -64,11 +64,11 @@ async function addStream(streamEntry: StreamEntry) {
 }
 
 async function start() {
-    const schedule = await Schedule.fromCSV("res/largeschedule.csv")
-    const stream = await newStream("AlHiwar", alHiwarUrl, "res/largeschedule.csv", schedule, offsetSeconds, rootDirectory)
+    const schedule = await Schedule.fromCSV("res/schedule.csv")
+    const stream = await newStream("AlHiwar", alHiwarUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
     Streams.addStream(stream)
     activeStreams.push(stream)
-    stream.startDownloading()
+    await stream.startDownloading()
 }
 
 start()

@@ -1,3 +1,4 @@
-{"name":"AlHiwar","playlistUrl":"https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8","schedulePath":"res/largeschedule.csv","_id":"JTCBypLFtUGlyLy6"}
+{"name":"AlHiwar","playlistUrl":"https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8","schedulePath":"res/schedule.csv","_id":"JTCBypLFtUGlyLy6"}
 {"name":"AlJazeera","playlistUrl":"https://live-hls-web-aja.getaj.net/AJA/index.m3u8","schedulePath":"res/schedule.csv","_id":"TR1eGanxMFMChKcD"}
-{"name":"AlHiwar","playlistUrl":"https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8","schedulePath":"res/largeschedule.csv","_id":"JTCBypLFtUGlyLy6"}
+{"name":"__AlHiwar","playlistUrl":"https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8","schedulePath":"res/schedule.csv","_id":"zJI2UW8VMr0QzWgE"}
+{"name":"AlHiwar","playlistUrl":"https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8","schedulePath":"res/schedule.csv","_id":"JTCBypLFtUGlyLy6"}

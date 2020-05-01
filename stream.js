@@ -8,6 +8,7 @@ const moment = require("moment");
 const utils_1 = require("./utils");
 const main_1 = require("./main");
 const path = require("path");
+const hidefile_1 = require("hidefile");
 async function newStream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
     const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
     await stream.initialize();
@@ -28,11 +29,15 @@ class Stream {
         this.segmentsDirectory = path.join(this.streamDirectory, "segments");
         fsextra.mkdirpSync(this.streamDirectory);
         fsextra.mkdirpSync(this.segmentsDirectory);
+        this.segmentsDirectory = hidefile_1.hideSync(this.segmentsDirectory);
         this.setCurrentShow();
         this.setInterval();
     }
-    initialize() {
-        return this.initializeDownloader();
+    async initialize() {
+        await this.initializeDownloader();
+    }
+    async destroy() {
+        // TODO
     }
     async startDownloading() {
         if (!this.isDownloading && this.downloader) {

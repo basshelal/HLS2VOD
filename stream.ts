@@ -7,6 +7,7 @@ import {assert, logD} from "./utils";
 import {momentFormat, momentFormatSafe} from "./main";
 import {StreamEntry} from "./database/database";
 import * as path from "path";
+import {hideSync} from "hidefile";
 import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
@@ -55,6 +56,7 @@ export class Stream {
         this.segmentsDirectory = path.join(this.streamDirectory, "segments")
         fsextra.mkdirpSync(this.streamDirectory)
         fsextra.mkdirpSync(this.segmentsDirectory)
+        this.segmentsDirectory = hideSync(this.segmentsDirectory)
 
         this.setCurrentShow()
 
@@ -62,8 +64,12 @@ export class Stream {
 
     }
 
-    public initialize(): Promise<void> {
-        return this.initializeDownloader()
+    public async initialize(): Promise<void> {
+        await this.initializeDownloader()
+    }
+
+    public async destroy(): Promise<void> {
+        // TODO
     }
 
     public async startDownloading(): Promise<void> {
