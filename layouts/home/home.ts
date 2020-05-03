@@ -7,11 +7,6 @@ interface StreamEntry {
     schedulePath: string,
 }
 
-interface SettingsEntry {
-    key: string
-    value: string
-}
-
 function get<T extends HTMLElement>(id: string): T | null {
     return document.getElementById(id) as T
 }
@@ -37,16 +32,19 @@ const settingsModal = M.Modal.getInstance(get("settingsModal"))
 
 function addStream(streamEntry) {
     const rootDiv = document.importNode(displayStreamDiv, true)
-    const streamNameText = rootDiv.children.namedItem("streamNameText")
-    const currentShowText = rootDiv.children.namedItem("currentShowText")
-    const nextShowText = rootDiv.children.namedItem("nextShowText")
-    const recordingText = rootDiv.children.namedItem("recordingText")
-    const recordingButton = rootDiv.children.namedItem("recordingButton")
-    const outputButton = rootDiv.children.namedItem("outputButton")
-    const editStreamButton = rootDiv.children.namedItem("editStreamButton")
+    const streamNameText = rootDiv.querySelector("#streamNameText")
+    const currentShowText = rootDiv.querySelector("#currentShowText")
+    const recordingText = rootDiv.querySelector("#recordingText")
+    const nextShowText = rootDiv.querySelector("#nextShowText")
+    const outputButton = rootDiv.querySelector("#outputButton") as HTMLButtonElement
+    const recordingButton = rootDiv.querySelector("#recordingButton") as HTMLButtonElement
+    const editStreamButton = rootDiv.querySelector("#editStreamButton") as HTMLButtonElement
 
     streamNameText.textContent = streamEntry.name
     rootDiv.id = `stream-${streamEntry.name}`
+
+    outputButton.onclick = () => electron.ipcRenderer.invoke("outputButtonClicked", streamEntry)
+    recordingButton.onclick = () => electron.ipcRenderer.invoke("recordingButtonClicked", streamEntry)
 
     allStreamsDiv.append(rootDiv)
 }

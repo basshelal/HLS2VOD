@@ -15,5 +15,9 @@ function default_1() {
             if (index >= 0)
                 this.splice(index);
         };
+    if (!Array.prototype.isEmpty)
+        Array.prototype.isEmpty = function () {
+            return this.length === 0;
+        };
 }
 exports.default = default_1;

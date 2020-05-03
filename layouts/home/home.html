@@ -61,29 +61,36 @@
         <div id="displayStreamDiv">
             <h5 id="streamNameText">Stream Name</h5>
             <div class="row">
-                <div class="col s6">
+                <div class="col s4">
                     <p id="currentShowText">Current Show</p>
                 </div>
-                <div class="col s6">
-                    <p id="nextShowText">Next Show</p>
-                </div>
-                <div class="col s6">
+                <div class="col s4">
                     <p id="recordingText">Recording...</p>
                 </div>
-                <div class="col s6">
-                    <p id="recordingButton">Stop start recording Button</p>
+                <div class="col s4">
+                    <p id="nextShowText">Next Show</p>
                 </div>
-                <div class="col s6">
-                    <p id="outputButton">View output Button</p>
+                <div class="col s4">
+                    <button class="waves-effect waves-light btn pink darken-4" id="outputButton">
+                        View Output Folder
+                    </button>
                 </div>
-                <div class="col s6">
-                    <p id="editStreamButton">Edit Stream Button</p>
+                <div class="col s4">
+                    <button class="waves-effect waves-light btn pink darken-4" id="recordingButton">
+                        Stop start recording
+                    </button>
+                </div>
+                <div class="col s4">
+                    <button class="waves-effect waves-light btn pink darken-4 disabled" id="editStreamButton">
+                        Edit Stream
+                    </button>
                 </div>
             </div>
         </div>
     </template>
 
-    <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger"
+    <button
+            class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger disabled"
             data-position="top"
             style="margin-bottom: 16px"
             data-target="addNewStreamModal"

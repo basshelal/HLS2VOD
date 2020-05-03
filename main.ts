@@ -1,8 +1,8 @@
 import * as electron from "electron";
 import {newStream, Schedule, Stream} from "./stream";
-import {Settings, StreamEntry, Streams} from "./database/database";
+import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./database/database";
 import extensions from "./extensions";
-import moment = require("moment");
+import * as path from "path";
 import BrowserWindow = electron.BrowserWindow;
 
 extensions()
@@ -23,23 +23,32 @@ async function onReady() {
     browserWindow.on("close", onClose)
     browserWindow.loadFile('layouts/home/home.html')
 
-    await Settings.setOffsetSeconds(offsetSeconds)
-    await Settings.setOutputDirectory(rootDirectory)
     const streams: Array<StreamEntry> = await Streams.getAllStreams()
-    const settings: Map<string, string> = await Settings.getAllSettingsMapped()
+    let settings: Map<SettingsEntryKey, string> = await Settings.getAllSettings()
+
+    if (!settings.get("offsetSeconds")) {
+        await Settings.setOffsetSeconds(defaultOffsetSeconds)
+        settings = await Settings.getAllSettings()
+    }
+    if (!settings.get("outputDirectory")) {
+        await Settings.setOutputDirectory(defaultOutputDirectory)
+        settings = await Settings.getAllSettings()
+    }
+
     browserWindow.webContents.once("did-finish-load", () => {
         browserWindow.webContents.send("displayStreams", streams)
         browserWindow.webContents.send("displaySettings", settings)
+        start(settings)
     })
 }
 
-function onClose() {
-    //  Promise.all(activeStreams.map(it => it.stopDownloading())).then(electron.app.quit)
+async function onClose() {
+    console.log(activeStreams.length)
+    await Promise.all(activeStreams.map(it => it.stopDownloading()))
+    electron.app.quit()
 }
 
 electron.app.whenReady().then(onReady)
-
-electron.app.on('window-all-closed', onClose)
 
 electron.ipcMain.handle("addStream", (event, args) => {
     const streamEntry: StreamEntry = args as StreamEntry
@@ -54,33 +63,49 @@ electron.ipcMain.handle("saveSettings", (event, args) => {
     Settings.setOutputDirectory(outputDirectory)
 })
 
+electron.ipcMain.handle("outputButtonClicked", async (event, args) => {
+    const streamEntry = args as StreamEntry
+    const rootDirectory = await Settings.getOutputDirectory()
+    electron.shell.openItem(path.join(rootDirectory, streamEntry.name))
+})
+
+electron.ipcMain.handle("recordingButtonClicked", async (event, args) => {
+    const streamEntry = args as StreamEntry
+    const stream = activeStreams.find(it => it.name === streamEntry.name)
+    if (stream) {
+        stream.stopDownloading()
+        activeStreams.remove(stream)
+    } else {
+        await start(await Settings.getAllSettings())
+    }
+})
+
 const activeStreams: Array<Stream> = []
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8"
-const alArabyUrl = "https://alaraby.cdn.octivid.com/alaraby/smil:alaraby.stream.smil/playlist.m3u8"
-const aljazeeraUrl = "https://live-hls-web-aja.getaj.net/AJA/index.m3u8"
 
-const rootDirectory = "F:/HLS2VOD"
-const offsetSeconds = 120
+const defaultOutputDirectory = path.join(__dirname, "Streams")
+const defaultOffsetSeconds = 120
+
+const schedulePath = "res/schedule.csv"
 
 async function addStream(streamEntry: StreamEntry) {
-    //  const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
-    //   const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, rootDirectory)
-    const schedule: Schedule = await Schedule.fromCSV("res/schedule.csv")
-    const stream = await newStream(moment().format(momentFormatSafe), aljazeeraUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
+    /*const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
+    const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, defaultOutputDirectory)
 
-    Streams.addStream(stream)
-    activeStreams.push(stream)
+    Streams.addStream(stream)*/
 }
 
-async function start() {
-    const schedule = await Schedule.fromCSV("res/schedule.csv")
-    const stream = await newStream("AlHiwar", alHiwarUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
-    Streams.addStream(stream)
-    activeStreams.push(stream)
-    //  await stream.startDownloading()
+async function start(settings: Map<SettingsEntryKey, string>) {
+    const offsetSeconds = parseInt(settings.get("offsetSeconds"))
+    const outputDirectory = settings.get("outputDirectory")
+    const schedule = await Schedule.fromCSV(schedulePath)
+    const stream = await newStream("AlHiwar", alHiwarUrl, schedulePath, schedule, offsetSeconds, outputDirectory)
+    if (!activeStreams.contains(stream)) {
+        await Streams.addStream(stream)
+        activeStreams.push(stream)
+        await stream.startDownloading()
+    }
 }
-
-start()

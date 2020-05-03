@@ -17,7 +17,7 @@ export class Downloader {
     constructor(
         public playlistUrl: string,
         public segmentDirectory: string,
-        private timeoutDuration: number = 60,
+        private timeoutDuration: number = 600,
         private playlistRefreshInterval: number = 2,
     ) {
         this.queue = new PQueue()
@@ -39,27 +39,6 @@ export class Downloader {
 
     public resume() {
         this.queue.start()
-    }
-
-    public async mergeAll(): Promise<void> {
-        let segmentsDir = this.segmentDirectory;
-        let mergedSegmentsFile: string = segmentsDir + "/merged.ts";
-
-        // Get all segments
-        const segments: Array<string> = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
-        segments.sort();
-
-        if (segments.length == 0) return
-
-        // Merge TS files
-        await mergeFiles(segments, mergedSegmentsFile);
-
-        // Transmux
-        await transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "/video.mp4");
-
-        // Delete ts files
-        fs.removeSync(mergedSegmentsFile);
-        segments.forEach(it => fs.removeSync(it))
     }
 
     public async merge(fromChunkName: string, toChunkName: string, outputDirectory: string, outputFileName: string): Promise<void> {
@@ -116,6 +95,16 @@ export class Downloader {
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return
 
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex)
+
+        segments.forEach(it => fs.removeSync(it))
+    }
+
+    public deleteAllSegments() {
+        let segmentsDir = this.segmentDirectory
+
+        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
+
+        print("Deleting All Segments")
 
         segments.forEach(it => fs.removeSync(it))
     }

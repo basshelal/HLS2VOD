@@ -8,6 +8,7 @@ import {momentFormat, momentFormatSafe} from "./main";
 import {StreamEntry} from "./database/database";
 import * as path from "path";
 import {hideSync} from "hidefile";
+import {EventEmitter} from "events";
 import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
@@ -18,7 +19,7 @@ export async function newStream(name: string, playlistUrl: string, schedulePath:
     return stream
 }
 
-export class Stream {
+export class Stream extends EventEmitter {
 
     public name: string
     private streamDirectory: string
@@ -44,6 +45,7 @@ export class Stream {
         offsetSeconds: number,
         rootDirectory: string
     ) {
+        super()
         this.name = name
         this.playlistUrl = playlistUrl
         this.schedulePath = schedulePath
@@ -66,16 +68,19 @@ export class Stream {
 
     public async initialize(): Promise<void> {
         await this.initializeDownloader()
+        this.emit("initialized")
     }
 
     public async destroy(): Promise<void> {
         // TODO
+        this.emit("destroyed")
     }
 
     public async startDownloading(): Promise<void> {
         if (!this.isDownloading && this.downloader) {
             await this.downloader.start()
             this.isDownloading = true
+            this.emit("started")
         }
     }
 
@@ -83,6 +88,7 @@ export class Stream {
         if (this.isDownloading && this.downloader) {
             this.downloader.pause()
             this.isDownloading = false
+            this.emit("paused")
         }
     }
 
@@ -90,14 +96,19 @@ export class Stream {
         if (!this.isDownloading && this.downloader) {
             this.downloader.resume()
             this.isDownloading = true
+            this.emit("resumed")
         }
     }
 
     public async stopDownloading(): Promise<void> {
         if (this.isDownloading && this.downloader) {
             this.downloader.stop()
-            await this.downloader.mergeAll()
+            await this.downloader.merge(this.getFirstChunkPath(), this.getLastChunkPath(),
+                path.join(this.streamDirectory, "_unfinished"), `${moment().format(momentFormatSafe)}.mp4`
+            )
+            this.downloader.deleteAllSegments()
             this.isDownloading = false
+            this.emit("stopped")
         }
     }
 
@@ -105,6 +116,10 @@ export class Stream {
         if (!this.currentShow.startChunkName) this.currentShow.startChunkName = this.getFirstChunkPath()
         if (!this.currentShow.endChunkName) this.currentShow.endChunkName = this.getLastChunkPath()
         if (this.downloader) {
+            // TODO ideally we should merge all into a merged.ts in the output dir, then delete all unnecessary segments
+            //  continue downloading and while doing that transmux and delete the merged.ts
+            //  this way we have less downtime and more isolation
+            this.emit("merging")
             await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName,
                 path.join(this.streamDirectory, this.currentShow.name), `${moment().format(momentFormatSafe)}.mp4`
             )
@@ -138,19 +153,8 @@ export class Stream {
         return result
     }
 
-    private setCurrentShow() {
-        const activeShows = this.scheduledShows.filter(it => it.isActive(false))
-        assert(activeShows.length == 1,
-            `There can only be exactly one show active!
-             Currently shows are ${this.scheduledShows.length} and active shows are ${activeShows.length}`)
-        this.currentShow = activeShows[0]
-        const currentShowIndex = this.scheduledShows.indexOf(this.currentShow)
-        const nextIndex = currentShowIndex + 1 <= this.scheduledShows.length ? currentShowIndex + 1 : 0
-        this.nextShow = this.scheduledShows[nextIndex]
-
-        logD(`New current show is:\n${this.currentShow}`)
-
-        this.nextEventTime = this.nextShow.offsetStartTime
+    emit(event: StreamEvent, ...args): boolean {
+        return super.emit(event, args)
     }
 
     private setInterval() {
@@ -189,6 +193,35 @@ export class Stream {
             playlistUrl: this.playlistUrl,
             schedulePath: this.schedulePath,
         }
+    }
+
+    on(event: StreamEvent, listener: (...args: any[]) => void): this {
+        return super.on(event, listener)
+    }
+
+    off(event: StreamEvent, listener: (...args: any[]) => void): this {
+        return super.off(event, listener)
+    }
+
+    once(event: StreamEvent, listener: (...args: any[]) => void): this {
+        return super.once(event, listener)
+    }
+
+    private setCurrentShow() {
+        const activeShows = this.scheduledShows.filter(it => it.isActive(false))
+        assert(activeShows.length == 1,
+            `There can only be exactly one show active!
+             Currently shows are ${this.scheduledShows.length} and active shows are ${activeShows.length}`)
+        this.currentShow = activeShows[0]
+        const currentShowIndex = this.scheduledShows.indexOf(this.currentShow)
+        const nextIndex = currentShowIndex + 1 <= this.scheduledShows.length ? currentShowIndex + 1 : 0
+        this.nextShow = this.scheduledShows[nextIndex]
+
+        logD(`New current show is:\n${this.currentShow}`)
+
+        this.nextEventTime = this.nextShow.offsetStartTime
+
+        this.emit("newCurrentShow")
     }
 }
 
@@ -321,3 +354,13 @@ class ScheduledShow extends Show {
         return JSON.stringify(obj, null, 2)
     }
 }
+
+export type StreamEvent =
+    "initialized"
+    | "destroyed"
+    | "started"
+    | "paused"
+    | "resumed"
+    | "stopped"
+    | "newCurrentShow"
+    | "merging"

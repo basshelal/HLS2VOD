@@ -9,7 +9,7 @@ const url_1 = require("url");
 const http_1 = require("./http");
 const utils_1 = require("../utils");
 class Downloader {
-    constructor(playlistUrl, segmentDirectory, timeoutDuration = 60, playlistRefreshInterval = 2) {
+    constructor(playlistUrl, segmentDirectory, timeoutDuration = 600, playlistRefreshInterval = 2) {
         this.playlistUrl = playlistUrl;
         this.segmentDirectory = segmentDirectory;
         this.timeoutDuration = timeoutDuration;
@@ -29,22 +29,6 @@ class Downloader {
     }
     resume() {
         this.queue.start();
-    }
-    async mergeAll() {
-        let segmentsDir = this.segmentDirectory;
-        let mergedSegmentsFile = segmentsDir + "/merged.ts";
-        // Get all segments
-        const segments = fs.readdirSync(segmentsDir).map(it => segmentsDir + "/" + it);
-        segments.sort();
-        if (segments.length == 0)
-            return;
-        // Merge TS files
-        await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
-        // Transmux
-        await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, segmentsDir + "/video.mp4");
-        // Delete ts files
-        fs.removeSync(mergedSegmentsFile);
-        segments.forEach(it => fs.removeSync(it));
     }
     async merge(fromChunkName, toChunkName, outputDirectory, outputFileName) {
         let segmentsDir = this.segmentDirectory;
@@ -83,6 +67,12 @@ class Downloader {
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1)
             return;
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
+        segments.forEach(it => fs.removeSync(it));
+    }
+    deleteAllSegments() {
+        let segmentsDir = this.segmentDirectory;
+        let segments = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it));
+        utils_1.print("Deleting All Segments");
         segments.forEach(it => fs.removeSync(it));
     }
     async refreshPlayList() {

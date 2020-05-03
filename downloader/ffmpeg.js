@@ -26,34 +26,22 @@ async function spawnFfmpeg(args) {
     });
 }
 exports.spawnFfmpeg = spawnFfmpeg;
-async function mergeChunks(segments, outputFile) {
-    // Temporary files
-    const segmentsFile = "ffmpeg-input.txt";
-    // Generate a FFMPEG input file
-    const inputStr = segments.map((f) => `file '${f}'\n`).join("");
-    fs.writeFileSync(segmentsFile, inputStr);
-    // Merge chunks
-    const mergeArgs = [
-        "-y",
-        "-loglevel", "warning",
-        "-f", "concat",
-        "-i", segmentsFile,
-        "-c", "copy",
-        outputFile,
-    ];
-    await spawnFfmpeg(mergeArgs);
-    // Clear temporary file
-    fs.unlinkSync(segmentsFile);
-}
-exports.mergeChunks = mergeChunks;
 async function transmuxTsToMp4(inputFile, outputFile) {
-    await spawnFfmpeg([
+    /*await spawnFfmpeg([
         "-y",
         "-loglevel", "warning",
         "-i", inputFile,
         "-c", "copy",
         "-bsf:a", "aac_adtstoasc",
         outputFile,
+    ]);*/
+    // help here https://askubuntu.com/questions/716424/how-to-convert-ts-file-into-a-mainstream-format-losslessly
+    await spawnFfmpeg([
+        "-y",
+        "-loglevel", "warning",
+        "-i", inputFile,
+        "-c", "copy",
+        outputFile
     ]);
 }
 exports.transmuxTsToMp4 = transmuxTsToMp4;

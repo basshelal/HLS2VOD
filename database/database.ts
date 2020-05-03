@@ -1,29 +1,24 @@
 import * as Datastore from "nedb";
 import {Stream} from "../stream";
 
-export const settingsDatabase = new Datastore({filename: "database/settings.db", autoload: true})
-export const streamsDatabase = new Datastore({filename: "database/streams.db", autoload: true})
+const settingsDatabase = new Datastore({filename: "database/settings.db", autoload: true})
+const streamsDatabase = new Datastore({filename: "database/streams.db", autoload: true})
 
-type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
+export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 
 export interface SettingsEntry {
-    key: string
+    key: SettingsEntryKey
     value: string
 }
 
 export const Settings = {
-    async getAllSettings(): Promise<Array<SettingsEntry>> {
-        return new Promise<Array<SettingsEntry>>((resolve, reject) => {
+    async getAllSettings(): Promise<Map<SettingsEntryKey, string>> {
+        return new Promise<Map<SettingsEntryKey, string>>((resolve, reject) => {
             settingsDatabase.find({}, (err: Error, documents: Array<SettingsEntry>) => {
                 if (err) reject(err)
-                else resolve(documents)
+                else resolve(new Map(documents.map(it => [it.key, it.value])))
             })
         })
-    },
-
-    async getAllSettingsMapped(): Promise<Map<string, string>> {
-        const settingsArray = await this.getAllSettings()
-        return new Map(settingsArray.map(it => [it.key, it.value]))
     },
 
     // region outputDirectory

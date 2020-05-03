@@ -9,14 +9,16 @@ const utils_1 = require("./utils");
 const main_1 = require("./main");
 const path = require("path");
 const hidefile_1 = require("hidefile");
+const events_1 = require("events");
 async function newStream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
     const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
     await stream.initialize();
     return stream;
 }
 exports.newStream = newStream;
-class Stream {
+class Stream extends events_1.EventEmitter {
     constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
+        super();
         this.isRunning = true;
         this.isDownloading = false;
         this.name = name;
@@ -35,33 +37,40 @@ class Stream {
     }
     async initialize() {
         await this.initializeDownloader();
+        this.emit("initialized");
     }
     async destroy() {
         // TODO
+        this.emit("destroyed");
     }
     async startDownloading() {
         if (!this.isDownloading && this.downloader) {
             await this.downloader.start();
             this.isDownloading = true;
+            this.emit("started");
         }
     }
     async pauseDownloading() {
         if (this.isDownloading && this.downloader) {
             this.downloader.pause();
             this.isDownloading = false;
+            this.emit("paused");
         }
     }
     async resumeDownloading() {
         if (!this.isDownloading && this.downloader) {
             this.downloader.resume();
             this.isDownloading = true;
+            this.emit("resumed");
         }
     }
     async stopDownloading() {
         if (this.isDownloading && this.downloader) {
             this.downloader.stop();
-            await this.downloader.mergeAll();
+            await this.downloader.merge(this.getFirstChunkPath(), this.getLastChunkPath(), path.join(this.streamDirectory, "_unfinished"), `${moment().format(main_1.momentFormatSafe)}.mp4`);
+            this.downloader.deleteAllSegments();
             this.isDownloading = false;
+            this.emit("stopped");
         }
     }
     async mergeCurrentShow() {
@@ -70,6 +79,10 @@ class Stream {
         if (!this.currentShow.endChunkName)
             this.currentShow.endChunkName = this.getLastChunkPath();
         if (this.downloader) {
+            // TODO ideally we should merge all into a merged.ts in the output dir, then delete all unnecessary segments
+            //  continue downloading and while doing that transmux and delete the merged.ts
+            //  this way we have less downtime and more isolation
+            this.emit("merging");
             await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName, path.join(this.streamDirectory, this.currentShow.name), `${moment().format(main_1.momentFormatSafe)}.mp4`);
             this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName);
         }
@@ -97,16 +110,8 @@ class Stream {
         utils_1.logD(`Last chunk is ${result}`);
         return result;
     }
-    setCurrentShow() {
-        const activeShows = this.scheduledShows.filter(it => it.isActive(false));
-        utils_1.assert(activeShows.length == 1, `There can only be exactly one show active!
-             Currently shows are ${this.scheduledShows.length} and active shows are ${activeShows.length}`);
-        this.currentShow = activeShows[0];
-        const currentShowIndex = this.scheduledShows.indexOf(this.currentShow);
-        const nextIndex = currentShowIndex + 1 <= this.scheduledShows.length ? currentShowIndex + 1 : 0;
-        this.nextShow = this.scheduledShows[nextIndex];
-        utils_1.logD(`New current show is:\n${this.currentShow}`);
-        this.nextEventTime = this.nextShow.offsetStartTime;
+    emit(event, ...args) {
+        return super.emit(event, args);
     }
     setInterval() {
         this.mergerTimeOut = setInterval(async () => {
@@ -143,6 +148,27 @@ class Stream {
             playlistUrl: this.playlistUrl,
             schedulePath: this.schedulePath,
         };
+    }
+    on(event, listener) {
+        return super.on(event, listener);
+    }
+    off(event, listener) {
+        return super.off(event, listener);
+    }
+    once(event, listener) {
+        return super.once(event, listener);
+    }
+    setCurrentShow() {
+        const activeShows = this.scheduledShows.filter(it => it.isActive(false));
+        utils_1.assert(activeShows.length == 1, `There can only be exactly one show active!
+             Currently shows are ${this.scheduledShows.length} and active shows are ${activeShows.length}`);
+        this.currentShow = activeShows[0];
+        const currentShowIndex = this.scheduledShows.indexOf(this.currentShow);
+        const nextIndex = currentShowIndex + 1 <= this.scheduledShows.length ? currentShowIndex + 1 : 0;
+        this.nextShow = this.scheduledShows[nextIndex];
+        utils_1.logD(`New current show is:\n${this.currentShow}`);
+        this.nextEventTime = this.nextShow.offsetStartTime;
+        this.emit("newCurrentShow");
     }
 }
 exports.Stream = Stream;
