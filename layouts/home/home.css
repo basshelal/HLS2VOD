@@ -32,6 +32,17 @@ header > * {
     box-shadow: 0 1px 0 0 var(--primary-color-light) !important;
 }
 
+/* label focus color */
+.input-field input:focus + label {
+    color: var(--primary-color-light) !important;
+}
+
+/* label underline focus color */
+.input-field input:focus {
+    border-bottom: 1px solid var(--primary-color-light) !important;
+    box-shadow: 0 1px 0 0 var(--primary-color-light) !important;
+}
+
 .btn {
     border-radius: 6px;
 }

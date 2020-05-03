@@ -14,6 +14,10 @@ exports.Settings = {
             });
         });
     },
+    async getAllSettingsMapped() {
+        const settingsArray = await this.getAllSettings();
+        return new Map(settingsArray.map(it => [it.key, it.value]));
+    },
     // region outputDirectory
     async setOutputDirectory(newOutputDirectory) {
         return new Promise((resolve, reject) => exports.settingsDatabase.update({ key: "outputDirectory" }, { key: "outputDirectory", value: newOutputDirectory }, { upsert: true, returnUpdatedDocs: true }, (err, numberOfUpdated, affectedDocuments, upsert) => {

@@ -26,7 +26,7 @@ class Stream {
         this.rootDirectory = rootDirectory;
         this.scheduledShows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds));
         this.streamDirectory = path.join(this.rootDirectory, this.name);
-        this.segmentsDirectory = path.join(this.streamDirectory, "segments");
+        this.segmentsDirectory = path.join(this.streamDirectory, ".segments");
         fsextra.mkdirpSync(this.streamDirectory);
         fsextra.mkdirpSync(this.segmentsDirectory);
         this.segmentsDirectory = hidefile_1.hideSync(this.segmentsDirectory);

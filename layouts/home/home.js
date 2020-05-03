@@ -3,17 +3,22 @@ const electron = require("electron");
 function get(id) {
     return document.getElementById(id);
 }
-const addStreamButton = get("addStreamButton");
+const settingsButton = get("settingsButton");
+const offsetSecondsInput = get("offsetSecondsInput");
+const outputDirectoryTextArea = get("outputDirectoryTextArea");
+const saveSettingsButton = get("saveSettingsButton");
 const displayStreamTemplate = get("displayStreamTemplate");
 const displayStreamDiv = displayStreamTemplate.content.querySelector("div");
 const allStreamsDiv = get("allStreamsDiv");
+const addStreamButton = get("addStreamButton");
 const streamNameTextArea = get("streamNameTextArea");
 const playListURLTextArea = get("playListURLTextArea");
 const importScheduleFileInput = get("importScheduleFileInput");
 const confirmAddStreamButton = get("confirmAddStreamButton");
 M.Tooltip.init(document.querySelectorAll('.tooltipped'), { inDuration: 500, outDuration: 500 });
 M.Modal.init(document.querySelectorAll('.modal'), { dismissible: true, inDuration: 500, outDuration: 500 });
-const modal = M.Modal.getInstance(get("modal"));
+const addNewStreamModal = M.Modal.getInstance(get("addNewStreamModal"));
+const settingsModal = M.Modal.getInstance(get("settingsModal"));
 function addStream(streamEntry) {
     const rootDiv = document.importNode(displayStreamDiv, true);
     const streamNameText = rootDiv.children.namedItem("streamNameText");
@@ -31,6 +36,14 @@ electron.ipcRenderer.on("displayStreams", (event, args) => {
     const streams = args;
     streams.forEach(streamEntry => addStream(streamEntry));
 });
+electron.ipcRenderer.on("displaySettings", (event, args) => {
+    const settings = args;
+    const offsetSeconds = settings.get("offsetSeconds");
+    const outputDirectory = settings.get("outputDirectory");
+    offsetSecondsInput.value = offsetSeconds;
+    outputDirectoryTextArea.value = outputDirectory;
+    M.updateTextFields();
+});
 confirmAddStreamButton.onclick = () => {
     const streamEntry = {
         name: streamNameTextArea.value,
@@ -40,5 +53,12 @@ confirmAddStreamButton.onclick = () => {
     };
     console.log(streamEntry);
     electron.ipcRenderer.invoke("addStream", streamEntry).then(() => addStream(streamEntry));
-    modal.close();
+    addNewStreamModal.close();
+};
+saveSettingsButton.onclick = () => {
+    const settings = new Map();
+    settings.set("offsetSeconds", offsetSecondsInput.value);
+    settings.set("outputDirectory", outputDirectoryTextArea.value);
+    electron.ipcRenderer.invoke("saveSettings", settings);
+    settingsModal.close();
 };

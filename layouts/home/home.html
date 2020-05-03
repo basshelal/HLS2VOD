@@ -19,6 +19,38 @@
 
 <div class="container center">
 
+    <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger"
+            data-position="top"
+            data-target="settingsModal"
+            data-tooltip="Settings"
+            id="settingsButton" style="margin-bottom: 16px">
+        <i class="material-icons">settings</i>
+    </button>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content container center" id="settingsDiv">
+
+            <h4>Settings</h4>
+
+            <div class="row">
+                <p>Here is where information will go</p>
+                <div class="input-field col s5">
+                    <input id="offsetSecondsInput" type="number">
+                    <label for="offsetSecondsInput">Offset Seconds</label>
+                </div>
+                <p class="col s2"></p>
+                <div class="input-field col s5">
+                    <textarea class="materialize-textarea" id="outputDirectoryTextArea"></textarea>
+                    <label for="outputDirectoryTextArea">Output Directory</label>
+                </div>
+            </div>
+
+            <button class="waves-effect waves-light btn pink darken-4" id="saveSettingsButton">
+                Save Settings
+            </button>
+        </div>
+    </div>
+
     <h3>All Streams</h3>
 
     <div id="allStreamsDiv">
@@ -54,30 +86,20 @@
     <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger"
             data-position="top"
             style="margin-bottom: 16px"
-            data-target="modal"
+            data-target="addNewStreamModal"
             data-tooltip="Add new Stream" id="addStreamButton">
         <i class="material-icons">add</i>
     </button>
 </div>
 
-<div class="modal" id="modal">
+<div class="modal" id="addNewStreamModal">
     <div class="modal-content container center" id="addNewStreamDiv">
-        <!--
-        TODO
-         For display Stream we'd like it to look like this:
-         It should have how long it's been recording for,
-         Also what show it's currently recording, how long left for that show,
-         maybe also what's the next show?
-         A button to the output directory of the stream
-         Stop and start recording
-        -->
-
 
         <h4>Add New Stream</h4>
 
         <div class="row">
             <p>Here is where information will go</p>
-            <div class="input-field s1 col s4">
+            <div class="input-field col s4">
                 <textarea class="materialize-textarea" id="streamNameTextArea"></textarea>
                 <label for="streamNameTextArea">Stream Name</label>
             </div>

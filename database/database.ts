@@ -21,6 +21,11 @@ export const Settings = {
         })
     },
 
+    async getAllSettingsMapped(): Promise<Map<string, string>> {
+        const settingsArray = await this.getAllSettings()
+        return new Map(settingsArray.map(it => [it.key, it.value]))
+    },
+
     // region outputDirectory
     async setOutputDirectory(newOutputDirectory: string): Promise<string> {
         return new Promise<string>((resolve, reject) =>

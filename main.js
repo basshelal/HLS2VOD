@@ -21,9 +21,13 @@ async function onReady() {
     });
     browserWindow.on("close", onClose);
     browserWindow.loadFile('layouts/home/home.html');
+    await database_1.Settings.setOffsetSeconds(offsetSeconds);
+    await database_1.Settings.setOutputDirectory(rootDirectory);
     const streams = await database_1.Streams.getAllStreams();
+    const settings = await database_1.Settings.getAllSettingsMapped();
     browserWindow.webContents.once("did-finish-load", () => {
         browserWindow.webContents.send("displayStreams", streams);
+        browserWindow.webContents.send("displaySettings", settings);
     });
 }
 function onClose() {
@@ -34,6 +38,13 @@ electron.app.on('window-all-closed', onClose);
 electron.ipcMain.handle("addStream", (event, args) => {
     const streamEntry = args;
     addStream(streamEntry);
+});
+electron.ipcMain.handle("saveSettings", (event, args) => {
+    const settings = args;
+    const offsetSeconds = parseInt(settings.get("offsetSeconds"));
+    const outputDirectory = settings.get("outputDirectory");
+    database_1.Settings.setOffsetSeconds(offsetSeconds);
+    database_1.Settings.setOutputDirectory(outputDirectory);
 });
 const activeStreams = [];
 exports.momentFormat = "dddd Do MMMM YYYY, HH:mm:ss";
@@ -56,6 +67,6 @@ async function start() {
     const stream = await stream_1.newStream("AlHiwar", alHiwarUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory);
     database_1.Streams.addStream(stream);
     activeStreams.push(stream);
-    await stream.startDownloading();
+    //  await stream.startDownloading()
 }
 start();

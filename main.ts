@@ -1,6 +1,6 @@
 import * as electron from "electron";
 import {newStream, Schedule, Stream} from "./stream";
-import {StreamEntry, Streams} from "./database/database";
+import {Settings, StreamEntry, Streams} from "./database/database";
 import extensions from "./extensions";
 import moment = require("moment");
 import BrowserWindow = electron.BrowserWindow;
@@ -23,9 +23,13 @@ async function onReady() {
     browserWindow.on("close", onClose)
     browserWindow.loadFile('layouts/home/home.html')
 
+    await Settings.setOffsetSeconds(offsetSeconds)
+    await Settings.setOutputDirectory(rootDirectory)
     const streams: Array<StreamEntry> = await Streams.getAllStreams()
+    const settings: Map<string, string> = await Settings.getAllSettingsMapped()
     browserWindow.webContents.once("did-finish-load", () => {
         browserWindow.webContents.send("displayStreams", streams)
+        browserWindow.webContents.send("displaySettings", settings)
     })
 }
 
@@ -40,6 +44,14 @@ electron.app.on('window-all-closed', onClose)
 electron.ipcMain.handle("addStream", (event, args) => {
     const streamEntry: StreamEntry = args as StreamEntry
     addStream(streamEntry)
+})
+
+electron.ipcMain.handle("saveSettings", (event, args) => {
+    const settings = args as Map<string, string>
+    const offsetSeconds = parseInt(settings.get("offsetSeconds"))
+    const outputDirectory = settings.get("outputDirectory")
+    Settings.setOffsetSeconds(offsetSeconds)
+    Settings.setOutputDirectory(outputDirectory)
 })
 
 const activeStreams: Array<Stream> = []
@@ -68,7 +80,7 @@ async function start() {
     const stream = await newStream("AlHiwar", alHiwarUrl, "res/schedule.csv", schedule, offsetSeconds, rootDirectory)
     Streams.addStream(stream)
     activeStreams.push(stream)
-    await stream.startDownloading()
+    //  await stream.startDownloading()
 }
 
 start()
