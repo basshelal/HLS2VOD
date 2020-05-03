@@ -5,7 +5,7 @@ import {mergeFiles, transmuxTsToMp4} from "./ffmpeg";
 import PQueue from "p-queue";
 import {URL} from "url";
 import {download, get} from "./http";
-import {print} from "../utils";
+import {logD} from "../utils";
 
 export class Downloader {
 
@@ -52,8 +52,8 @@ export class Downloader {
         let firstSegmentIndex: number = segments.indexOf(fromChunkName)
         let lastSegmentIndex: number = segments.indexOf(toChunkName)
 
-        print(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`)
-        print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
+        logD(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`)
+        logD(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
 
         if (firstSegmentIndex < 0 || lastSegmentIndex < 0) return
 
@@ -65,14 +65,14 @@ export class Downloader {
 
         segments.remove(mergedSegmentsFile)
 
-        print(`Merging ${segments}`)
+        logD(`Merging ${segments}`)
 
         // Merge TS files
         await mergeFiles(segments, mergedSegmentsFile)
 
-        print("Finished Merging")
+        logD("Finished Merging")
 
-        print(`Transmuxing to mp4`)
+        logD(`Transmuxing to mp4`)
 
         // Transmux
         await transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName))
@@ -89,8 +89,8 @@ export class Downloader {
         let firstSegmentIndex: number = segments.indexOf(fromChunkName)
         let lastSegmentIndex: number = segments.indexOf(toChunkNameExclusive)
 
-        print(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`)
-        print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
+        logD(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`)
+        logD(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
 
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return
 
@@ -104,7 +104,7 @@ export class Downloader {
 
         let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
 
-        print("Deleting All Segments")
+        logD("Deleting All Segments")
 
         segments.forEach(it => fs.removeSync(it))
     }
@@ -126,7 +126,7 @@ export class Downloader {
                 console.error("Could not find last segment in playlist");
                 toLoad = segments;
             } else if (index === segments.length - 1) {
-                console.log("No new segments since last check");
+                logD("No new segments since last check");
                 return;
             } else {
                 toLoad = segments.slice(index + 1);
@@ -135,7 +135,7 @@ export class Downloader {
 
         this.lastSegment = toLoad[toLoad.length - 1];
         for (const uri of toLoad) {
-            console.log("Queued:", uri);
+            logD("Queued:", uri);
             this.queue.add(() => this.downloadSegment(uri));
         }
 
@@ -147,7 +147,7 @@ export class Downloader {
     }
 
     private timeout(): void {
-        console.log("No new segment for a while, stopping");
+        logD("No new segment for a while, stopping");
         this.stop();
     }
 
@@ -170,7 +170,7 @@ export class Downloader {
 
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename));
-        console.log("Downloaded:", segmentUrl);
+        logD("Downloaded:", segmentUrl);
     }
 }
 

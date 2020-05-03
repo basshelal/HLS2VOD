@@ -70,7 +70,6 @@ confirmAddStreamButton.onclick = () => {
         schedulePath: importScheduleFileInput.name
         // TODO the full path will never work! We have to read the schedule here and send it back
     }
-    console.log(streamEntry)
     electron.ipcRenderer.invoke("addStream", streamEntry).then(() => addStream(streamEntry))
     addNewStreamModal.close()
 }

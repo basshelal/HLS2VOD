@@ -4,10 +4,10 @@ import {logD} from "../utils";
 
 export async function spawnFfmpeg(args: Array<string>): Promise<void> {
     return new Promise((resolve, reject) => {
-        console.log("Spawning FFMPEG", "ffmpeg", args.join(" "));
+        logD(`Spawning FFMPEG ${args.join(" ")}`);
 
         const ffmpeg = cp.spawn("ffmpeg\\bin\\ffmpeg", args);
-        ffmpeg.on("message", (msg) => console.log("ffmpeg message:", msg));
+        ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`));
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg);
             reject(msg);
@@ -21,8 +21,8 @@ export async function spawnFfmpeg(args: Array<string>): Promise<void> {
             }
         });
 
-        ffmpeg.stdout.on("data", (data) => console.log(`ffmpeg stdout: ${data}`));
-        ffmpeg.stderr.on("data", (data) => console.log(`ffmpeg stderr: ${data}`));
+        ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`));
+        ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`));
     });
 }
 

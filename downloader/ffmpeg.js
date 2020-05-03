@@ -5,9 +5,9 @@ const fs = require("fs");
 const utils_1 = require("../utils");
 async function spawnFfmpeg(args) {
     return new Promise((resolve, reject) => {
-        console.log("Spawning FFMPEG", "ffmpeg", args.join(" "));
+        utils_1.logD(`Spawning FFMPEG ${args.join(" ")}`);
         const ffmpeg = cp.spawn("ffmpeg\\bin\\ffmpeg", args);
-        ffmpeg.on("message", (msg) => console.log("ffmpeg message:", msg));
+        ffmpeg.on("message", (msg) => utils_1.logD(`ffmpeg message:, ${msg}`));
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg);
             reject(msg);
@@ -21,8 +21,8 @@ async function spawnFfmpeg(args) {
                 resolve();
             }
         });
-        ffmpeg.stdout.on("data", (data) => console.log(`ffmpeg stdout: ${data}`));
-        ffmpeg.stderr.on("data", (data) => console.log(`ffmpeg stderr: ${data}`));
+        ffmpeg.stdout.on("data", (data) => utils_1.logD(`ffmpeg stdout: ${data}`));
+        ffmpeg.stderr.on("data", (data) => utils_1.logD(`ffmpeg stderr: ${data}`));
     });
 }
 exports.spawnFfmpeg = spawnFfmpeg;

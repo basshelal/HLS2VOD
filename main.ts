@@ -43,7 +43,6 @@ async function onReady() {
 }
 
 async function onClose() {
-    console.log(activeStreams.length)
     await Promise.all(activeStreams.map(it => it.stopDownloading()))
     electron.app.quit()
 }

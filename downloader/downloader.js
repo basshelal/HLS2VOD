@@ -38,8 +38,8 @@ class Downloader {
         segments.sort();
         let firstSegmentIndex = segments.indexOf(fromChunkName);
         let lastSegmentIndex = segments.indexOf(toChunkName);
-        utils_1.print(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`);
-        utils_1.print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`);
+        utils_1.logD(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`);
+        utils_1.logD(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`);
         if (firstSegmentIndex < 0 || lastSegmentIndex < 0)
             return;
         if (lastSegmentIndex + 1 <= segments.length)
@@ -47,11 +47,11 @@ class Downloader {
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
         fs.mkdirpSync(outputDirectory);
         segments.remove(mergedSegmentsFile);
-        utils_1.print(`Merging ${segments}`);
+        utils_1.logD(`Merging ${segments}`);
         // Merge TS files
         await ffmpeg_1.mergeFiles(segments, mergedSegmentsFile);
-        utils_1.print("Finished Merging");
-        utils_1.print(`Transmuxing to mp4`);
+        utils_1.logD("Finished Merging");
+        utils_1.logD(`Transmuxing to mp4`);
         // Transmux
         await ffmpeg_1.transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName));
         fs.removeSync(mergedSegmentsFile);
@@ -62,8 +62,8 @@ class Downloader {
         segments.sort();
         let firstSegmentIndex = segments.indexOf(fromChunkName);
         let lastSegmentIndex = segments.indexOf(toChunkNameExclusive);
-        utils_1.print(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`);
-        utils_1.print(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`);
+        utils_1.logD(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`);
+        utils_1.logD(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`);
         if (firstSegmentIndex === -1 || lastSegmentIndex === -1)
             return;
         segments = segments.slice(firstSegmentIndex, lastSegmentIndex);
@@ -72,7 +72,7 @@ class Downloader {
     deleteAllSegments() {
         let segmentsDir = this.segmentDirectory;
         let segments = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it));
-        utils_1.print("Deleting All Segments");
+        utils_1.logD("Deleting All Segments");
         segments.forEach(it => fs.removeSync(it));
     }
     async refreshPlayList() {
@@ -91,7 +91,7 @@ class Downloader {
                 toLoad = segments;
             }
             else if (index === segments.length - 1) {
-                console.log("No new segments since last check");
+                utils_1.logD("No new segments since last check");
                 return;
             }
             else {
@@ -100,7 +100,7 @@ class Downloader {
         }
         this.lastSegment = toLoad[toLoad.length - 1];
         for (const uri of toLoad) {
-            console.log("Queued:", uri);
+            utils_1.logD("Queued:", uri);
             this.queue.add(() => this.downloadSegment(uri));
         }
         // Timeout after X seconds without new segment
@@ -110,7 +110,7 @@ class Downloader {
         this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000);
     }
     timeout() {
-        console.log("No new segment for a while, stopping");
+        utils_1.logD("No new segment for a while, stopping");
         this.stop();
     }
     async loadPlaylist() {
@@ -128,7 +128,7 @@ class Downloader {
         filename = filename.substr(slash + 1);
         // Download file
         await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
-        console.log("Downloaded:", segmentUrl);
+        utils_1.logD("Downloaded:", segmentUrl);
     }
 }
 exports.Downloader = Downloader;
