@@ -11,6 +11,14 @@ function get<T extends HTMLElement>(id: string): T | null {
     return document.getElementById(id) as T
 }
 
+function sendToMain<T>(name: string, args?: T): Promise<T> {
+    return electron.ipcRenderer.invoke(name, args)
+}
+
+function handle<T>(name: string, listener: (event: Electron.IpcRendererEvent, args: T) => void) {
+    electron.ipcRenderer.on(name, listener)
+}
+
 const settingsButton = get<HTMLButtonElement>("settingsButton")
 const offsetSecondsInput = get<HTMLInputElement>("offsetSecondsInput")
 const outputDirectoryTextArea = get<HTMLTextAreaElement>("outputDirectoryTextArea")
@@ -30,32 +38,38 @@ M.Modal.init(document.querySelectorAll('.modal'), {dismissible: true, inDuration
 const addNewStreamModal = M.Modal.getInstance(get("addNewStreamModal"))
 const settingsModal = M.Modal.getInstance(get("settingsModal"))
 
-function addStream(streamEntry) {
-    const rootDiv = document.importNode(displayStreamDiv, true)
-    const streamNameText = rootDiv.querySelector("#streamNameText")
-    const currentShowText = rootDiv.querySelector("#currentShowText")
-    const recordingText = rootDiv.querySelector("#recordingText")
-    const nextShowText = rootDiv.querySelector("#nextShowText")
-    const outputButton = rootDiv.querySelector("#outputButton") as HTMLButtonElement
-    const recordingButton = rootDiv.querySelector("#recordingButton") as HTMLButtonElement
-    const editStreamButton = rootDiv.querySelector("#editStreamButton") as HTMLButtonElement
+function displayStream(streamEntry: StreamEntry) {
+    const rootDiv: HTMLDivElement = document.importNode(displayStreamDiv, true)
+    const streamNameText = rootDiv.querySelector<HTMLParagraphElement>("#streamNameText")
+    const currentShowText = rootDiv.querySelector<HTMLParagraphElement>("#currentShowText")
+    const recordingText = rootDiv.querySelector<HTMLParagraphElement>("#recordingText")
+    const nextShowText = rootDiv.querySelector<HTMLParagraphElement>("#nextShowText")
+    const outputButton = rootDiv.querySelector<HTMLButtonElement>("#outputButton")
+    const recordingButton = rootDiv.querySelector<HTMLButtonElement>("#recordingButton")
+    const editStreamButton = rootDiv.querySelector<HTMLButtonElement>("#editStreamButton")
+    const streamInfoText = rootDiv.querySelector<HTMLParagraphElement>("#streamInfoText")
 
     streamNameText.textContent = streamEntry.name
     rootDiv.id = `stream-${streamEntry.name}`
 
-    outputButton.onclick = () => electron.ipcRenderer.invoke("outputButtonClicked", streamEntry)
-    recordingButton.onclick = () => electron.ipcRenderer.invoke("recordingButtonClicked", streamEntry)
+    outputButton.onclick = () => sendToMain("outputButtonClicked", streamEntry)
+    recordingButton.onclick = () => sendToMain("recordingButtonClicked", streamEntry)
+
+    recordingText.textContent = "Not recording yet"
+    recordingButton.textContent = "Start Recording"
 
     allStreamsDiv.append(rootDiv)
 }
 
-electron.ipcRenderer.on("displayStreams", (event, args) => {
-    const streams = args as Array<StreamEntry>
-    streams.forEach(streamEntry => addStream(streamEntry))
+function getStreamDiv(streamName: string): HTMLDivElement | null {
+    return get<HTMLDivElement>(`stream-${streamName}`)
+}
+
+handle<Array<StreamEntry>>("displayStreams", (event, streams) => {
+    streams.forEach(streamEntry => displayStream(streamEntry))
 })
 
-electron.ipcRenderer.on("displaySettings", (event, args) => {
-    const settings = args as Map<string, string>
+handle<Map<string, string>>("displaySettings", (event, settings) => {
     const offsetSeconds = settings.get("offsetSeconds")
     const outputDirectory = settings.get("outputDirectory")
     offsetSecondsInput.value = offsetSeconds
@@ -63,14 +77,42 @@ electron.ipcRenderer.on("displaySettings", (event, args) => {
     M.updateTextFields()
 })
 
+handle<StreamEntry>("streamNewCurrentShow", (event, streamEntry) => {
+    const currentShow = streamEntry["currentShow"]
+    const nextShow = streamEntry["nextShow"]
+
+    const streamDiv: HTMLDivElement = getStreamDiv(streamEntry.name)
+    const currentShowText = streamDiv.querySelector<HTMLParagraphElement>("#currentShowText")
+    const nextShowText = streamDiv.querySelector<HTMLParagraphElement>("#nextShowText")
+
+    currentShowText.textContent = `Current Show: ${currentShow.name}`
+    nextShowText.textContent = `Next Show: ${nextShow.name}`
+})
+
+function changeRecordingState(streamName: string, textContent: string, isRecording: boolean) {
+    const streamDiv: HTMLDivElement = getStreamDiv(streamName)
+    const recordingText = streamDiv.querySelector<HTMLParagraphElement>("#recordingText")
+    const recordingButton = streamDiv.querySelector<HTMLButtonElement>("#recordingButton")
+    recordingText.textContent = textContent
+    if (isRecording) recordingButton.textContent = "Stop Recording"
+    else recordingButton.textContent = "Start Recording"
+}
+
+handle<StreamEntry>("streamStarted", (event, streamEntry) =>
+    changeRecordingState(streamEntry.name, "Recording...", true))
+
+handle<StreamEntry>("streamStopped", (event, streamEntry) =>
+    changeRecordingState(streamEntry.name, "Stopped", false))
+
 confirmAddStreamButton.onclick = () => {
-    const streamEntry = {
+    const streamEntry: StreamEntry = {
         name: streamNameTextArea.value,
         playlistUrl: playListURLTextArea.value,
         schedulePath: importScheduleFileInput.name
         // TODO the full path will never work! We have to read the schedule here and send it back
     }
-    electron.ipcRenderer.invoke("addStream", streamEntry).then(() => addStream(streamEntry))
+    sendToMain("addStream", streamEntry)
+        .then((s: StreamEntry) => displayStream(s))
     addNewStreamModal.close()
 }
 
@@ -78,6 +120,6 @@ saveSettingsButton.onclick = () => {
     const settings = new Map<string, string>()
     settings.set("offsetSeconds", offsetSecondsInput.value)
     settings.set("outputDirectory", outputDirectoryTextArea.value)
-    electron.ipcRenderer.invoke("saveSettings", settings)
+    sendToMain("saveSettings", settings)
     settingsModal.close()
 }

@@ -10,14 +10,14 @@ const main_1 = require("./main");
 const path = require("path");
 const hidefile_1 = require("hidefile");
 const events_1 = require("events");
-async function newStream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
-    const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory);
+async function newStream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener) {
+    const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener);
     await stream.initialize();
     return stream;
 }
 exports.newStream = newStream;
 class Stream extends events_1.EventEmitter {
-    constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
+    constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener) {
         super();
         this.isDownloading = false;
         this.isRunning = true;
@@ -32,6 +32,8 @@ class Stream extends events_1.EventEmitter {
         fsextra.mkdirpSync(this.streamDirectory);
         fsextra.mkdirpSync(this.segmentsDirectory);
         this.segmentsDirectory = hidefile_1.hideSync(this.segmentsDirectory);
+        if (listener)
+            this.addStreamListener(listener);
         this.setCurrentShow();
         this.setInterval();
     }

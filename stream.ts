@@ -13,8 +13,9 @@ import ErrnoException = NodeJS.ErrnoException;
 import Timeout = NodeJS.Timeout;
 
 export async function newStream(name: string, playlistUrl: string, schedulePath: string,
-                                schedule: Schedule, offsetSeconds: number, rootDirectory: string): Promise<Stream> {
-    const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory)
+                                schedule: Schedule, offsetSeconds: number, rootDirectory: string,
+                                listener?: StreamListener): Promise<Stream> {
+    const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener)
     await stream.initialize()
     return stream
 }
@@ -44,7 +45,8 @@ export class Stream extends EventEmitter {
         schedulePath: string,
         schedule: Schedule,
         offsetSeconds: number,
-        rootDirectory: string
+        rootDirectory: string,
+        listener?: StreamListener
     ) {
         super()
         this.name = name
@@ -60,6 +62,8 @@ export class Stream extends EventEmitter {
         fsextra.mkdirpSync(this.streamDirectory)
         fsextra.mkdirpSync(this.segmentsDirectory)
         this.segmentsDirectory = hideSync(this.segmentsDirectory)
+
+        if (listener) this.addStreamListener(listener)
 
         this.setCurrentShow()
 
