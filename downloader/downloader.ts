@@ -135,7 +135,7 @@ export class Downloader {
 
         this.lastSegment = toLoad[toLoad.length - 1];
         for (const uri of toLoad) {
-            logD("Queued:", uri);
+            logD(`Queued: ${uri}`);
             this.queue.add(() => this.downloadSegment(uri));
         }
 
@@ -170,7 +170,7 @@ export class Downloader {
 
         // Download file
         await download(segmentUrl, path.join(this.segmentDirectory, filename));
-        logD("Downloaded:", segmentUrl);
+        logD(`Downloaded: ${segmentUrl}`);
     }
 }
 

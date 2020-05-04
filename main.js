@@ -6,6 +6,7 @@ const database_1 = require("./database/database");
 const extensions_1 = require("./extensions");
 const path = require("path");
 var BrowserWindow = electron.BrowserWindow;
+const utils_1 = require("./utils");
 extensions_1.default();
 let browserWindow;
 async function onReady() {
@@ -34,7 +35,7 @@ async function onReady() {
     browserWindow.webContents.once("did-finish-load", () => {
         browserWindow.webContents.send("displayStreams", streams);
         browserWindow.webContents.send("displaySettings", settings);
-        start(settings);
+        start();
     });
 }
 async function onClose() {
@@ -66,7 +67,7 @@ electron.ipcMain.handle("recordingButtonClicked", async (event, args) => {
         activeStreams.remove(stream);
     }
     else {
-        await start(await database_1.Settings.getAllSettings());
+        await start();
     }
 });
 const activeStreams = [];
@@ -76,20 +77,43 @@ const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playl
 const defaultOutputDirectory = path.join(__dirname, "Streams");
 const defaultOffsetSeconds = 120;
 const schedulePath = "res/schedule.csv";
+const alHiwar = {
+    name: "AlHiwar",
+    playlistUrl: alHiwarUrl,
+    schedulePath: schedulePath
+};
 async function addStream(streamEntry) {
-    /*const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
-    const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, defaultOutputDirectory)
-
-    Streams.addStream(stream)*/
-}
-async function start(settings) {
+    const settings = await database_1.Settings.getAllSettings();
     const offsetSeconds = parseInt(settings.get("offsetSeconds"));
     const outputDirectory = settings.get("outputDirectory");
-    const schedule = await stream_1.Schedule.fromCSV(schedulePath);
-    const stream = await stream_1.newStream("AlHiwar", alHiwarUrl, schedulePath, schedule, offsetSeconds, outputDirectory);
-    if (!activeStreams.contains(stream)) {
+    const schedule = await stream_1.Schedule.fromCSV(streamEntry.schedulePath);
+    const stream = await stream_1.newStream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, outputDirectory);
+    stream.addStreamListener({
+        onStarted(stream) {
+            utils_1.logD(`Started ${stream}`);
+        },
+        onStopped(stream) {
+            utils_1.logD(`Stopped ${stream}`);
+        },
+        onPaused(stream) {
+            utils_1.logD(`Paused ${stream}`);
+        },
+        onResumed(stream) {
+            utils_1.logD(`Resumed ${stream}`);
+        },
+        onMerging(stream) {
+            utils_1.logD(`Merging ${stream}`);
+        },
+        onNewCurrentShow(stream) {
+            utils_1.logD(`New Current Show ${stream}`);
+        },
+    });
+    if (stream.notIn(activeStreams)) {
         await database_1.Streams.addStream(stream);
         activeStreams.push(stream);
         await stream.startDownloading();
     }
+}
+async function start() {
+    addStream(alHiwar);
 }

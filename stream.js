@@ -19,8 +19,8 @@ exports.newStream = newStream;
 class Stream extends events_1.EventEmitter {
     constructor(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory) {
         super();
-        this.isRunning = true;
         this.isDownloading = false;
+        this.isRunning = true;
         this.name = name;
         this.playlistUrl = playlistUrl;
         this.schedulePath = schedulePath;
@@ -36,7 +36,13 @@ class Stream extends events_1.EventEmitter {
         this.setInterval();
     }
     async initialize() {
-        await this.initializeDownloader();
+        const streamChooser = new downloader_1.StreamChooser(this.playlistUrl);
+        if (!await streamChooser.load())
+            throw Error("StreamChooser failed!");
+        const playlistUrl = streamChooser.getPlaylistUrl("best");
+        if (!playlistUrl)
+            throw Error("PlaylistUrl failed!");
+        this.downloader = new downloader_1.Downloader(playlistUrl, this.segmentsDirectory);
         this.emit("initialized");
     }
     async destroy() {
@@ -87,15 +93,6 @@ class Stream extends events_1.EventEmitter {
             this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName);
         }
     }
-    async initializeDownloader() {
-        const streamChooser = new downloader_1.StreamChooser(this.playlistUrl);
-        if (!await streamChooser.load())
-            throw Error("StreamChooser failed!");
-        const playlistUrl = streamChooser.getPlaylistUrl("best");
-        if (!playlistUrl)
-            throw Error("PlaylistUrl failed!");
-        this.downloader = new downloader_1.Downloader(playlistUrl, this.segmentsDirectory);
-    }
     getFirstChunkPath() {
         const segments = fs.readdirSync(this.segmentsDirectory).map(it => path.join(this.segmentsDirectory, it));
         segments.sort();
@@ -109,9 +106,6 @@ class Stream extends events_1.EventEmitter {
         const result = segments[segments.length - 1];
         utils_1.logD(`Last chunk is ${result}`);
         return result;
-    }
-    emit(event, ...args) {
-        return super.emit(event, args);
     }
     setInterval() {
         this.mergerTimeOut = setInterval(async () => {
@@ -149,6 +143,9 @@ class Stream extends events_1.EventEmitter {
             schedulePath: this.schedulePath,
         };
     }
+    emit(event) {
+        return super.emit(event, this);
+    }
     on(event, listener) {
         return super.on(event, listener);
     }
@@ -157,6 +154,24 @@ class Stream extends events_1.EventEmitter {
     }
     once(event, listener) {
         return super.once(event, listener);
+    }
+    addStreamListener(listener) {
+        if (listener.onInitialized)
+            this.on("initialized", listener.onInitialized);
+        if (listener.onDestroyed)
+            this.on("destroyed", listener.onDestroyed);
+        if (listener.onStarted)
+            this.on("started", listener.onStarted);
+        if (listener.onPaused)
+            this.on("paused", listener.onPaused);
+        if (listener.onResumed)
+            this.on("resumed", listener.onResumed);
+        if (listener.onStopped)
+            this.on("stopped", listener.onStopped);
+        if (listener.onNewCurrentShow)
+            this.on("newCurrentShow", listener.onNewCurrentShow);
+        if (listener.onMerging)
+            this.on("merging", listener.onMerging);
     }
     setCurrentShow() {
         const activeShows = this.scheduledShows.filter(it => it.isActive(false));
@@ -169,6 +184,9 @@ class Stream extends events_1.EventEmitter {
         utils_1.logD(`New current show is:\n${this.currentShow}`);
         this.nextEventTime = this.nextShow.offsetStartTime;
         this.emit("newCurrentShow");
+    }
+    toString() {
+        return JSON.stringify(this.toStreamEntry(), null, 2);
     }
 }
 exports.Stream = Stream;

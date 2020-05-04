@@ -3,6 +3,7 @@ import {newStream, Schedule, Stream} from "./stream";
 import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./database/database";
 import extensions from "./extensions";
 import * as path from "path";
+import {logD} from "./utils";
 import BrowserWindow = electron.BrowserWindow;
 
 extensions()
@@ -38,7 +39,7 @@ async function onReady() {
     browserWindow.webContents.once("did-finish-load", () => {
         browserWindow.webContents.send("displayStreams", streams)
         browserWindow.webContents.send("displaySettings", settings)
-        start(settings)
+        start()
     })
 }
 
@@ -75,7 +76,7 @@ electron.ipcMain.handle("recordingButtonClicked", async (event, args) => {
         stream.stopDownloading()
         activeStreams.remove(stream)
     } else {
-        await start(await Settings.getAllSettings())
+        await start()
     }
 })
 
@@ -90,21 +91,46 @@ const defaultOffsetSeconds = 120
 
 const schedulePath = "res/schedule.csv"
 
-async function addStream(streamEntry: StreamEntry) {
-    /*const schedule: Schedule = await Schedule.fromCSV(streamEntry.schedulePath)
-    const stream = new Stream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, defaultOutputDirectory)
-
-    Streams.addStream(stream)*/
+const alHiwar: StreamEntry = {
+    name: "AlHiwar",
+    playlistUrl: alHiwarUrl,
+    schedulePath: schedulePath
 }
 
-async function start(settings: Map<SettingsEntryKey, string>) {
+async function addStream(streamEntry: StreamEntry) {
+    const settings = await Settings.getAllSettings()
     const offsetSeconds = parseInt(settings.get("offsetSeconds"))
     const outputDirectory = settings.get("outputDirectory")
-    const schedule = await Schedule.fromCSV(schedulePath)
-    const stream = await newStream("AlHiwar", alHiwarUrl, schedulePath, schedule, offsetSeconds, outputDirectory)
-    if (!activeStreams.contains(stream)) {
+    const schedule = await Schedule.fromCSV(streamEntry.schedulePath)
+    const stream = await newStream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath, schedule, offsetSeconds, outputDirectory)
+
+    stream.addStreamListener({
+        onStarted(stream: Stream) {
+            logD(`Started ${stream}`)
+        },
+        onStopped(stream: Stream) {
+            logD(`Stopped ${stream}`)
+        },
+        onPaused(stream: Stream) {
+            logD(`Paused ${stream}`)
+        },
+        onResumed(stream: Stream) {
+            logD(`Resumed ${stream}`)
+        },
+        onMerging(stream: Stream) {
+            logD(`Merging ${stream}`)
+        },
+        onNewCurrentShow(stream: Stream) {
+            logD(`New Current Show ${stream}`)
+        },
+    })
+    if (stream.notIn(activeStreams)) {
         await Streams.addStream(stream)
         activeStreams.push(stream)
         await stream.startDownloading()
     }
+}
+
+async function start() {
+    addStream(alHiwar)
 }

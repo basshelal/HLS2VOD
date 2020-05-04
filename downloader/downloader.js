@@ -100,7 +100,7 @@ class Downloader {
         }
         this.lastSegment = toLoad[toLoad.length - 1];
         for (const uri of toLoad) {
-            utils_1.logD("Queued:", uri);
+            utils_1.logD(`Queued: ${uri}`);
             this.queue.add(() => this.downloadSegment(uri));
         }
         // Timeout after X seconds without new segment
@@ -128,7 +128,7 @@ class Downloader {
         filename = filename.substr(slash + 1);
         // Download file
         await http_1.download(segmentUrl, path.join(this.segmentDirectory, filename));
-        utils_1.logD("Downloaded:", segmentUrl);
+        utils_1.logD(`Downloaded: ${segmentUrl}`);
     }
 }
 exports.Downloader = Downloader;

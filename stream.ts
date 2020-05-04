@@ -22,20 +22,21 @@ export async function newStream(name: string, playlistUrl: string, schedulePath:
 export class Stream extends EventEmitter {
 
     public name: string
+    public playlistUrl: string
+    public schedulePath: string
+    public currentShow: ScheduledShow
+    public nextShow: ScheduledShow
+    public schedule: Schedule
+    public isDownloading: boolean = false
+
     private streamDirectory: string
     private segmentsDirectory: string
     private downloader: Downloader
-    public playlistUrl: string
-    private currentShow: ScheduledShow
-    private nextShow: ScheduledShow
     private mergerTimeOut: Timeout
-    public schedulePath: string
     private nextEventTime: number
-    public schedule: Schedule
     private rootDirectory: string
     private scheduledShows: Array<ScheduledShow>
     private isRunning: boolean = true
-    public isDownloading: boolean = false
 
     constructor(
         name: string,
@@ -67,7 +68,13 @@ export class Stream extends EventEmitter {
     }
 
     public async initialize(): Promise<void> {
-        await this.initializeDownloader()
+        const streamChooser = new StreamChooser(this.playlistUrl)
+        if (!await streamChooser.load()) throw Error("StreamChooser failed!")
+
+        const playlistUrl = streamChooser.getPlaylistUrl("best")
+        if (!playlistUrl) throw Error("PlaylistUrl failed!")
+
+        this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
         this.emit("initialized")
     }
 
@@ -127,16 +134,6 @@ export class Stream extends EventEmitter {
         }
     }
 
-    private async initializeDownloader(): Promise<void> {
-        const streamChooser = new StreamChooser(this.playlistUrl)
-        if (!await streamChooser.load()) throw Error("StreamChooser failed!")
-
-        const playlistUrl = streamChooser.getPlaylistUrl("best")
-        if (!playlistUrl) throw Error("PlaylistUrl failed!")
-
-        this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
-    }
-
     private getFirstChunkPath(): string {
         const segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => path.join(this.segmentsDirectory, it))
         segments.sort()
@@ -151,10 +148,6 @@ export class Stream extends EventEmitter {
         const result = segments[segments.length - 1]
         logD(`Last chunk is ${result}`)
         return result
-    }
-
-    emit(event: StreamEvent, ...args): boolean {
-        return super.emit(event, args)
     }
 
     private setInterval() {
@@ -195,16 +188,31 @@ export class Stream extends EventEmitter {
         }
     }
 
-    on(event: StreamEvent, listener: (...args: any[]) => void): this {
+    emit(event: StreamEvent): boolean {
+        return super.emit(event, this)
+    }
+
+    on(event: StreamEvent, listener: (stream?: Stream) => void): this {
         return super.on(event, listener)
     }
 
-    off(event: StreamEvent, listener: (...args: any[]) => void): this {
+    off(event: StreamEvent, listener: (stream?: Stream) => void): this {
         return super.off(event, listener)
     }
 
-    once(event: StreamEvent, listener: (...args: any[]) => void): this {
+    once(event: StreamEvent, listener: (stream?: Stream) => void): this {
         return super.once(event, listener)
+    }
+
+    public addStreamListener(listener: StreamListener) {
+        if (listener.onInitialized) this.on("initialized", listener.onInitialized)
+        if (listener.onDestroyed) this.on("destroyed", listener.onDestroyed)
+        if (listener.onStarted) this.on("started", listener.onStarted)
+        if (listener.onPaused) this.on("paused", listener.onPaused)
+        if (listener.onResumed) this.on("resumed", listener.onResumed)
+        if (listener.onStopped) this.on("stopped", listener.onStopped)
+        if (listener.onNewCurrentShow) this.on("newCurrentShow", listener.onNewCurrentShow)
+        if (listener.onMerging) this.on("merging", listener.onMerging)
     }
 
     private setCurrentShow() {
@@ -222,6 +230,11 @@ export class Stream extends EventEmitter {
         this.nextEventTime = this.nextShow.offsetStartTime
 
         this.emit("newCurrentShow")
+    }
+
+
+    toString(): string {
+        return JSON.stringify(this.toStreamEntry(), null, 2)
     }
 }
 
@@ -364,3 +377,21 @@ export type StreamEvent =
     | "stopped"
     | "newCurrentShow"
     | "merging"
+
+export interface StreamListener {
+    onInitialized?(stream: Stream)
+
+    onDestroyed?(stream: Stream)
+
+    onStarted?(stream: Stream)
+
+    onPaused?(stream: Stream)
+
+    onResumed?(stream: Stream)
+
+    onStopped?(stream: Stream)
+
+    onNewCurrentShow?(stream: Stream)
+
+    onMerging?(stream: Stream)
+}
