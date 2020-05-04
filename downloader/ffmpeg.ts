@@ -1,12 +1,14 @@
 import * as cp from "child_process";
 import * as fs from "fs";
+import * as electron from "electron";
 import {logD} from "../utils";
+import * as path from "path";
 
 export async function spawnFfmpeg(args: Array<string>): Promise<void> {
     return new Promise((resolve, reject) => {
         logD(`Spawning FFMPEG ${args.join(" ")}`);
 
-        const ffmpeg = cp.spawn("ffmpeg\\bin\\ffmpeg", args);
+        const ffmpeg = cp.spawn(path.join(electron.app.getAppPath(), "ffmpeg/bin/ffmpeg"), args);
         ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`));
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg);

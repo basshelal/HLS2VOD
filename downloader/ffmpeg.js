@@ -2,11 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const cp = require("child_process");
 const fs = require("fs");
+const electron = require("electron");
 const utils_1 = require("../utils");
+const path = require("path");
 async function spawnFfmpeg(args) {
     return new Promise((resolve, reject) => {
         utils_1.logD(`Spawning FFMPEG ${args.join(" ")}`);
-        const ffmpeg = cp.spawn("ffmpeg\\bin\\ffmpeg", args);
+        const ffmpeg = cp.spawn(path.join(electron.app.getAppPath(), "ffmpeg/bin/ffmpeg"), args);
         ffmpeg.on("message", (msg) => utils_1.logD(`ffmpeg message:, ${msg}`));
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg);

@@ -82,9 +82,9 @@ const activeStreams = [];
 exports.momentFormat = "dddd Do MMMM YYYY, HH:mm:ss";
 exports.momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss";
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8";
-const defaultOutputDirectory = path.join(__dirname, "Streams");
+const defaultOutputDirectory = path.join(electron.app.getPath("downloads"), "HLS2VOD");
 const defaultOffsetSeconds = 120;
-const schedulePath = "res/schedule.csv";
+const schedulePath = path.join(electron.app.getAppPath(), "res/schedule.csv");
 const alHiwar = {
     name: "AlHiwar",
     playlistUrl: alHiwarUrl,
