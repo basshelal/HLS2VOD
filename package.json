@@ -28,6 +28,6 @@
     "@types/jquery": "^3.3.35",
     "@types/materialize-css": "^1.0.7",
     "@types/node": "^13.11.0",
-    "electron": "^8.2.2"
+    "electron": "^8.2.4"
   }
 }
