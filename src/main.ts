@@ -30,7 +30,7 @@ electron.app.whenReady().then(async () => {
             nodeIntegration: true
         }
     })
-    browserWindow.loadFile('layouts/home/home.html')
+    browserWindow.loadFile(path.join(electron.app.getAppPath(), "./src/layouts/home/home.html"))
 
     const streams: Array<StreamEntry> = await Streams.getAllStreams()
     let settings: Map<SettingsEntryKey, string> = await Settings.getAllSettings()
