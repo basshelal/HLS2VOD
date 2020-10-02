@@ -1,8 +1,16 @@
 import * as Datastore from "nedb";
 import {Stream} from "../stream";
+import * as path from "path";
+import * as electron from "electron";
 
-const settingsDatabase = new Datastore({filename: "database/settings.db", autoload: true})
-const streamsDatabase = new Datastore({filename: "database/streams.db", autoload: true})
+const settingsDatabase = new Datastore({
+    filename: path.join(electron.app.getAppPath(), "database/settings.db"),
+    autoload: true
+})
+const streamsDatabase = new Datastore({
+    filename: path.join(electron.app.getAppPath(), "database/streams.db"),
+    autoload: true
+})
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 

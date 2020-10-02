@@ -8,7 +8,18 @@ export async function spawnFfmpeg(args: Array<string>): Promise<void> {
     return new Promise((resolve, reject) => {
         logD(`Spawning FFMPEG ${args.join(" ")}`);
 
-        const ffmpeg = cp.spawn(path.join(electron.app.getAppPath(), "ffmpeg/bin/ffmpeg"), args);
+        let ffmpegBin: string = ""
+
+        switch (process.platform) {
+            case "win32":
+                ffmpegBin = path.join(electron.app.getAppPath(), "ffmpeg/bin/win32/ffmpeg")
+                break
+            case "linux":
+                ffmpegBin = path.join(electron.app.getAppPath(), "ffmpeg/bin/linux/ffmpeg")
+                break
+        }
+
+        const ffmpeg = cp.spawn(ffmpegBin, args);
         ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`));
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg);

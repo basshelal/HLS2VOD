@@ -2,7 +2,7 @@
   "name": "hls2vod",
   "version": "0.0.1",
   "private": true,
-  "main": "main.js",
+  "main": "js/main.js",
   "scripts": {
     "start": "electron ."
   },
