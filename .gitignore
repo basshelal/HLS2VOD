@@ -1,6 +1,7 @@
 node_modules
 build
 js
+database
 npm-debug.log
 .env
 .DS_Store

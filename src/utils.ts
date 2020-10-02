@@ -1,4 +1,12 @@
 import * as electron from "electron";
+import * as path from "path";
+
+export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
+export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
+
+export function getPath(pathString: string): string {
+    return path.join(electron.app.getAppPath(), pathString)
+}
 
 export function logD(message: any, calledFrom: string = "") {
     if (!electron.app.isPackaged)

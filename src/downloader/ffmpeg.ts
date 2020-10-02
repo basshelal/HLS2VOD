@@ -1,41 +1,38 @@
 import * as cp from "child_process";
 import * as fs from "fs";
-import * as electron from "electron";
-import {logD} from "../utils";
-import * as path from "path";
+import {getPath, logD} from "../utils";
 
 export async function spawnFfmpeg(args: Array<string>): Promise<void> {
     return new Promise((resolve, reject) => {
-        logD(`Spawning FFMPEG ${args.join(" ")}`);
+        logD(`Spawning FFMPEG ${args.join(" ")}`)
 
         let ffmpegBin: string = ""
-
         switch (process.platform) {
             case "win32":
-                ffmpegBin = path.join(electron.app.getAppPath(), "ffmpeg/bin/win32/ffmpeg")
+                ffmpegBin = getPath("ffmpeg/bin/win32/ffmpeg")
                 break
             case "linux":
-                ffmpegBin = path.join(electron.app.getAppPath(), "ffmpeg/bin/linux/ffmpeg")
+                ffmpegBin = getPath("ffmpeg/bin/linux/ffmpeg")
                 break
         }
 
-        const ffmpeg = cp.spawn(ffmpegBin, args);
-        ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`));
+        const ffmpeg = cp.spawn(ffmpegBin, args)
+        ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`))
         ffmpeg.on("error", (msg) => {
-            console.error("ffmpeg error:", msg);
-            reject(msg);
+            console.error("ffmpeg error:", msg)
+            reject(msg)
         });
         ffmpeg.on("close", (status) => {
             if (status !== 0) {
-                console.error(`ffmpeg closed with status ${status}`);
-                reject(`ffmpeg closed with status ${status}`);
+                console.error(`ffmpeg closed with status ${status}`)
+                reject(`ffmpeg closed with status ${status}`)
             } else {
-                resolve();
+                resolve()
             }
-        });
+        })
 
-        ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`));
-        ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`));
+        ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+        ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
     });
 }
 
@@ -64,7 +61,7 @@ async function copyToStream(inFile: string, outStream: fs.WriteStream): Promise<
             .on("error", reject)
             .on("end", resolve)
             .pipe(outStream, {end: false})
-    });
+    })
 }
 
 export async function mergeFiles(files: Array<string>, outputFile: string): Promise<void> {
