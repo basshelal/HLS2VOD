@@ -1,11 +1,11 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as m3u8 from "m3u8-parser";
-import {mergeFiles, transmuxTsToMp4} from "./ffmpeg";
+import {mergeFiles, transmuxTsToMp4} from "./Ffmpeg";
 import PQueue from "p-queue";
 import {URL} from "url";
-import {download, get} from "./http";
-import {logD} from "../utils";
+import {download, get} from "./Http";
+import {logD} from "../Utils";
 
 export class Downloader {
 

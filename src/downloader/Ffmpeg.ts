@@ -1,27 +1,25 @@
 import * as cp from "child_process";
 import * as fs from "fs";
-import {getPath, logD} from "../utils";
+import {getPath, logD} from "../Utils";
+
+export function ffmpegBin(): string {
+    if (process.platform === "win32") {
+        return getPath("ffmpeg/bin/win32/ffmpeg.exe")
+    } else if (process.platform === "linux") {
+        return getPath("ffmpeg/bin/linux/ffmpeg")
+    } else return ""
+}
 
 export async function spawnFfmpeg(args: Array<string>): Promise<void> {
     return new Promise((resolve, reject) => {
-        logD(`Spawning FFMPEG ${args.join(" ")}`)
+        logD(`Spawning ${ffmpegBin()} ${args.join(" ")}`)
 
-        let ffmpegBin: string = ""
-        switch (process.platform) {
-            case "win32":
-                ffmpegBin = getPath("ffmpeg/bin/win32/ffmpeg")
-                break
-            case "linux":
-                ffmpegBin = getPath("ffmpeg/bin/linux/ffmpeg")
-                break
-        }
-
-        const ffmpeg = cp.spawn(ffmpegBin, args)
+        const ffmpeg = cp.spawn(ffmpegBin(), args)
         ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`))
         ffmpeg.on("error", (msg) => {
             console.error("ffmpeg error:", msg)
             reject(msg)
-        });
+        })
         ffmpeg.on("close", (status) => {
             if (status !== 0) {
                 console.error(`ffmpeg closed with status ${status}`)
@@ -33,19 +31,10 @@ export async function spawnFfmpeg(args: Array<string>): Promise<void> {
 
         ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
         ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
-    });
+    })
 }
 
 export async function transmuxTsToMp4(inputFile: string, outputFile: string): Promise<void> {
-    /*await spawnFfmpeg([
-        "-y",
-        "-loglevel", "warning",
-        "-i", inputFile,
-        "-c", "copy",
-        "-bsf:a", "aac_adtstoasc",
-        outputFile,
-    ]);*/
-    // help here https://askubuntu.com/questions/716424/how-to-convert-ts-file-into-a-mainstream-format-losslessly
     await spawnFfmpeg([
         "-y",
         "-loglevel", "warning",

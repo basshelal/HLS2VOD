@@ -1,4 +1,4 @@
-const database = require("../../database/database");
+const database = require("../../Database");
 const electron = require("electron");
 
 interface StreamEntry {

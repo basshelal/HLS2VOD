@@ -1,10 +1,10 @@
 import * as electron from "electron";
 import {BrowserWindow, IpcMainInvokeEvent} from "electron";
-import {newStream, Schedule, Stream, StreamListener} from "./stream";
-import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./database/database";
-import extensions from "./extensions";
+import {newStream, Schedule, Stream, StreamListener} from "./Stream";
+import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database";
+import extensions from "./Extensions";
 import * as path from "path";
-import {getPath, logD} from "./utils";
+import {getPath, logD} from "./Utils";
 
 extensions()
 

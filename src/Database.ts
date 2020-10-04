@@ -1,14 +1,13 @@
-import * as Datastore from "nedb";
-import {Stream} from "../stream";
-import * as path from "path";
-import * as electron from "electron";
+import Datastore from "nedb";
+import {Stream} from "./Stream";
+import {getPath} from "./Utils";
 
 const settingsDatabase = new Datastore({
-    filename: path.join(electron.app.getAppPath(), "database/settings.db"),
+    filename: getPath("database/settings.db"),
     autoload: true
 })
 const streamsDatabase = new Datastore({
-    filename: path.join(electron.app.getAppPath(), "database/streams.db"),
+    filename: getPath("database/streams.db"),
     autoload: true
 })
 
@@ -35,7 +34,7 @@ export const Settings = {
             settingsDatabase.update<SettingsEntry>({key: "outputDirectory"},
                 {key: "outputDirectory", value: newOutputDirectory},
                 {upsert: true, returnUpdatedDocs: true},
-                (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
+                (err: Error, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
                     else resolve((affectedDocuments as SettingsEntry).value)
                 }))
@@ -58,7 +57,7 @@ export const Settings = {
             settingsDatabase.update<SettingsEntry>({key: "offsetSeconds"},
                 {key: "offsetSeconds", value: newOffsetSeconds},
                 {upsert: true, returnUpdatedDocs: true},
-                (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
+                (err: Error, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
                     else resolve(Number.parseInt((affectedDocuments as SettingsEntry).value))
                 }))
@@ -82,13 +81,12 @@ export interface StreamEntry {
     schedulePath: string,
 }
 
-
 export const Streams = {
     async addStream(stream: Stream): Promise<void> {
         return new Promise<void>((resolve, reject) =>
             streamsDatabase.update({name: stream.name}, stream.toStreamEntry(),
                 {upsert: true},
-                (err: Error, numberOfUpdated: number, upsert: boolean) => {
+                (err: Error) => {
                     if (err) reject(err)
                     else resolve()
                 }
@@ -105,7 +103,7 @@ export const Streams = {
     },
     async deleteStream(stream: Stream): Promise<void> {
         return new Promise<void>((resolve, reject) =>
-            streamsDatabase.remove(stream.toStreamEntry(), (err: Error, n: number) => {
+            streamsDatabase.remove(stream.toStreamEntry(), (err: Error) => {
                 if (err) reject(err)
                 else resolve()
             })
@@ -115,7 +113,7 @@ export const Streams = {
         return new Promise<StreamEntry>((resolve, reject) =>
             streamsDatabase.update({name: streamName}, updatedStream.toStreamEntry(),
                 {upsert: false, returnUpdatedDocs: true},
-                (err: Error, numberOfUpdated: number, affectedDocuments: any, upsert: boolean) => {
+                (err: Error, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
                     else resolve(affectedDocuments as StreamEntry)
                 }

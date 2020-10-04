@@ -1,9 +1,9 @@
-import {Downloader, StreamChooser} from "./downloader/downloader";
+import {Downloader, StreamChooser} from "./downloader/Downloader";
 import * as fs from "fs";
 import * as fsextra from "fs-extra";
 import csv from "csvtojson";
-import {assert, logD, momentFormat, momentFormatSafe} from "./utils";
-import {StreamEntry} from "./database/database";
+import {assert, logD, momentFormat, momentFormatSafe} from "./Utils";
+import {StreamEntry} from "./Database";
 import * as path from "path";
 import {hideSync} from "hidefile";
 import {EventEmitter} from "events";

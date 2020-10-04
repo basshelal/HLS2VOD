@@ -1,4 +1,18 @@
+import React from 'react'
+
 import styled, {keyframes} from 'styled-components'
+
+export default function Greetings(): JSX.Element {
+    return (
+        <Container>
+            <Image
+                src="https://www.vectorlogo.zone/logos/reactjs/reactjs-icon.svg"
+                alt="ReactJS logo"
+            />
+            <Text>TypeScript Electron & React ^_^</Text>
+        </Container>
+    )
+}
 
 const rotate = keyframes`
   from {
@@ -9,7 +23,7 @@ const rotate = keyframes`
   }
 `
 
-export const Container = styled.div`
+const Container = styled.div`
     height: 100vh;
     padding: 25px;
     display: flex;
@@ -18,12 +32,12 @@ export const Container = styled.div`
     justify-content: center;
 `
 
-export const Image = styled.img`
+const Image = styled.img`
     width: 300px;
     animation: ${rotate} 15s linear infinite;
     opacity: 0.1;
 `
-export const Text = styled.p`
+const Text = styled.p`
     margin-top: 35px;
     font-size: 20px;
     font-weight: bold;
