@@ -4,7 +4,9 @@ import {newStream, Schedule, Stream, StreamListener} from "./Stream";
 import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database";
 import extensions from "./Extensions";
 import * as path from "path";
-import {getPath, logD} from "./Utils";
+import {logD} from "./Utils";
+import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer";
+import url from "url";
 
 extensions()
 
@@ -78,6 +80,7 @@ function startElectronApp() {
     electron.app.whenReady().then(async () => {
         electron.app.allowRendererProcessReuse = true
         browserWindow = new BrowserWindow({
+            backgroundColor: "#0e0e0e",
             center: true,
             width: 1200,
             height: 900,
@@ -86,7 +89,28 @@ function startElectronApp() {
                 nodeIntegration: true
             }
         })
-        browserWindow.loadFile(getPath("./src/layouts/home/home.html"))
+        if (process.env.NODE_ENV === 'development') {
+            installExtension(REACT_DEVELOPER_TOOLS)
+                .then((name) => console.log(`Added Extension:  ${name}`))
+                .catch((err) => console.log('An error occurred: ', err));
+            installExtension(REDUX_DEVTOOLS)
+                .then((name) => console.log(`Added Extension:  ${name}`))
+                .catch((err) => console.log('An error occurred: ', err));
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+            browserWindow.loadURL('http://localhost:4000')
+        } else {
+            browserWindow.loadURL(
+                url.format({
+                    pathname: path.join(__dirname, 'renderer/index.html'),
+                    protocol: 'file:',
+                    slashes: true
+                })
+            )
+        }
+
+        // browserWindow.loadFile(getPath("./src/layouts/home/home.html"))
 
         const streams: Array<StreamEntry> = await Streams.getAllStreams()
         let settings: Map<SettingsEntryKey, string> = await Settings.getAllSettings()

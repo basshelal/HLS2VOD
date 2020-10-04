@@ -1,3 +1,4 @@
+// @ts-ignore
 const database = require("../../Database");
 const electron = require("electron");
 

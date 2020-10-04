@@ -11,8 +11,8 @@ export class Downloader {
 
     private queue: PQueue
     private lastSegment?: string
-    private timeoutHandle?: NodeJS.Timeout
-    private refreshHandle?: NodeJS.Timeout
+    private timeoutHandle?: number
+    private refreshHandle?: number
 
     constructor(
         public playlistUrl: string,
