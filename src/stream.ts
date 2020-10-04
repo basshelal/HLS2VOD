@@ -1,15 +1,13 @@
 import {Downloader, StreamChooser} from "./downloader/downloader";
 import * as fs from "fs";
 import * as fsextra from "fs-extra";
-import * as csv from "csvtojson";
-import * as moment from "moment";
+import csv from "csvtojson";
 import {assert, logD, momentFormat, momentFormatSafe} from "./utils";
 import {StreamEntry} from "./database/database";
 import * as path from "path";
 import {hideSync} from "hidefile";
 import {EventEmitter} from "events";
-import ErrnoException = NodeJS.ErrnoException;
-import Timeout = NodeJS.Timeout;
+import moment from "moment";
 
 export async function newStream(name: string, playlistUrl: string, schedulePath: string,
                                 schedule: Schedule, offsetSeconds: number, rootDirectory: string,
@@ -32,7 +30,7 @@ export class Stream extends EventEmitter {
     private streamDirectory: string
     private segmentsDirectory: string
     private downloader: Downloader
-    private mergerTimeOut: Timeout
+    private mergerTimeOut: number
     private nextEventTime: number
     private rootDirectory: string
     private scheduledShows: Array<ScheduledShow>
@@ -264,7 +262,7 @@ function getScheduleFromFileData(data: any): Schedule {
 
 async function scheduleFromJson(jsonFilePath: string): Promise<Schedule> {
     return new Promise<Schedule>((resolve, reject) => {
-        fs.readFile(jsonFilePath, ((error: ErrnoException, data: Buffer) => {
+        fs.readFile(jsonFilePath, ((error: NodeJS.ErrnoException, data: Buffer) => {
             if (error) reject(error)
             else resolve(getScheduleFromFileData(JSON.parse(data.toString())))
         }))
