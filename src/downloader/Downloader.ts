@@ -1,7 +1,7 @@
 import * as fs from "fs-extra"
 import * as path from "path"
 import * as m3u8 from "m3u8-parser"
-import {mergeFiles, transmuxTsToMp4} from "./Ffmpeg"
+import {Ffmpeg} from "./Ffmpeg"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {download, get} from "./Http"
@@ -9,7 +9,7 @@ import {logD} from "../Utils"
 
 export class Downloader {
 
-    private queue: PQueue
+    private queue: PQueue = new PQueue()
     private lastSegment?: string
     private timeoutHandle?: number
     private refreshHandle?: number
@@ -20,7 +20,6 @@ export class Downloader {
         private timeoutDuration: number = 600,
         private playlistRefreshInterval: number = 2
     ) {
-        this.queue = new PQueue()
     }
 
     public async start(): Promise<void> {
@@ -68,14 +67,14 @@ export class Downloader {
         logD(`Merging ${segments}`)
 
         // Merge TS files
-        await mergeFiles(segments, mergedSegmentsFile)
+        await Ffmpeg.mergeFiles(segments, mergedSegmentsFile)
 
         logD("Finished Merging")
 
         logD(`Transmuxing to mp4`)
 
         // Transmux
-        await transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName))
+        await Ffmpeg.transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName))
 
         fs.removeSync(mergedSegmentsFile)
     }
@@ -235,42 +234,4 @@ export class StreamChooser {
         console.error("No stream or playlist found in URL:", this.streamUrl)
         return false
     }
-}
-
-export interface IConfig {
-    quality?: "worst" | "best" | number;
-    streamUrl: string;
-    segmentsDir?: string;
-}
-
-export async function startDownloader(url: string): Promise<void> {
-    let config: IConfig = {
-        quality: "best",
-        segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
-        streamUrl: url
-    }
-    const runId = Date.now()
-    const segmentsDir: string = config.segmentsDir + `/${runId}/` || `./segments/${runId}/`
-    const mergedSegmentsFile: string = segmentsDir + "merged.ts"
-
-    // Create target directory
-    fs.mkdirpSync(path.dirname(mergedSegmentsFile))
-    fs.mkdirpSync(segmentsDir)
-
-    // Choose proper stream
-    const streamChooser = new StreamChooser(config.streamUrl)
-    if (!await streamChooser.load()) {
-        return
-    }
-    const playlistUrl = streamChooser.getPlaylistUrl(config.quality)
-    if (!playlistUrl) {
-        return
-    }
-
-    // Start download
-    let downloader = new Downloader(
-        playlistUrl,
-        segmentsDir
-    )
-    return await downloader.start()
 }
