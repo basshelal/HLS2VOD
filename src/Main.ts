@@ -1,12 +1,12 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
-import {newStream, Schedule, Stream, StreamListener} from "./Stream"
+import {Schedule, Stream, StreamListener} from "./Stream"
 import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database"
 import extensions from "./Extensions"
 import * as path from "path"
-import {logD} from "./Utils"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
+import {logD} from "./Log"
 
 extensions()
 
@@ -70,8 +70,15 @@ async function addStream(streamEntry: StreamEntry): Promise<Stream> {
     const outputDirectory = settings.get("outputDirectory")
     const schedule = await Schedule.fromCSV(streamEntry.schedulePath)
 
-    const stream = await newStream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath,
-        schedule, offsetSeconds, outputDirectory, streamListener)
+    const stream = await Stream.new({
+        name: streamEntry.name,
+        playlistUrl: streamEntry.playlistUrl,
+        schedulePath: streamEntry.schedulePath,
+        schedule: schedule,
+        offsetSeconds: offsetSeconds,
+        rootDirectory: outputDirectory,
+        listener: streamListener
+    })
     await Streams.addStream(stream)
     return stream
 }

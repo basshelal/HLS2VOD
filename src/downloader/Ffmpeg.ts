@@ -1,34 +1,37 @@
-import * as cp from "child_process"
-import {getPath, logD} from "../Utils"
+import {getPath} from "../Utils"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
+import {spawn} from "child_process"
+import {logD, logE} from "../Log"
 
 export class Ffmpeg {
     private constructor() {}
 
-    static get binPath(): string {
-        if (process.platform === "win32") {
+    private static resolveBin(): string {
+        if (process.platform === "win32")
             return getPath("ffmpeg/bin/win32/ffmpeg.exe")
-        } else if (process.platform === "linux") {
+        else if (process.platform === "linux")
             return getPath("ffmpeg/bin/linux/ffmpeg")
-        } else if (process.platform === "darwin") {
+        else if (process.platform === "darwin") {
             // TODO Get Darwin ffmpeg binaries
         } else return ""
     }
+
+    static binPath = Ffmpeg.resolveBin()
 
     static spawn(args: Array<string>): Promise<void> {
         return new Promise((resolve, reject) => {
             const ffmpegPath = Ffmpeg.binPath
             logD(`Spawning ${ffmpegPath} ${args.join(" ")}`)
 
-            const ffmpeg = cp.spawn(ffmpegPath, args)
+            const ffmpeg = spawn(ffmpegPath, args)
             ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`))
             ffmpeg.on("error", (msg) => {
-                console.error("ffmpeg error:", msg)
+                logE(`ffmpeg error: ${msg}`)
                 reject(msg)
             })
             ffmpeg.on("close", (status) => {
                 if (status !== 0) {
-                    console.error(`ffmpeg closed with status ${status}`)
+                    logE(`ffmpeg closed with status ${status}`)
                     reject(`ffmpeg closed with status ${status}`)
                 } else {
                     resolve()

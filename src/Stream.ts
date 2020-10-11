@@ -1,29 +1,14 @@
 import {Downloader, StreamChooser} from "./downloader/Downloader"
 import * as fs from "fs"
 import csv from "csvtojson"
-import {assert, logD, momentFormat, momentFormatSafe} from "./Utils"
+import {momentFormat, momentFormatSafe} from "./Utils"
 import {StreamEntry} from "./Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
 import moment from "moment"
 import {mkdirpSync} from "fs-extra"
-
-export async function newStream(name: string, playlistUrl: string, schedulePath: string,
-                                schedule: Schedule, offsetSeconds: number, rootDirectory: string,
-                                listener?: StreamListener): Promise<Stream> {
-    const stream = new Stream({
-        name: name,
-        playlistUrl: playlistUrl,
-        schedulePath: schedulePath,
-        schedule: schedule,
-        offsetSeconds: offsetSeconds,
-        rootDirectory: rootDirectory,
-        listener: listener
-    })
-    await stream.initialize()
-    return stream
-}
+import {assert, logD} from "./Log"
 
 export class Stream extends EventEmitter {
 
@@ -243,6 +228,20 @@ export class Stream extends EventEmitter {
 
     toString(): string {
         return JSON.stringify(this.toStreamEntry(), null, 2)
+    }
+
+    static async new({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener}: {
+        name: string
+        playlistUrl: string
+        schedulePath: string
+        schedule: Schedule
+        offsetSeconds: number
+        rootDirectory: string
+        listener?: StreamListener
+    }): Promise<Stream> {
+        const stream = new Stream({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener})
+        await stream.initialize()
+        return stream
     }
 }
 

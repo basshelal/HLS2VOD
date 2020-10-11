@@ -3,35 +3,49 @@ import chalk from "chalk"
 import {AssertionError} from "assert"
 
 export const logOptions = {
-    enabled: true
+    enabled: true,
+    beforeLog: Function,
+    afterLog: Function
 }
 
-export function logD(message: any) {
-    if (logOptions.enabled)
+function log(logFunction: Function) {
+    if (logOptions.enabled) {
+        logOptions.beforeLog()
+        logFunction()
+        logOptions.afterLog()
+    }
+}
+
+export function logD(message: any, calledFrom: string = "") {
+    log(() => {
         console.debug(`${now()}\n` +
             chalk.blueBright(`${message.toString()}\n`)
         )
+    })
 }
 
-export function logW(message: any) {
-    if (logOptions.enabled)
+export function logW(message: any, calledFrom: string = "") {
+    log(() => {
         console.warn(`${now()}\n` +
             chalk.yellowBright(`${message.toString()}\n`)
         )
+    })
 }
 
-export function logI(message: any) {
-    if (logOptions.enabled)
+export function logI(message: any, calledFrom: string = "") {
+    log(() => {
         console.info(`${now()}\n` +
             chalk.whiteBright(`${message.toString()}\n`)
         )
+    })
 }
 
-export function logE(message: any) {
-    if (logOptions.enabled)
+export function logE(message: any, calledFrom: string = "") {
+    log(() => {
         console.error(`${now()}\n` +
             chalk.red(`${message.toString()}\n`)
         )
+    })
 }
 
 export function assert(condition: boolean, message: string, args?: IArguments, func?: Function) {

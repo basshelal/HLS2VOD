@@ -5,7 +5,7 @@ import {Ffmpeg} from "./Ffmpeg"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {download, get} from "./Http"
-import {logD} from "../Utils"
+import {logD} from "../Log"
 
 export class Downloader {
 
@@ -19,8 +19,7 @@ export class Downloader {
         public segmentDirectory: string,
         private timeoutDuration: number = 600,
         private playlistRefreshInterval: number = 2
-    ) {
-    }
+    ) {}
 
     public async start(): Promise<void> {
         this.queue.add(() => this.refreshPlayList())
@@ -173,11 +172,11 @@ export class Downloader {
     }
 }
 
+// TODO reduce this shit to a single function that takes a streamUrl and bandwidth and gives playlistUrl
 export class StreamChooser {
     private manifest?: m3u8.Manifest
 
-    constructor(private streamUrl: string) {
-    }
+    constructor(private streamUrl: string) {}
 
     public async load(): Promise<boolean> {
         const streams = await get(this.streamUrl)
