@@ -1,5 +1,5 @@
-import * as electron from "electron";
-import * as path from "path";
+import * as electron from "electron"
+import * as path from "path"
 import moment from "moment"
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"

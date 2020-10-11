@@ -1,11 +1,11 @@
-import * as fs from "fs-extra";
-import * as path from "path";
-import * as m3u8 from "m3u8-parser";
-import {mergeFiles, transmuxTsToMp4} from "./Ffmpeg";
-import PQueue from "p-queue";
-import {URL} from "url";
-import {download, get} from "./Http";
-import {logD} from "../Utils";
+import * as fs from "fs-extra"
+import * as path from "path"
+import * as m3u8 from "m3u8-parser"
+import {mergeFiles, transmuxTsToMp4} from "./Ffmpeg"
+import PQueue from "p-queue"
+import {URL} from "url"
+import {download, get} from "./Http"
+import {logD} from "../Utils"
 
 export class Downloader {
 
@@ -18,7 +18,7 @@ export class Downloader {
         public playlistUrl: string,
         public segmentDirectory: string,
         private timeoutDuration: number = 600,
-        private playlistRefreshInterval: number = 2,
+        private playlistRefreshInterval: number = 2
     ) {
         this.queue = new PQueue()
     }
@@ -110,130 +110,130 @@ export class Downloader {
     }
 
     private async refreshPlayList(): Promise<void> {
-        const playlist = await this.loadPlaylist();
+        const playlist = await this.loadPlaylist()
 
-        const interval = playlist.targetDuration || this.playlistRefreshInterval;
-        const segments = playlist.segments!.map((s) => new URL(s.uri, this.playlistUrl).href);
+        const interval = playlist.targetDuration || this.playlistRefreshInterval
+        const segments = playlist.segments!.map((s) => new URL(s.uri, this.playlistUrl).href)
 
-        this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000);
+        this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000)
 
-        let toLoad: string[] = [];
+        let toLoad: string[] = []
         if (!this.lastSegment) {
-            toLoad = segments.slice(segments.length - 1);
+            toLoad = segments.slice(segments.length - 1)
         } else {
-            const index = segments.indexOf(this.lastSegment);
+            const index = segments.indexOf(this.lastSegment)
             if (index < 0) {
-                console.error("Could not find last segment in playlist");
-                toLoad = segments;
+                console.error("Could not find last segment in playlist")
+                toLoad = segments
             } else if (index === segments.length - 1) {
-                logD("No new segments since last check");
-                return;
+                logD("No new segments since last check")
+                return
             } else {
-                toLoad = segments.slice(index + 1);
+                toLoad = segments.slice(index + 1)
             }
         }
 
-        this.lastSegment = toLoad[toLoad.length - 1];
+        this.lastSegment = toLoad[toLoad.length - 1]
         for (const uri of toLoad) {
-            logD(`Queued: ${uri}`);
-            this.queue.add(() => this.downloadSegment(uri));
+            logD(`Queued: ${uri}`)
+            this.queue.add(() => this.downloadSegment(uri))
         }
 
         // Timeout after X seconds without new segment
         if (this.timeoutHandle) {
-            clearTimeout(this.timeoutHandle);
+            clearTimeout(this.timeoutHandle)
         }
-        this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000);
+        this.timeoutHandle = setTimeout(() => this.timeout(), this.timeoutDuration * 1000)
     }
 
     private timeout(): void {
-        logD("No new segment for a while, stopping");
-        this.stop();
+        logD("No new segment for a while, stopping")
+        this.stop()
     }
 
     private async loadPlaylist(): Promise<m3u8.Manifest> {
-        const response = await get(this.playlistUrl);
+        const response = await get(this.playlistUrl)
 
-        const parser = new m3u8.Parser();
-        parser.push(response);
-        parser.end();
+        const parser = new m3u8.Parser()
+        parser.push(response)
+        parser.end()
 
-        return parser.manifest;
+        return parser.manifest
     }
 
     private async downloadSegment(segmentUrl: string): Promise<void> {
         // Get filename from URL
-        const question = segmentUrl.indexOf("?");
-        let filename = question > 0 ? segmentUrl.substr(0, question) : segmentUrl;
-        const slash = filename.lastIndexOf("/");
-        filename = filename.substr(slash + 1);
+        const question = segmentUrl.indexOf("?")
+        let filename = question > 0 ? segmentUrl.substr(0, question) : segmentUrl
+        const slash = filename.lastIndexOf("/")
+        filename = filename.substr(slash + 1)
 
         // Download file
-        await download(segmentUrl, path.join(this.segmentDirectory, filename));
-        logD(`Downloaded: ${segmentUrl}`);
+        await download(segmentUrl, path.join(this.segmentDirectory, filename))
+        logD(`Downloaded: ${segmentUrl}`)
     }
 }
 
 export class StreamChooser {
-    private manifest?: m3u8.Manifest;
+    private manifest?: m3u8.Manifest
 
     constructor(private streamUrl: string) {
     }
 
     public async load(): Promise<boolean> {
-        const streams = await get(this.streamUrl);
+        const streams = await get(this.streamUrl)
 
-        const parser = new m3u8.Parser();
-        parser.push(streams);
-        parser.end();
+        const parser = new m3u8.Parser()
+        parser.push(streams)
+        parser.end()
 
-        this.manifest = parser.manifest;
+        this.manifest = parser.manifest
 
         return (this.manifest.segments && this.manifest.segments.length > 0)
             || (this.manifest.playlists && this.manifest.playlists.length > 0)
-            || false;
+            || false
     }
 
     public isMaster(): boolean {
         if (!this.manifest) {
-            throw Error("You need to call 'load' before 'isMaster'");
+            throw Error("You need to call 'load' before 'isMaster'")
         }
 
-        return this.manifest.playlists && this.manifest.playlists.length > 0 || false;
+        return this.manifest.playlists && this.manifest.playlists.length > 0 || false
     }
 
     public getPlaylistUrl(maxBandwidth?: "worst" | "best" | number): string | false {
         if (!this.manifest) {
-            throw Error("You need to call 'load' before 'getPlaylistUrl'");
+            throw Error("You need to call 'load' before 'getPlaylistUrl'")
         }
 
         // If we already provided a playlist URL
         if (this.manifest.segments && this.manifest.segments.length > 0) {
-            return this.streamUrl;
+            return this.streamUrl
         }
 
         // You need a quality parameter with a master playlist
         if (!maxBandwidth) {
-            console.error("You need to provide a quality with a master playlist");
-            return false;
+            console.error("You need to provide a quality with a master playlist")
+            return false
         }
 
         // Find the most relevant playlist
         if (this.manifest.playlists && this.manifest.playlists.length > 0) {
-            let compareFn: (prev: m3u8.ManifestPlaylist, current: m3u8.ManifestPlaylist) => m3u8.ManifestPlaylist;
+            let compareFn: (prev: m3u8.ManifestPlaylist, current: m3u8.ManifestPlaylist) => m3u8.ManifestPlaylist
             if (maxBandwidth === "best") {
-                compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH) ? prev : current;
+                compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH) ? prev : current
             } else if (maxBandwidth === "worst") {
-                compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH) ? current : prev;
+                compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH) ? current : prev
             } else {
-                compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH || current.attributes.BANDWIDTH > maxBandwidth) ? prev : current;
+                compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH || current.attributes.BANDWIDTH > maxBandwidth) ? prev : current
             }
-            const uri = this.manifest.playlists.reduce(compareFn).uri;
-            return new URL(uri, this.streamUrl).href;
+            const uri = this.manifest.playlists.reduce(compareFn).uri
+            return new URL(uri, this.streamUrl).href
         }
 
-        console.error("No stream or playlist found in URL:", this.streamUrl);
-        return false;
+        console.error("No stream or playlist found in URL:", this.streamUrl)
+        return false
     }
 }
 
@@ -248,29 +248,29 @@ export async function startDownloader(url: string): Promise<void> {
         quality: "best",
         segmentsDir: "C:\\Users\\bassh\\Desktop\\StreamDownloader\\segments",
         streamUrl: url
-    };
-    const runId = Date.now();
-    const segmentsDir: string = config.segmentsDir + `/${runId}/` || `./segments/${runId}/`;
-    const mergedSegmentsFile: string = segmentsDir + "merged.ts";
+    }
+    const runId = Date.now()
+    const segmentsDir: string = config.segmentsDir + `/${runId}/` || `./segments/${runId}/`
+    const mergedSegmentsFile: string = segmentsDir + "merged.ts"
 
     // Create target directory
-    fs.mkdirpSync(path.dirname(mergedSegmentsFile));
-    fs.mkdirpSync(segmentsDir);
+    fs.mkdirpSync(path.dirname(mergedSegmentsFile))
+    fs.mkdirpSync(segmentsDir)
 
     // Choose proper stream
-    const streamChooser = new StreamChooser(config.streamUrl);
+    const streamChooser = new StreamChooser(config.streamUrl)
     if (!await streamChooser.load()) {
-        return;
+        return
     }
-    const playlistUrl = streamChooser.getPlaylistUrl(config.quality);
+    const playlistUrl = streamChooser.getPlaylistUrl(config.quality)
     if (!playlistUrl) {
-        return;
+        return
     }
 
     // Start download
     let downloader = new Downloader(
         playlistUrl,
         segmentsDir
-    );
-    return await downloader.start();
+    )
+    return await downloader.start()
 }

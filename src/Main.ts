@@ -1,12 +1,12 @@
-import * as electron from "electron";
-import {BrowserWindow, IpcMainInvokeEvent} from "electron";
-import {newStream, Schedule, Stream, StreamListener} from "./Stream";
-import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database";
-import extensions from "./Extensions";
-import * as path from "path";
-import {logD} from "./Utils";
-import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer";
-import url from "url";
+import * as electron from "electron"
+import {BrowserWindow, IpcMainInvokeEvent} from "electron"
+import {newStream, Schedule, Stream, StreamListener} from "./Stream"
+import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database"
+import extensions from "./Extensions"
+import * as path from "path"
+import {logD} from "./Utils"
+import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
+import url from "url"
 
 extensions()
 
@@ -51,7 +51,7 @@ const streamListener: StreamListener = {
         streamEntry["currentShow"] = stream.currentShow
         streamEntry["nextShow"] = stream.nextShow
         send("streamNewCurrentShow", streamEntry)
-    },
+    }
 }
 
 let browserWindow: BrowserWindow
@@ -89,22 +89,22 @@ function startElectronApp() {
                 nodeIntegration: true
             }
         })
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === "development") {
             installExtension(REACT_DEVELOPER_TOOLS)
                 .then((name) => console.log(`Added Extension:  ${name}`))
-                .catch((err) => console.log('An error occurred: ', err));
+                .catch((err) => console.log("An error occurred: ", err))
             installExtension(REDUX_DEVTOOLS)
                 .then((name) => console.log(`Added Extension:  ${name}`))
-                .catch((err) => console.log('An error occurred: ', err));
+                .catch((err) => console.log("An error occurred: ", err))
         }
 
-        if (process.env.NODE_ENV === 'development') {
-            browserWindow.loadURL('http://localhost:4000')
+        if (process.env.NODE_ENV === "development") {
+            browserWindow.loadURL("http://localhost:4000")
         } else {
             browserWindow.loadURL(
                 url.format({
-                    pathname: path.join(__dirname, 'renderer/index.html'),
-                    protocol: 'file:',
+                    pathname: path.join(__dirname, "renderer/index.html"),
+                    protocol: "file:",
                     slashes: true
                 })
             )

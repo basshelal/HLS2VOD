@@ -1,18 +1,26 @@
-import {Downloader, StreamChooser} from "./downloader/Downloader";
-import * as fs from "fs";
-import * as fsextra from "fs-extra";
-import csv from "csvtojson";
-import {assert, logD, momentFormat, momentFormatSafe} from "./Utils";
-import {StreamEntry} from "./Database";
-import * as path from "path";
-import {hideSync} from "hidefile";
-import {EventEmitter} from "events";
-import moment from "moment";
+import {Downloader, StreamChooser} from "./downloader/Downloader"
+import * as fs from "fs"
+import csv from "csvtojson"
+import {assert, logD, momentFormat, momentFormatSafe} from "./Utils"
+import {StreamEntry} from "./Database"
+import * as path from "path"
+import {hideSync} from "hidefile"
+import {EventEmitter} from "events"
+import moment from "moment"
+import {mkdirpSync} from "fs-extra"
 
 export async function newStream(name: string, playlistUrl: string, schedulePath: string,
                                 schedule: Schedule, offsetSeconds: number, rootDirectory: string,
                                 listener?: StreamListener): Promise<Stream> {
-    const stream = new Stream(name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener)
+    const stream = new Stream({
+        name: name,
+        playlistUrl: playlistUrl,
+        schedulePath: schedulePath,
+        schedule: schedule,
+        offsetSeconds: offsetSeconds,
+        rootDirectory: rootDirectory,
+        listener: listener
+    })
     await stream.initialize()
     return stream
 }
@@ -36,15 +44,15 @@ export class Stream extends EventEmitter {
     private scheduledShows: Array<ScheduledShow>
     private isRunning: boolean = true
 
-    constructor(
-        name: string,
-        playlistUrl: string,
-        schedulePath: string,
-        schedule: Schedule,
-        offsetSeconds: number,
-        rootDirectory: string,
+    constructor({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener}: {
+        name: string
+        playlistUrl: string
+        schedulePath: string
+        schedule: Schedule
+        offsetSeconds: number
+        rootDirectory: string
         listener?: StreamListener
-    ) {
+    }) {
         super()
         this.name = name
         this.playlistUrl = playlistUrl
@@ -56,8 +64,8 @@ export class Stream extends EventEmitter {
 
         this.streamDirectory = path.join(this.rootDirectory, this.name)
         this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
-        fsextra.mkdirpSync(this.streamDirectory)
-        fsextra.mkdirpSync(this.segmentsDirectory)
+        mkdirpSync(this.streamDirectory)
+        mkdirpSync(this.segmentsDirectory)
         this.segmentsDirectory = hideSync(this.segmentsDirectory)
 
         if (listener) this.addStreamListener(listener)
@@ -185,7 +193,7 @@ export class Stream extends EventEmitter {
         return {
             name: this.name,
             playlistUrl: this.playlistUrl,
-            schedulePath: this.schedulePath,
+            schedulePath: this.schedulePath
         }
     }
 
@@ -233,7 +241,6 @@ export class Stream extends EventEmitter {
         this.emit("newCurrentShow")
     }
 
-
     toString(): string {
         return JSON.stringify(this.toStreamEntry(), null, 2)
     }
@@ -252,7 +259,7 @@ export const Schedule = {
     fromCSV(csvFilePath: string): Promise<Schedule> {
         return scheduleFromCsv(csvFilePath)
     }
-};
+}
 
 function getScheduleFromFileData(data: any): Schedule {
     if (Array.isArray(data)) {

@@ -1,6 +1,6 @@
-import * as cp from "child_process";
-import * as fs from "fs";
-import {getPath, logD} from "../Utils";
+import * as cp from "child_process"
+import * as fs from "fs"
+import {getPath, logD} from "../Utils"
 
 export function ffmpegBin(): string {
     if (process.platform === "win32") {

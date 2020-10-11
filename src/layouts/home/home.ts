@@ -1,6 +1,6 @@
 // @ts-ignore
-const database = require("../../Database");
-const electron = require("electron");
+const database = require("../../Database")
+const electron = require("electron")
 
 interface StreamEntry {
     name: string,
@@ -33,8 +33,8 @@ const playListURLTextArea = get<HTMLTextAreaElement>("playListURLTextArea")
 const importScheduleFileInput = get<HTMLInputElement>("importScheduleFileInput")
 const confirmAddStreamButton = get<HTMLButtonElement>("confirmAddStreamButton")
 
-M.Tooltip.init(document.querySelectorAll('.tooltipped'), {inDuration: 500, outDuration: 500})
-M.Modal.init(document.querySelectorAll('.modal'), {dismissible: true, inDuration: 500, outDuration: 500})
+M.Tooltip.init(document.querySelectorAll(".tooltipped"), {inDuration: 500, outDuration: 500})
+M.Modal.init(document.querySelectorAll(".modal"), {dismissible: true, inDuration: 500, outDuration: 500})
 
 const addNewStreamModal = M.Modal.getInstance(get("addNewStreamModal"))
 const settingsModal = M.Modal.getInstance(get("settingsModal"))

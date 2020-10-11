@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import axios from "axios";
+import * as fs from "fs"
+import axios from "axios"
 
 export async function get(url: string): Promise<string> {
     const response = await axios.get(url, {responseType: "text"})

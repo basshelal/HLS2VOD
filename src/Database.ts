@@ -1,6 +1,6 @@
-import Datastore from "nedb";
-import {Stream} from "./Stream";
-import {getPath} from "./Utils";
+import Datastore from "nedb"
+import {Stream} from "./Stream"
+import {getPath} from "./Utils"
 
 const settingsDatabase = new Datastore({
     filename: getPath("database/settings.db"),
@@ -71,7 +71,7 @@ export const Settings = {
                     else resolve(Number.parseInt(documents[0].value))
                 })
         )
-    },
+    }
     // endregion offsetSeconds
 }
 
@@ -128,5 +128,5 @@ export const Streams = {
                 else resolve(documents[0])
             })
         )
-    },
+    }
 }

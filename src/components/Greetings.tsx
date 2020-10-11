@@ -1,7 +1,7 @@
-import React from 'react'
+import React from "react"
 
-import styled, {keyframes} from 'styled-components'
-import {from} from "../Utils";
+import styled, {keyframes} from "styled-components"
+import {from} from "../Utils"
 
 const rotate = keyframes`
   from {
