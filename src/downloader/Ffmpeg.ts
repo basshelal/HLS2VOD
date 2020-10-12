@@ -6,14 +6,14 @@ import {logD, logE} from "../Log"
 export class Ffmpeg {
     private constructor() {}
 
-    private static resolveBin(): string {
+    private static resolveBin(): string | null {
         if (process.platform === "win32")
             return getPath("ffmpeg/bin/win32/ffmpeg.exe")
         else if (process.platform === "linux")
             return getPath("ffmpeg/bin/linux/ffmpeg")
-        else if (process.platform === "darwin") {
-            // TODO Get Darwin ffmpeg binaries
-        } else return ""
+        else if (process.platform === "darwin")
+            return getPath("ffmpeg/bin/darwin/ffmpeg")
+        else return null
     }
 
     static binPath = Ffmpeg.resolveBin()
@@ -21,6 +21,7 @@ export class Ffmpeg {
     static spawn(args: Array<string>): Promise<void> {
         return new Promise((resolve, reject) => {
             const ffmpegPath = Ffmpeg.binPath
+            if (!ffmpegPath) logE(`Ffmpeg path not found`)
             logD(`Spawning ${ffmpegPath} ${args.join(" ")}`)
 
             const ffmpeg = spawn(ffmpegPath, args)

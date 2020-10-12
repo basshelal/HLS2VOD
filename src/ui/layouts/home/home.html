@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HLS2VOD</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link href="home.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>HLS 2 VOD</h1>
+</header>
+
+<br>
+
+<div class="container center">
+
+    <button class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger"
+            data-position="top"
+            data-target="settingsModal"
+            data-tooltip="Settings"
+            id="settingsButton" style="margin-bottom: 16px">
+        <i class="material-icons">settings</i>
+    </button>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content container center" id="settingsDiv">
+
+            <h4>Settings</h4>
+
+            <div class="row">
+                <p>Here is where information will go</p>
+                <div class="input-field col s5">
+                    <input id="offsetSecondsInput" type="number">
+                    <label for="offsetSecondsInput">Offset Seconds</label>
+                </div>
+                <p class="col s2"></p>
+                <div class="input-field col s5">
+                    <textarea class="materialize-textarea" id="outputDirectoryTextArea"></textarea>
+                    <label for="outputDirectoryTextArea">Output Directory</label>
+                </div>
+            </div>
+
+            <button class="waves-effect waves-light btn pink darken-4" id="saveSettingsButton">
+                Save Settings
+            </button>
+        </div>
+    </div>
+
+    <h3>All Streams</h3>
+
+    <div id="allStreamsDiv">
+
+    </div>
+
+    <template id="displayStreamTemplate">
+        <div id="displayStreamDiv">
+            <h5 id="streamNameText">Stream Name</h5>
+            <div class="row">
+                <div class="col s4">
+                    <p id="currentShowText">Current Show</p>
+                </div>
+                <div class="col s4">
+                    <p id="recordingText">Recording...</p>
+                </div>
+                <div class="col s4">
+                    <p id="nextShowText">Next Show</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col s4">
+                    <button class="waves-effect waves-light btn pink darken-4" id="outputButton">
+                        View Output Folder
+                    </button>
+                </div>
+                <div class="col s4">
+                    <button class="waves-effect waves-light btn pink darken-4" id="recordingButton">
+                        Stop start recording
+                    </button>
+                </div>
+                <div class="col s4">
+                    <button class="waves-effect waves-light btn pink darken-4 disabled" id="editStreamButton">
+                        Edit Stream
+                    </button>
+                </div>
+                <div class="col s12">
+                    <p id="streamInfoText">Information messages go here</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <button
+            class="waves-circle waves-effect waves-light btn-floating btn-large pink darken-4 tooltipped modal-trigger disabled"
+            data-position="top"
+            style="margin-bottom: 16px"
+            data-target="addNewStreamModal"
+            data-tooltip="Add new Stream" id="addStreamButton">
+        <i class="material-icons">add</i>
+    </button>
+</div>
+
+<div class="modal" id="addNewStreamModal">
+    <div class="modal-content container center" id="addNewStreamDiv">
+
+        <h4>Add New Stream</h4>
+
+        <div class="row">
+            <p>Here is where information will go</p>
+            <div class="input-field col s4">
+                <textarea class="materialize-textarea" id="streamNameTextArea"></textarea>
+                <label for="streamNameTextArea">Stream Name</label>
+            </div>
+            <div class="input-field col s4">
+                <textarea class="materialize-textarea" id="playListURLTextArea"></textarea>
+                <label for="playListURLTextArea">m3u8 Playlist URL</label>
+            </div>
+            <div class="input-field col s4">
+                <div class="file-field input-field">
+                    <div class="waves-effect waves-light btn pink darken-4">
+                        <span>Import Schedule</span>
+                        <input accept=".csv" id="importScheduleFileInput" type="file">
+                    </div>
+                    <div class="file-path-wrapper">
+                        <input class="file-path" type="text">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="waves-effect waves-light btn pink darken-4" id="confirmAddStreamButton">
+            Add Stream
+        </button>
+    </div>
+</div>
+
+</body>
+<script src="../../../js/layouts/home/home.js"></script>
+</html>

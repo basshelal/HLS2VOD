@@ -1,19 +1,20 @@
-import React from "react"
+import React, {ReactElement} from "react"
 import {render} from "react-dom"
-import {GlobalStyle} from "./styles/GlobalStyle"
-import Greetings from "./components/Greetings"
+import {GlobalStyle} from "./ui/GlobalStyle"
+import Greetings from "./ui/layouts/Greetings"
+import StreamView from "./ui/components/StreamView"
 
-const mainElement = document.createElement("div")
-mainElement.setAttribute("id", "root")
-document.body.appendChild(mainElement)
-
-const App = () => {
+function App(): ReactElement {
     return (
         <>
             <GlobalStyle/>
             <Greetings/>
+            <StreamView/>
         </>
     )
 }
 
+const mainElement = document.createElement("div")
+mainElement.setAttribute("id", "root")
+document.body.appendChild(mainElement)
 render(<App/>, mainElement)

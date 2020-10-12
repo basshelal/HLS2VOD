@@ -70,7 +70,6 @@ export class Stream extends EventEmitter {
     }
 
     public async destroy(): Promise<void> {
-        // TODO
         this.emit("destroyed")
     }
 

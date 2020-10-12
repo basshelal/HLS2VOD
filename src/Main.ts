@@ -87,7 +87,6 @@ function startElectronApp() {
     electron.app.whenReady().then(async () => {
         electron.app.allowRendererProcessReuse = true
         browserWindow = new BrowserWindow({
-            backgroundColor: "#0e0e0e",
             center: true,
             width: 1200,
             height: 900,
@@ -180,6 +179,8 @@ function startElectronApp() {
                 activeStreams.push(stream)
             }
         })
+
+    handle("test", ((event, args) => logD(args)))
 }
 
 startElectronApp()
