@@ -5,21 +5,27 @@ import {Ffmpeg} from "./Ffmpeg"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {download, get} from "./Http"
-import {logD} from "../Log"
+import {logD, logE} from "../Log"
 
 export class Downloader {
 
+    public playlistUrl: string
+    public segmentDirectory: string
+
     private queue: PQueue = new PQueue()
+    private timeoutDuration: number
+    private playlistRefreshInterval: number
     private lastSegment?: string
     private timeoutHandle?: number
     private refreshHandle?: number
 
-    constructor(
-        public playlistUrl: string,
-        public segmentDirectory: string,
-        private timeoutDuration: number = 600,
-        private playlistRefreshInterval: number = 2
-    ) {}
+    constructor(playlistUrl: string, segmentDirectory: string,
+                timeoutDuration: number = 600, playlistRefreshInterval: number = 2) {
+        this.playlistUrl = playlistUrl
+        this.segmentDirectory = segmentDirectory
+        this.timeoutDuration = timeoutDuration
+        this.playlistRefreshInterval = playlistRefreshInterval
+    }
 
     public async start(): Promise<void> {
         this.queue.add(() => this.refreshPlayList())
@@ -40,8 +46,8 @@ export class Downloader {
     }
 
     public async merge(fromChunkName: string, toChunkName: string, outputDirectory: string, outputFileName: string): Promise<void> {
-        let segmentsDir = this.segmentDirectory
-        let mergedSegmentsFile: string = path.join(segmentsDir, "merged.ts")
+        const segmentsDir = this.segmentDirectory
+        const mergedSegmentsFile: string = path.join(segmentsDir, "merged.ts")
 
         // Get all segments
         let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
@@ -170,54 +176,27 @@ export class Downloader {
         await download(segmentUrl, path.join(this.segmentDirectory, filename))
         logD(`Downloaded: ${segmentUrl}`)
     }
-}
 
-// TODO reduce this shit to a single function that takes a streamUrl and bandwidth and gives playlistUrl
-export class StreamChooser {
-    private manifest?: m3u8.Manifest
-
-    constructor(private streamUrl: string) {}
-
-    public async load(): Promise<boolean> {
-        const streams = await get(this.streamUrl)
+    static async chooseStream(streamUrl: string,
+                              maxBandwidth: "worst" | "best" | number = "best"): Promise<string | null> {
+        const streams: string = await get(streamUrl)
 
         const parser = new m3u8.Parser()
         parser.push(streams)
         parser.end()
 
-        this.manifest = parser.manifest
+        const manifest = parser.manifest
 
-        return (this.manifest.segments && this.manifest.segments.length > 0)
-            || (this.manifest.playlists && this.manifest.playlists.length > 0)
-            || false
-    }
+        const isValid = (manifest.segments && manifest.segments.length > 0)
+            || (manifest.playlists && manifest.playlists.length > 0)
 
-    public isMaster(): boolean {
-        if (!this.manifest) {
-            throw Error("You need to call 'load' before 'isMaster'")
-        }
-
-        return this.manifest.playlists && this.manifest.playlists.length > 0 || false
-    }
-
-    public getPlaylistUrl(maxBandwidth?: "worst" | "best" | number): string | false {
-        if (!this.manifest) {
-            throw Error("You need to call 'load' before 'getPlaylistUrl'")
-        }
+        if (!isValid) return null
 
         // If we already provided a playlist URL
-        if (this.manifest.segments && this.manifest.segments.length > 0) {
-            return this.streamUrl
-        }
-
-        // You need a quality parameter with a master playlist
-        if (!maxBandwidth) {
-            console.error("You need to provide a quality with a master playlist")
-            return false
-        }
+        if (manifest.segments && manifest.segments.length > 0) return streamUrl
 
         // Find the most relevant playlist
-        if (this.manifest.playlists && this.manifest.playlists.length > 0) {
+        if (manifest.playlists && manifest.playlists.length > 0) {
             let compareFn: (prev: m3u8.ManifestPlaylist, current: m3u8.ManifestPlaylist) => m3u8.ManifestPlaylist
             if (maxBandwidth === "best") {
                 compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH) ? prev : current
@@ -226,11 +205,11 @@ export class StreamChooser {
             } else {
                 compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH || current.attributes.BANDWIDTH > maxBandwidth) ? prev : current
             }
-            const uri = this.manifest.playlists.reduce(compareFn).uri
-            return new URL(uri, this.streamUrl).href
+            const uri = manifest.playlists.reduce(compareFn).uri
+            return new URL(uri, streamUrl).href
         }
 
-        console.error("No stream or playlist found in URL:", this.streamUrl)
-        return false
+        logE(`No stream or playlist found in URL: ${streamUrl}`)
+        return null
     }
 }

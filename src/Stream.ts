@@ -1,4 +1,4 @@
-import {Downloader, StreamChooser} from "./downloader/Downloader"
+import {Downloader} from "./downloader/Downloader"
 import * as fs from "fs"
 import csv from "csvtojson"
 import {momentFormat, momentFormatSafe} from "./Utils"
@@ -62,10 +62,7 @@ export class Stream extends EventEmitter {
     }
 
     public async initialize(): Promise<void> {
-        const streamChooser = new StreamChooser(this.playlistUrl)
-        if (!await streamChooser.load()) throw Error("StreamChooser failed!")
-
-        const playlistUrl = streamChooser.getPlaylistUrl("best")
+        const playlistUrl = await Downloader.chooseStream(this.playlistUrl)
         if (!playlistUrl) throw Error("PlaylistUrl failed!")
 
         this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)

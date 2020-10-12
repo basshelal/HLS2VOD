@@ -10,41 +10,23 @@ export function getPath(pathString: string): string {
     return path.join(electron.app.getAppPath(), pathString)
 }
 
-export function now(): string {
-    return moment().format(momentFormat)
-}
+export function now(): string { return moment().format(momentFormat) }
 
-export function json(value: any, space: number = 2): string {
-    return JSON.stringify(value, null, space)
-}
+export function json(value: any, space: number = 2): string { return JSON.stringify(value, null, space) }
 
-export function abs(x: number): number {
-    return Math.abs(x)
-}
+export function abs(x: number): number { return Math.abs(x) }
 
-export function floor(x: number): number {
-    return Math.floor(x)
-}
+export function floor(x: number): number { return Math.floor(x) }
 
-export function ceil(x: number): number {
-    return Math.ceil(x)
-}
+export function ceil(x: number): number { return Math.ceil(x) }
 
-export function sqrt(x: number): number {
-    return Math.sqrt(x)
-}
+export function sqrt(x: number): number { return Math.sqrt(x) }
 
-export function pow(x: number, y: number): number {
-    return Math.pow(x, y)
-}
+export function pow(x: number, y: number): number { return Math.pow(x, y) }
 
-export function round(x: number): number {
-    return Math.round(x)
-}
+export function round(x: number): number { return Math.round(x) }
 
-export function random(): number {
-    return Math.random()
-}
+export function random(): number { return Math.random() }
 
 export function average(...values: Array<number>): number {
     if (values.isNotEmpty()) {

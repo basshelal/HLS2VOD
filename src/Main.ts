@@ -2,13 +2,13 @@ import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
 import {Schedule, Stream, StreamListener} from "./Stream"
 import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database"
-import extensions from "./Extensions"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
 import {logD} from "./Log"
+import Extensions from "./Extensions"
 
-extensions()
+Extensions()
 
 const activeStreams: Array<Stream> = []
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8"

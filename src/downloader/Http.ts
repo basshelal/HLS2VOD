@@ -1,14 +1,13 @@
-import * as fs from "fs"
 import axios from "axios"
+import {createWriteStream} from "fs"
 
 export async function get(url: string): Promise<string> {
-    const response = await axios.get(url, {responseType: "text"})
-    return response.data
+    return (await axios.get(url, {responseType: "text"})).data
 }
 
 export async function download(url: string, filePath: string): Promise<void> {
-    const response = await axios(url, {responseType: "stream"})
-    const stream = response.data.pipe(fs.createWriteStream(filePath))
+    const stream = (await axios(url, {responseType: "stream"}))
+        .data.pipe(createWriteStream(filePath))
     return new Promise((resolve, reject) => {
         stream.on("finish", resolve)
         stream.on("error", reject)
