@@ -1,0 +1,1 @@
+export const AppName: string = "HLS2VOD"

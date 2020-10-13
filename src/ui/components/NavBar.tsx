@@ -17,6 +17,7 @@ import ListItemIcon from "@material-ui/core/ListItemIcon"
 import ListItemText from "@material-ui/core/ListItemText"
 import {Info, Settings, ViewStream} from "@material-ui/icons"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
+import {AppName} from "../UICommons"
 
 const drawerWidth = 240
 
@@ -105,7 +106,7 @@ export default function NavBar() {
                         className={clsx(classes.menuButton, open && classes.hide)}>
                         <MenuIcon/>
                     </IconButton>
-                    <Typography variant="h4" align="center" noWrap>HLS2VOD</Typography>
+                    <Typography variant="h4" align="center" noWrap>{AppName}</Typography>
                 </Toolbar>
             </AppBar>
             <Drawer
@@ -117,6 +118,7 @@ export default function NavBar() {
                     paper: classes.drawerPaper
                 }}>
                 <div className={classes.drawerHeader}>
+                    <Typography variant="h6" align={"center"}>{AppName}</Typography>
                     <IconButton onClick={() => {setOpen(false)}}>
                         {theme.direction === "ltr" ? <ChevronLeftIcon/> : <ChevronRightIcon/>}
                     </IconButton>
@@ -131,10 +133,7 @@ export default function NavBar() {
                     ))}
                 </List>
             </Drawer>
-            <main
-                className={clsx(classes.content, {
-                    [classes.contentShift]: open
-                })}>
+            <main className={clsx(classes.content, {[classes.contentShift]: open})}>
                 <div className={classes.drawerHeader}/>
                 <Typography paragraph>
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
