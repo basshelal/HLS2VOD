@@ -1,4 +1,4 @@
-import React, {FunctionComponent, PropsWithChildren, ReactElement, useState} from "react"
+import React, {FC, PropsWithChildren, ReactElement, useState} from "react"
 import clsx from "clsx"
 import {createStyles, makeStyles, Theme, useTheme} from "@material-ui/core/styles"
 import Drawer from "@material-ui/core/Drawer"
@@ -94,7 +94,7 @@ interface NavBarProps {
 
 }
 
-export const NavBar: FunctionComponent = (props?: PropsWithChildren<NavBarProps>) => {
+export const NavBar: FC = (props?: PropsWithChildren<NavBarProps>) => {
     const classes = styles()
     const theme = useTheme()
     theme.palette = createPalette({primary: {main: "#880E4F"}})
@@ -113,7 +113,7 @@ export const NavBar: FunctionComponent = (props?: PropsWithChildren<NavBarProps>
                         className={clsx(classes.menuButton, open && classes.hide)}>
                         <MenuIcon/>
                     </IconButton>
-                    <Typography variant="h4" align="center" noWrap>{AppName}</Typography>
+                    <Typography variant="h4" style={{flexGrow: 1}} align="center" noWrap>{AppName}</Typography>
                 </Toolbar>
             </AppBar>
             <Drawer
@@ -136,6 +136,7 @@ export const NavBar: FunctionComponent = (props?: PropsWithChildren<NavBarProps>
                 ))}</List>
             </Drawer>
             <main className={clsx(classes.content, {[classes.contentShift]: open})}>
+                <div className={classes.drawerHeader}/>
                 {props.children}
             </main>
         </div>
