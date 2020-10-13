@@ -179,8 +179,6 @@ function startElectronApp() {
                 activeStreams.push(stream)
             }
         })
-
-    handle("test", ((event, args) => logD(args)))
 }
 
 startElectronApp()

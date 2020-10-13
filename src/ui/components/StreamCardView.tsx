@@ -11,6 +11,6 @@ import React, {ReactElement} from "react"
  * Info messages
  */
 
-export default function StreamView(): ReactElement {
+export default function StreamCardView(): ReactElement {
     return null
 }

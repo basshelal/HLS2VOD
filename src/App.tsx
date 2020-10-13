@@ -2,14 +2,16 @@ import React, {ReactElement} from "react"
 import {render} from "react-dom"
 import {GlobalStyle} from "./ui/GlobalStyle"
 import Greetings from "./ui/layouts/Greetings"
-import StreamView from "./ui/components/StreamView"
+import StreamCardView from "./ui/components/StreamCardView"
+import NavBar from "./ui/components/NavBar"
 
 function App(): ReactElement {
     return (
         <>
             <GlobalStyle/>
             <Greetings/>
-            <StreamView/>
+            <NavBar/>
+            <StreamCardView/>
         </>
     )
 }
