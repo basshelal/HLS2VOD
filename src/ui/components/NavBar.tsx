@@ -1,4 +1,4 @@
-import React, {ReactElement, useState} from "react"
+import React, {FunctionComponent, PropsWithChildren, ReactElement, useState} from "react"
 import clsx from "clsx"
 import {createStyles, makeStyles, Theme, useTheme} from "@material-ui/core/styles"
 import Drawer from "@material-ui/core/Drawer"
@@ -18,8 +18,10 @@ import ListItemText from "@material-ui/core/ListItemText"
 import {Info, Settings, ViewStream} from "@material-ui/icons"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
 import {AppName} from "../UICommons"
+import createPalette from "@material-ui/core/styles/createPalette"
 
-const drawerWidth = 240
+const drawerWidth: number = 240
+const navigationItems: Array<string> = ["Streams", "Settings", "About"]
 
 function styles(): ClassNameMap {
     return makeStyles((theme: Theme) =>
@@ -88,9 +90,14 @@ function resolveIcon(text: string): ReactElement {
     if (text === "About") return <Info/>
 }
 
-export default function NavBar() {
+interface NavBarProps {
+
+}
+
+export const NavBar: FunctionComponent = (props?: PropsWithChildren<NavBarProps>) => {
     const classes = styles()
     const theme = useTheme()
+    theme.palette = createPalette({primary: {main: "#880E4F"}})
     const [open, setOpen] = useState<boolean>(false)
 
     return (
@@ -114,50 +121,22 @@ export default function NavBar() {
                 variant="persistent"
                 anchor="left"
                 open={open}
-                classes={{
-                    paper: classes.drawerPaper
-                }}>
+                classes={{paper: classes.drawerPaper}}>
                 <div className={classes.drawerHeader}>
-                    <Typography variant="h6" align={"center"}>{AppName}</Typography>
                     <IconButton onClick={() => {setOpen(false)}}>
                         {theme.direction === "ltr" ? <ChevronLeftIcon/> : <ChevronRightIcon/>}
                     </IconButton>
                 </div>
                 <Divider/>
-                <List>
-                    {["Streams", "Settings", "About"].map((text: string, index: number) => (
-                        <ListItem button key={text}>
-                            <ListItemIcon>{resolveIcon(text)}</ListItemIcon>
-                            <ListItemText primary={text}/>
-                        </ListItem>
-                    ))}
-                </List>
+                <List>{navigationItems.map((text: string, index: number) => (
+                    <ListItem button key={text}>
+                        <ListItemIcon>{resolveIcon(text)}</ListItemIcon>
+                        <ListItemText primary={text}/>
+                    </ListItem>
+                ))}</List>
             </Drawer>
             <main className={clsx(classes.content, {[classes.contentShift]: open})}>
-                <div className={classes.drawerHeader}/>
-                <Typography paragraph>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
-                    ut labore et dolore magna aliqua. Rhoncus dolor purus non enim praesent elementum
-                    facilisis leo vel. Risus at ultrices mi tempus imperdiet. Semper risus in hendrerit
-                    gravida rutrum quisque non tellus. Convallis convallis tellus id interdum velit laoreet id
-                    donec ultrices. Odio morbi quis commodo odio aenean sed adipiscing. Amet nisl suscipit
-                    adipiscing bibendum est ultricies integer quis. Cursus euismod quis viverra nibh cras.
-                    Metus vulputate eu scelerisque felis imperdiet proin fermentum leo. Mauris commodo quis
-                    imperdiet massa tincidunt. Cras tincidunt lobortis feugiat vivamus at augue. At augue eget
-                    arcu dictum varius duis at consectetur lorem. Velit sed ullamcorper morbi tincidunt. Lorem
-                    donec massa sapien faucibus et molestie ac.
-                </Typography>
-                <Typography paragraph>
-                    Consequat mauris nunc congue nisi vitae suscipit. Fringilla est ullamcorper eget nulla
-                    facilisi etiam dignissim diam. Pulvinar elementum integer enim neque volutpat ac
-                    tincidunt. Ornare suspendisse sed nisi lacus sed viverra tellus. Purus sit amet volutpat
-                    consequat mauris. Elementum eu facilisis sed odio morbi. Euismod lacinia at quis risus sed
-                    vulputate odio. Morbi tincidunt ornare massa eget egestas purus viverra accumsan in. In
-                    hendrerit gravida rutrum quisque non tellus orci ac. Pellentesque nec nam aliquam sem et
-                    tortor. Habitant morbi tristique senectus et. Adipiscing elit duis tristique sollicitudin
-                    nibh sit. Ornare aenean euismod elementum nisi quis eleifend. Commodo viverra maecenas
-                    accumsan lacus vel facilisis. Nulla posuere sollicitudin aliquam ultrices sagittis orci a.
-                </Typography>
+                {props.children}
             </main>
         </div>
     )
