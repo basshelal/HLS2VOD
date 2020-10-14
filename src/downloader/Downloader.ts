@@ -11,6 +11,7 @@ export class Downloader {
 
     public playlistUrl: string
     public segmentDirectory: string
+    public onDownloadSegment: (destinationPath: string) => void
 
     private queue: PQueue = new PQueue()
     private timeoutDuration: number
@@ -172,9 +173,12 @@ export class Downloader {
         const slash = filename.lastIndexOf("/")
         filename = filename.substr(slash + 1)
 
+        const destinationPath: string = path.join(this.segmentDirectory, filename)
+
         // Download file
-        await download(segmentUrl, path.join(this.segmentDirectory, filename))
-        logD(`Downloaded: ${segmentUrl}`)
+        await download(segmentUrl, destinationPath)
+        logD(`Downloaded: ${segmentUrl} to ${destinationPath}`)
+        this.onDownloadSegment(destinationPath)
     }
 
     static async chooseStream(streamUrl: string,

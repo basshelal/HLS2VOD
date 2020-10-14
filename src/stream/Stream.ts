@@ -1,23 +1,27 @@
 import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
+import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {momentFormat, momentFormatSafe, timer} from "../utils/Utils"
+import {json, momentFormat, momentFormatSafe, timer} from "../utils/Utils"
 import {StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
-import moment from "moment"
+import moment, {Duration, Moment} from "moment"
 import {mkdirpSync} from "fs-extra"
-import {assert, logD} from "../utils/Log"
+import {assert, logD, logE} from "../utils/Log"
 
+// TODO merging .ts files should (or could) be done inline instead of at the end
+// TODO should be able to have multiple active shows, so we'll need a show checker and a segment writer
+// TODO: Should be able to be forced to start or stop download
 export class Stream extends EventEmitter {
 
     public name: string
     public playlistUrl: string
+
     public schedulePath: string
-    public currentShow: ScheduledShow
-    public nextShow: ScheduledShow
-    public schedule: Schedule
+    public currentShow: Show
+    public nextShow: Show
     public isDownloading: boolean = false
 
     private streamDirectory: string
@@ -26,7 +30,7 @@ export class Stream extends EventEmitter {
     private mergerTimer: NodeJS.Timeout
     private nextEventTime: number
     private rootDirectory: string
-    private scheduledShows: Array<ScheduledShow>
+    private schedule: Schedule
     private isRunning: boolean = true
 
     constructor({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener}: {
@@ -42,10 +46,9 @@ export class Stream extends EventEmitter {
         this.name = name
         this.playlistUrl = playlistUrl
         this.schedulePath = schedulePath
-        this.schedule = schedule
         this.rootDirectory = rootDirectory
 
-        this.scheduledShows = schedule.map(it => ScheduledShow.fromSchedule(it, schedule, offsetSeconds))
+        this.schedule = schedule.map(it => Show.fromSchedule(it, schedule, offsetSeconds))
 
         this.streamDirectory = path.join(this.rootDirectory, this.name)
         this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
@@ -88,7 +91,7 @@ export class Stream extends EventEmitter {
 
     public async initialize(): Promise<void> {
         const playlistUrl = await Downloader.chooseStream(this.playlistUrl)
-        if (!playlistUrl) throw Error("PlaylistUrl failed!")
+        if (!playlistUrl) return logE(`Failed to initialize Stream, invalid playlistUrl\n${this.playlistUrl}`)
 
         this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
         this.emit("initialized")
@@ -201,14 +204,14 @@ export class Stream extends EventEmitter {
     }
 
     private setCurrentShow() {
-        const activeShows = this.scheduledShows.filter(it => it.isActive(false))
+        const activeShows = this.schedule.filter(it => it.isActive(false))
         assert(activeShows.length == 1,
             `There can only be exactly one show active!
-             Currently shows are ${this.scheduledShows.length} and active shows are ${activeShows.length}`)
+             Currently shows are ${this.schedule.length} and active shows are ${activeShows.length}`)
         this.currentShow = activeShows[0]
-        const currentShowIndex = this.scheduledShows.indexOf(this.currentShow)
-        const nextIndex = currentShowIndex + 1 <= this.scheduledShows.length ? currentShowIndex + 1 : 0
-        this.nextShow = this.scheduledShows[nextIndex]
+        const currentShowIndex = this.schedule.indexOf(this.currentShow)
+        const nextIndex = currentShowIndex + 1 <= this.schedule.length ? currentShowIndex + 1 : 0
+        this.nextShow = this.schedule[nextIndex]
 
         logD(`New current show is:\n${this.currentShow}`)
 
@@ -243,59 +246,43 @@ const Days: Array<Day> = ["sunday", "monday", "tuesday", "wednesday", "thursday"
 export type Schedule = Array<Show>
 
 export const Schedule = {
-    fromJson(jsonFilePath: string): Promise<Schedule> {
-        return scheduleFromJson(jsonFilePath)
+    async fromJson(jsonFilePath: string): Promise<Schedule> {
+        return new Promise<Schedule>((resolve, reject) => {
+            fs.readFile(jsonFilePath, ((error: NodeJS.ErrnoException, data: Buffer) => {
+                if (error) reject(error)
+                else resolve(getScheduleFromFileData(JSON.parse(data.toString())))
+            }))
+        })
     },
-    fromCSV(csvFilePath: string): Promise<Schedule> {
-        return scheduleFromCsv(csvFilePath)
+    async fromCSV(csvFilePath: string): Promise<Schedule> {
+        return new Promise<Schedule>(resolve =>
+            csv().fromFile(csvFilePath).then(data => resolve(getScheduleFromFileData(data)))
+        )
     }
 }
 
 function getScheduleFromFileData(data: any): Schedule {
-    if (Array.isArray(data)) {
-        return data.map(it => new Show(it.name, it.day.toLowerCase(), it.hour, it.minute))
-    } else return []
+    if (Array.isArray(data))
+        return data.map(it => new Show(it.name, it.time, it.duration))
+    else return []
 }
 
-async function scheduleFromJson(jsonFilePath: string): Promise<Schedule> {
-    return new Promise<Schedule>((resolve, reject) => {
-        fs.readFile(jsonFilePath, ((error: NodeJS.ErrnoException, data: Buffer) => {
-            if (error) reject(error)
-            else resolve(getScheduleFromFileData(JSON.parse(data.toString())))
-        }))
-    })
-}
-
-async function scheduleFromCsv(csvFilePath: string): Promise<Schedule> {
-    return new Promise<Schedule>(resolve =>
-        csv().fromFile(csvFilePath).then(data => resolve(getScheduleFromFileData(data)))
-    )
-}
-
-// This is how its stored on file, use Extended version for a more usable one
 export class Show {
+
+    public startTime: number
+    public offsetStartTime: number
+    public endTime: number
+    public offsetEndTime: number
+
     constructor(public name: string,
-                public day: Day,
-                public hour: number,
-                public minute: number) {
-    }
+                public time: Moment,
+                public duration: Duration,
+                public offsetSeconds: number = 0) {
 
-    toString(): string {
-        return JSON.stringify(this, null, 2)
-    }
-}
+        // TODO: Calculate start and end times, we need the offsetSeconds
 
-class ScheduledShow extends Show {
-
-    public startChunkName: string
-    public endChunkName: string
-
-    constructor(show: Show,
-                public startTime: number,
-                public offsetStartTime: number,
-                public endTime: number,
-                public offsetEndTime: number) {
-        super(show.name, show.day, show.hour, show.minute)
+        moment(5, "HH:mm")
+        moment.duration()
     }
 
     public hasStarted(withOffset: boolean = true): boolean {
@@ -314,7 +301,7 @@ class ScheduledShow extends Show {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset)
     }
 
-    public static fromSchedule(show: Show, schedule: Schedule, offsetSeconds: number): ScheduledShow {
+    public static fromSchedule(show: Show, schedule: Schedule, offsetSeconds: number): Show {
         const offsetMillis = offsetSeconds * 1000
         const now: Date = new Date()
 
@@ -353,16 +340,16 @@ class ScheduledShow extends Show {
         const endTime: number = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf()
         const offsetEndTime: number = endTime + offsetMillis
 
-        return new ScheduledShow(show, startTime, offsetStartTime, endTime, offsetEndTime)
+        return new Show(show, startTime, offsetStartTime, endTime, offsetEndTime)
     }
 
-    toString(): string {
-        let obj: any = JSON.parse(JSON.stringify(this, null, 2))
+    public toString(): string {
+        const obj: any = JSON.parse(json(this, 2))
         obj["startTimeFormatted"] = moment(this.startTime).format(momentFormat)
         obj["offsetStartTimeFormatted"] = moment(this.offsetStartTime).format(momentFormat)
         obj["endTimeFormatted"] = moment(this.endTime).format(momentFormat)
         obj["offsetEndTimeFormatted"] = moment(this.offsetEndTime).format(momentFormat)
-        return JSON.stringify(obj, null, 2)
+        return json(obj, 2)
     }
 }
 
@@ -392,4 +379,20 @@ export interface StreamListener {
     onNewCurrentShow?(stream: Stream)
 
     onMerging?(stream: Stream)
+}
+
+export class FileConcatter {
+
+    private writeStream: WriteStream
+
+    constructor(public filePath: string) {
+        this.writeStream = createWriteStream(filePath)
+    }
+
+    public concat(...filePaths: Array<string>): this {
+        filePaths.forEach((file: string) => {
+            createReadStream(file).pipe(this.writeStream, {end: false})
+        })
+        return this
+    }
 }
