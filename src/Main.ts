@@ -1,11 +1,10 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
-import {Schedule, Stream, StreamListener} from "./stream/Stream"
+import {Schedule, Stream} from "./stream/Stream"
 import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
-import {logD} from "./utils/Log"
 import Extensions from "./utils/Extensions"
 
 Extensions()
@@ -22,36 +21,6 @@ const alHiwar: StreamEntry = {
     name: "AlHiwar",
     playlistUrl: alHiwarUrl,
     schedulePath: schedulePath
-}
-
-const streamListener: StreamListener = {
-    onStarted(stream: Stream) {
-        logD(`Started ${stream}`)
-        send("streamStarted", stream.toStreamEntry())
-    },
-    onStopped(stream: Stream) {
-        logD(`Stopped ${stream}`)
-        send("streamStopped", stream.toStreamEntry())
-    },
-    onPaused(stream: Stream) {
-        logD(`Paused ${stream}`)
-        send("streamPaused", stream.toStreamEntry())
-    },
-    onResumed(stream: Stream) {
-        logD(`Resumed ${stream}`)
-        send("streamResumed", stream.toStreamEntry())
-    },
-    onMerging(stream: Stream) {
-        logD(`Merging ${stream}`)
-        send("streamMerging", stream.toStreamEntry())
-    },
-    onNewCurrentShow(stream: Stream) {
-        logD(`New Current Show ${stream}`)
-        const streamEntry = stream.toStreamEntry()
-        streamEntry["currentShow"] = stream.currentShow
-        streamEntry["nextShow"] = stream.nextShow
-        send("streamNewCurrentShow", streamEntry)
-    }
 }
 
 let browserWindow: BrowserWindow
@@ -73,11 +42,9 @@ async function addStream(streamEntry: StreamEntry): Promise<Stream> {
     const stream = await Stream.new({
         name: streamEntry.name,
         playlistUrl: streamEntry.playlistUrl,
-        schedulePath: streamEntry.schedulePath,
-        schedule: schedule,
+        scheduledShows: schedule,
         offsetSeconds: offsetSeconds,
-        rootDirectory: outputDirectory,
-        listener: streamListener
+        rootDirectory: outputDirectory
     })
     await Streams.addStream(stream)
     return stream

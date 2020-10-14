@@ -18,7 +18,6 @@ export class Stream extends EventEmitter {
 
     public name: string
     public playlistUrl: string
-    public schedulePath: string
     public scheduledShows: Array<Show>
     public activeShows: Array<Show>
     public state: StreamState
@@ -30,10 +29,9 @@ export class Stream extends EventEmitter {
     public segmentsDirectory: string
     public downloader: Downloader
 
-    private constructor({name, playlistUrl, schedulePath, scheduledShows, offsetSeconds, rootDirectory}: {
+    private constructor({name, playlistUrl, scheduledShows, offsetSeconds, rootDirectory}: {
         name: string
         playlistUrl: string
-        schedulePath: string
         scheduledShows: Array<Show>
         offsetSeconds: number
         rootDirectory: string
@@ -41,7 +39,6 @@ export class Stream extends EventEmitter {
         super()
         this.name = name
         this.playlistUrl = playlistUrl
-        this.schedulePath = schedulePath
         this.rootDirectory = rootDirectory
 
         this.scheduledShows = scheduledShows.map(show => Show.fromSchedule(show, scheduledShows, offsetSeconds))
@@ -129,23 +126,18 @@ export class Stream extends EventEmitter {
         return json(this.toStreamEntry(), 2)
     }
 
-    static async new({name, playlistUrl, schedulePath, scheduledShows, offsetSeconds, rootDirectory}: {
+    static async new({name, playlistUrl, scheduledShows, offsetSeconds, rootDirectory}: {
         name: string
         playlistUrl: string
-        schedulePath: string
         scheduledShows: Array<Show>
         offsetSeconds: number
         rootDirectory: string
     }): Promise<Stream> {
-        const stream = new Stream({name, playlistUrl, schedulePath, scheduledShows, offsetSeconds, rootDirectory})
+        const stream = new Stream({name, playlistUrl, scheduledShows, offsetSeconds, rootDirectory})
         await stream.initialize()
         return stream
     }
 }
-
-export type Day = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday"
-
-const Days: Array<Day> = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
 export const Schedule = {
     async fromJson(jsonFilePath: string): Promise<Array<Show>> {
