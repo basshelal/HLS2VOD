@@ -175,7 +175,7 @@ function startElectronApp() {
                 activeStreams.remove(stream)
             } else {
                 stream = await addStream(alHiwar)
-                await stream.startDownloading()
+                await stream.start()
                 activeStreams.push(stream)
             }
         })

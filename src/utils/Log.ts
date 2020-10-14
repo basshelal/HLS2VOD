@@ -2,10 +2,20 @@ import {json, now} from "./Utils"
 import chalk from "chalk"
 import {AssertionError} from "assert"
 
-export const logOptions = {
+export type LogFunction = (message: any, calledFrom: Function) => void
+
+const emptyLogFunction: LogFunction = () => {}
+
+export interface LogOptions {
+    enabled: boolean,
+    beforeLog: LogFunction,
+    afterLog: LogFunction
+}
+
+export const logOptions: LogOptions = {
     enabled: true,
-    beforeLog: Function,
-    afterLog: Function
+    beforeLog: emptyLogFunction,
+    afterLog: emptyLogFunction
 }
 
 function log(logFunction: Function) {

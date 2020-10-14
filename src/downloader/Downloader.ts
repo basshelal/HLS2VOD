@@ -177,6 +177,7 @@ export class Downloader {
 
         // Download file
         await download(segmentUrl, destinationPath)
+        // TODO: Why download to a file that we will delete when we can have downloads directly to the videos??
         logD(`Downloaded: ${segmentUrl} to ${destinationPath}`)
         this.onDownloadSegment(destinationPath)
     }

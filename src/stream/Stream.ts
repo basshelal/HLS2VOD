@@ -2,14 +2,14 @@ import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {json, momentFormat, momentFormatSafe, timer} from "../utils/Utils"
+import {json, momentFormat, timer} from "../utils/Utils"
 import {StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
 import moment, {Duration, Moment} from "moment"
-import {mkdirpSync} from "fs-extra"
-import {assert, logD, logE} from "../utils/Log"
+import {mkdirpSync, removeSync} from "fs-extra"
+import {logE} from "../utils/Log"
 
 // TODO merging .ts files should (or could) be done inline instead of at the end
 // TODO should be able to have multiple active shows, so we'll need a show checker and a segment writer
@@ -18,29 +18,25 @@ export class Stream extends EventEmitter {
 
     public name: string
     public playlistUrl: string
-
     public schedulePath: string
-    public currentShow: Show
-    public nextShow: Show
-    public isDownloading: boolean = false
+    public scheduledShows: Array<Show>
+    public activeShows: Array<Show>
+    public state: StreamState
+    private mainTimer: NodeJS.Timeout
+    // Application output directory
+    public rootDirectory: string
+    public streamDirectory: string
+    // TODO at some point we can get rid of this below
+    public segmentsDirectory: string
+    public downloader: Downloader
 
-    private streamDirectory: string
-    private segmentsDirectory: string
-    private downloader: Downloader
-    private mergerTimer: NodeJS.Timeout
-    private nextEventTime: number
-    private rootDirectory: string
-    private schedule: Schedule
-    private isRunning: boolean = true
-
-    constructor({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener}: {
+    private constructor({name, playlistUrl, schedulePath, scheduledShows, offsetSeconds, rootDirectory}: {
         name: string
         playlistUrl: string
         schedulePath: string
-        schedule: Schedule
+        scheduledShows: Array<Show>
         offsetSeconds: number
         rootDirectory: string
-        listener?: StreamListener
     }) {
         super()
         this.name = name
@@ -48,7 +44,7 @@ export class Stream extends EventEmitter {
         this.schedulePath = schedulePath
         this.rootDirectory = rootDirectory
 
-        this.schedule = schedule.map(it => Show.fromSchedule(it, schedule, offsetSeconds))
+        this.scheduledShows = scheduledShows.map(show => Show.fromSchedule(show, scheduledShows, offsetSeconds))
 
         this.streamDirectory = path.join(this.rootDirectory, this.name)
         this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
@@ -56,116 +52,53 @@ export class Stream extends EventEmitter {
         mkdirpSync(this.segmentsDirectory)
         this.segmentsDirectory = hideSync(this.segmentsDirectory)
 
-        if (listener) this.addStreamListener(listener)
-
-        this.setCurrentShow()
-
-        this.mergerTimer = timer(1000, async () => {
-            const now: number = Date.now()
-            if (now > this.nextEventTime && this.isRunning) {
-                // TODO if schedule has changed we should probably re-read it here
-                this.pauseDownloading()
-                this.isRunning = false
-                if (this.nextShow.hasStarted(true)) {
-                    logD("Next show has started!")
-                    if (!this.nextShow.startChunkName)
-                        this.nextShow.startChunkName = this.getLastChunkPath()
-                    logD(`It is ${this.nextShow}`)
-                    this.nextEventTime = this.currentShow.offsetEndTime
-                }
-                if (this.currentShow.hasEnded(true)) {
-                    logD("Current show has ended!")
-                    if (!this.currentShow.endChunkName)
-                        this.currentShow.endChunkName = this.getLastChunkPath()
-                    logD(`It is ${this.currentShow}`)
-                    await this.mergeCurrentShow()
-                    this.setCurrentShow()
-                    if (!this.currentShow.startChunkName)
-                        this.currentShow.startChunkName = this.getFirstChunkPath()
-                }
-                this.resumeDownloading()
-                this.isRunning = true
-            }
-        })
+        this.mainTimer = timer(5000, this.mainTimerCallback)
     }
 
     public async initialize(): Promise<void> {
         const playlistUrl = await Downloader.chooseStream(this.playlistUrl)
-        if (!playlistUrl) return logE(`Failed to initialize Stream, invalid playlistUrl\n${this.playlistUrl}`)
+        if (!playlistUrl) return logE(`Failed to initialize Stream, invalid playlistUrl:\n${this.playlistUrl}`)
 
         this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
-        this.emit("initialized")
+        this.downloader.onDownloadSegment = this.onDownloadSegment
     }
 
-    public async destroy(): Promise<void> {
-        this.emit("destroyed")
+    private async onDownloadSegment(segmentPath: string) {
+        // A segment has been downloaded
+        // get active shows (find where the segment needs to be concatted)
+        // conact to each show
+        // delete segment
+        this.activeShows.forEach((show: Show) => {
+            if (show.isActive(true))
+                show.fileConcatter.concat(segmentPath)
+        })
+        removeSync(segmentPath)
     }
 
-    public async startDownloading(): Promise<void> {
-        if (!this.isDownloading && this.downloader) {
-            await this.downloader.start()
-            this.isDownloading = true
-            this.emit("started")
-        }
+    private async mainTimerCallback() {
+        // Manage active shows
+        this.scheduledShows.forEach((show: Show) => {
+            if (show.isActive(true) && this.activeShows.notContains(show)) {
+                this.activeShows.push(show)
+                // Show has started
+                show.fileConcatter.masterFilePath = path.join(this.streamDirectory, show.name)
+            } else if (!show.isActive(true) && this.activeShows.contains(show)) {
+                this.activeShows.remove(show)
+                // Show has finished
+            }
+        })
+        if (this.activeShows.isEmpty()) this.state === "waiting"
+        else this.state === "downloading"
     }
 
-    public async pauseDownloading(): Promise<void> {
-        if (this.isDownloading && this.downloader) {
-            this.downloader.pause()
-            this.isDownloading = false
-            this.emit("paused")
-        }
+    public async start(): Promise<void> {
+        await this.downloader.start()
+        if (this.state === "paused") this.state = "waiting"
     }
 
-    public async resumeDownloading(): Promise<void> {
-        if (!this.isDownloading && this.downloader) {
-            this.downloader.resume()
-            this.isDownloading = true
-            this.emit("resumed")
-        }
-    }
-
-    public async stopDownloading(): Promise<void> {
-        if (this.isDownloading && this.downloader) {
-            this.downloader.stop()
-            await this.downloader.merge(this.getFirstChunkPath(), this.getLastChunkPath(),
-                path.join(this.streamDirectory, "_unfinished"), `${moment().format(momentFormatSafe)}.mp4`
-            )
-            this.downloader.deleteAllSegments()
-            this.isDownloading = false
-            this.emit("stopped")
-        }
-    }
-
-    public async mergeCurrentShow(): Promise<void> {
-        if (!this.currentShow.startChunkName) this.currentShow.startChunkName = this.getFirstChunkPath()
-        if (!this.currentShow.endChunkName) this.currentShow.endChunkName = this.getLastChunkPath()
-        if (this.downloader) {
-            // TODO ideally we should merge all into a merged.ts in the output dir, then delete all unnecessary segments
-            //  continue downloading and while doing that transmux and delete the merged.ts
-            //  this way we have less downtime and more isolation
-            this.emit("merging")
-            await this.downloader.merge(this.currentShow.startChunkName, this.currentShow.endChunkName,
-                path.join(this.streamDirectory, this.currentShow.name), `${moment().format(momentFormatSafe)}.mp4`
-            )
-            this.downloader.deleteSegments(this.currentShow.startChunkName, this.nextShow.startChunkName)
-        }
-    }
-
-    private getFirstChunkPath(): string {
-        const segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => path.join(this.segmentsDirectory, it))
-        segments.sort()
-        const result = segments[0]
-        logD(`First chunk is ${result}`)
-        return result
-    }
-
-    private getLastChunkPath(): string {
-        const segments: Array<string> = fs.readdirSync(this.segmentsDirectory).map(it => path.join(this.segmentsDirectory, it))
-        segments.sort()
-        const result = segments[segments.length - 1]
-        logD(`Last chunk is ${result}`)
-        return result
+    public async pause(): Promise<void> {
+        await this.downloader.pause()
+        this.state = "paused"
     }
 
     public toStreamEntry(): StreamEntry {
@@ -176,64 +109,35 @@ export class Stream extends EventEmitter {
         }
     }
 
-    emit(event: StreamEvent): boolean {
+    emit(event: StreamState): boolean {
         return super.emit(event, this)
     }
 
-    on(event: StreamEvent, listener: (stream?: Stream) => void): this {
+    on(event: StreamState, listener: (stream?: Stream) => void): this {
         return super.on(event, listener)
     }
 
-    off(event: StreamEvent, listener: (stream?: Stream) => void): this {
+    off(event: StreamState, listener: (stream?: Stream) => void): this {
         return super.off(event, listener)
     }
 
-    once(event: StreamEvent, listener: (stream?: Stream) => void): this {
+    once(event: StreamState, listener: (stream?: Stream) => void): this {
         return super.once(event, listener)
     }
 
-    public addStreamListener(listener: StreamListener) {
-        if (listener.onInitialized) this.on("initialized", listener.onInitialized)
-        if (listener.onDestroyed) this.on("destroyed", listener.onDestroyed)
-        if (listener.onStarted) this.on("started", listener.onStarted)
-        if (listener.onPaused) this.on("paused", listener.onPaused)
-        if (listener.onResumed) this.on("resumed", listener.onResumed)
-        if (listener.onStopped) this.on("stopped", listener.onStopped)
-        if (listener.onNewCurrentShow) this.on("newCurrentShow", listener.onNewCurrentShow)
-        if (listener.onMerging) this.on("merging", listener.onMerging)
-    }
-
-    private setCurrentShow() {
-        const activeShows = this.schedule.filter(it => it.isActive(false))
-        assert(activeShows.length == 1,
-            `There can only be exactly one show active!
-             Currently shows are ${this.schedule.length} and active shows are ${activeShows.length}`)
-        this.currentShow = activeShows[0]
-        const currentShowIndex = this.schedule.indexOf(this.currentShow)
-        const nextIndex = currentShowIndex + 1 <= this.schedule.length ? currentShowIndex + 1 : 0
-        this.nextShow = this.schedule[nextIndex]
-
-        logD(`New current show is:\n${this.currentShow}`)
-
-        this.nextEventTime = this.nextShow.offsetStartTime
-
-        this.emit("newCurrentShow")
-    }
-
     toString(): string {
-        return JSON.stringify(this.toStreamEntry(), null, 2)
+        return json(this.toStreamEntry(), 2)
     }
 
-    static async new({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener}: {
+    static async new({name, playlistUrl, schedulePath, scheduledShows, offsetSeconds, rootDirectory}: {
         name: string
         playlistUrl: string
         schedulePath: string
-        schedule: Schedule
+        scheduledShows: Array<Show>
         offsetSeconds: number
         rootDirectory: string
-        listener?: StreamListener
     }): Promise<Stream> {
-        const stream = new Stream({name, playlistUrl, schedulePath, schedule, offsetSeconds, rootDirectory, listener})
+        const stream = new Stream({name, playlistUrl, schedulePath, scheduledShows, offsetSeconds, rootDirectory})
         await stream.initialize()
         return stream
     }
@@ -243,25 +147,23 @@ export type Day = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "
 
 const Days: Array<Day> = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
-export type Schedule = Array<Show>
-
 export const Schedule = {
-    async fromJson(jsonFilePath: string): Promise<Schedule> {
-        return new Promise<Schedule>((resolve, reject) => {
+    async fromJson(jsonFilePath: string): Promise<Array<Show>> {
+        return new Promise<Array<Show>>((resolve, reject) => {
             fs.readFile(jsonFilePath, ((error: NodeJS.ErrnoException, data: Buffer) => {
                 if (error) reject(error)
                 else resolve(getScheduleFromFileData(JSON.parse(data.toString())))
             }))
         })
     },
-    async fromCSV(csvFilePath: string): Promise<Schedule> {
-        return new Promise<Schedule>(resolve =>
+    async fromCSV(csvFilePath: string): Promise<Array<Show>> {
+        return new Promise<Array<Show>>(resolve =>
             csv().fromFile(csvFilePath).then(data => resolve(getScheduleFromFileData(data)))
         )
     }
 }
 
-function getScheduleFromFileData(data: any): Schedule {
+function getScheduleFromFileData(data: any): Array<Show> {
     if (Array.isArray(data))
         return data.map(it => new Show(it.name, it.time, it.duration))
     else return []
@@ -273,14 +175,19 @@ export class Show {
     public offsetStartTime: number
     public endTime: number
     public offsetEndTime: number
+    public fileConcatter: FileConcatter
 
     constructor(public name: string,
                 public time: Moment,
                 public duration: Duration,
+                streamDirectory: string,
                 public offsetSeconds: number = 0) {
+
+        this.fileConcatter = new FileConcatter(path.join(streamDirectory, this.name))
 
         // TODO: Calculate start and end times, we need the offsetSeconds
 
+        // Time is in day HH:mm format => Monday 23:59
         moment(5, "HH:mm")
         moment.duration()
     }
@@ -301,7 +208,7 @@ export class Show {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset)
     }
 
-    public static fromSchedule(show: Show, schedule: Schedule, offsetSeconds: number): Show {
+    public static fromSchedule(show: Show, schedule: Array<Show>, offsetSeconds: number): Show {
         const offsetMillis = offsetSeconds * 1000
         const now: Date = new Date()
 
@@ -353,40 +260,20 @@ export class Show {
     }
 }
 
-export type StreamEvent =
-    "initialized"
-    | "destroyed"
-    | "started"
+export type StreamState =
+/** Actively downloading segments */
+    "downloading"
+    /** Ready to download but waiting for shows to be active */
+    | "waiting"
+    /** Not downloading, even if shows are active */
     | "paused"
-    | "resumed"
-    | "stopped"
-    | "newCurrentShow"
-    | "merging"
-
-export interface StreamListener {
-    onInitialized?(stream: Stream)
-
-    onDestroyed?(stream: Stream)
-
-    onStarted?(stream: Stream)
-
-    onPaused?(stream: Stream)
-
-    onResumed?(stream: Stream)
-
-    onStopped?(stream: Stream)
-
-    onNewCurrentShow?(stream: Stream)
-
-    onMerging?(stream: Stream)
-}
 
 export class FileConcatter {
 
     private writeStream: WriteStream
 
-    constructor(public filePath: string) {
-        this.writeStream = createWriteStream(filePath)
+    constructor(public masterFilePath: string) {
+        this.writeStream = createWriteStream(masterFilePath)
     }
 
     public concat(...filePaths: Array<string>): this {
