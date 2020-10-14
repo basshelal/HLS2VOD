@@ -1,7 +1,7 @@
 import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import csv from "csvtojson"
-import {momentFormat, momentFormatSafe} from "../utils/Utils"
+import {momentFormat, momentFormatSafe, timer} from "../utils/Utils"
 import {StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
@@ -23,7 +23,7 @@ export class Stream extends EventEmitter {
     private streamDirectory: string
     private segmentsDirectory: string
     private downloader: Downloader
-    private mergerTimeOut: number
+    private mergerTimer: NodeJS.Timeout
     private nextEventTime: number
     private rootDirectory: string
     private scheduledShows: Array<ScheduledShow>
@@ -57,8 +57,33 @@ export class Stream extends EventEmitter {
 
         this.setCurrentShow()
 
-        this.setInterval()
-
+        this.mergerTimer = timer(1000, async () => {
+            const now: number = Date.now()
+            if (now > this.nextEventTime && this.isRunning) {
+                // TODO if schedule has changed we should probably re-read it here
+                this.pauseDownloading()
+                this.isRunning = false
+                if (this.nextShow.hasStarted(true)) {
+                    logD("Next show has started!")
+                    if (!this.nextShow.startChunkName)
+                        this.nextShow.startChunkName = this.getLastChunkPath()
+                    logD(`It is ${this.nextShow}`)
+                    this.nextEventTime = this.currentShow.offsetEndTime
+                }
+                if (this.currentShow.hasEnded(true)) {
+                    logD("Current show has ended!")
+                    if (!this.currentShow.endChunkName)
+                        this.currentShow.endChunkName = this.getLastChunkPath()
+                    logD(`It is ${this.currentShow}`)
+                    await this.mergeCurrentShow()
+                    this.setCurrentShow()
+                    if (!this.currentShow.startChunkName)
+                        this.currentShow.startChunkName = this.getFirstChunkPath()
+                }
+                this.resumeDownloading()
+                this.isRunning = true
+            }
+        })
     }
 
     public async initialize(): Promise<void> {
@@ -138,36 +163,6 @@ export class Stream extends EventEmitter {
         const result = segments[segments.length - 1]
         logD(`Last chunk is ${result}`)
         return result
-    }
-
-    private setInterval() {
-        this.mergerTimeOut = setInterval(async () => {
-            let now: number = Date.now()
-            if (now > this.nextEventTime && this.isRunning) {
-                // TODO if schedule has changed we should probably re-read it here
-                this.pauseDownloading()
-                this.isRunning = false
-                if (this.nextShow.hasStarted(true)) {
-                    logD("Next show has started!")
-                    if (!this.nextShow.startChunkName)
-                        this.nextShow.startChunkName = this.getLastChunkPath()
-                    logD(`It is ${this.nextShow}`)
-                    this.nextEventTime = this.currentShow.offsetEndTime
-                }
-                if (this.currentShow.hasEnded(true)) {
-                    logD("Current show has ended!")
-                    if (!this.currentShow.endChunkName)
-                        this.currentShow.endChunkName = this.getLastChunkPath()
-                    logD(`It is ${this.currentShow}`)
-                    await this.mergeCurrentShow()
-                    this.setCurrentShow()
-                    if (!this.currentShow.startChunkName)
-                        this.currentShow.startChunkName = this.getFirstChunkPath()
-                }
-                this.resumeDownloading()
-                this.isRunning = true
-            }
-        }, 1000)
     }
 
     public toStreamEntry(): StreamEntry {

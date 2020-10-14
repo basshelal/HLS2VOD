@@ -1,6 +1,7 @@
 import * as electron from "electron"
 import * as path from "path"
 import moment from "moment"
+import {setInterval} from "timers"
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
@@ -105,3 +106,5 @@ export function from(from: number) {
 }
 
 export type NumberObject = { it: number }
+
+export function timer(millis: number, callback: (...args: any[]) => void): NodeJS.Timeout { return setInterval(callback, millis) }
