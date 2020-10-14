@@ -3,6 +3,7 @@ import {render} from "react-dom"
 import {GlobalStyle} from "./ui/GlobalStyle"
 import {NavBar} from "./ui/components/NavBar"
 import {StreamsLayout} from "./ui/layouts/StreamsLayout"
+import {Footer} from "./ui/components/Footer"
 
 function App(): ReactElement {
     return (
@@ -11,6 +12,7 @@ function App(): ReactElement {
             <NavBar>
                 <StreamsLayout/>
             </NavBar>
+            <Footer/>
         </>
     )
 }

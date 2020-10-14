@@ -84,8 +84,8 @@ async function addStream(streamEntry: StreamEntry): Promise<Stream> {
 }
 
 function startElectronApp() {
+    electron.app.allowRendererProcessReuse = true
     electron.app.whenReady().then(async () => {
-        electron.app.allowRendererProcessReuse = true
         browserWindow = new BrowserWindow({
             center: true,
             width: 1200,
