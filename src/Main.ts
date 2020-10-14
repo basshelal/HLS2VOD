@@ -1,12 +1,12 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
-import {Schedule, Stream, StreamListener} from "./Stream"
+import {Schedule, Stream, StreamListener} from "./stream/Stream"
 import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
-import {logD} from "./Log"
-import Extensions from "./Extensions"
+import {logD} from "./utils/Log"
+import Extensions from "./utils/Extensions"
 
 Extensions()
 

@@ -1,6 +1,6 @@
 import Datastore from "nedb"
-import {Stream} from "./Stream"
-import {getPath} from "./Utils"
+import {Stream} from "./stream/Stream"
+import {getPath} from "./utils/Utils"
 
 const settingsDatabase = new Datastore({
     filename: getPath("database/settings.db"),

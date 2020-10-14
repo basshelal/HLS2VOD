@@ -1,14 +1,14 @@
-import {Downloader} from "./downloader/Downloader"
+import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import csv from "csvtojson"
-import {momentFormat, momentFormatSafe} from "./Utils"
-import {StreamEntry} from "./Database"
+import {momentFormat, momentFormatSafe} from "../utils/Utils"
+import {StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
 import moment from "moment"
 import {mkdirpSync} from "fs-extra"
-import {assert, logD} from "./Log"
+import {assert, logD} from "../utils/Log"
 
 export class Stream extends EventEmitter {
 

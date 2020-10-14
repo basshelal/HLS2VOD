@@ -1,5 +1,5 @@
 import React, {FC, PropsWithChildren} from "react"
-import {from} from "../../Utils"
+import {from} from "../../utils/Utils"
 import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
 

@@ -5,7 +5,7 @@ import {Ffmpeg} from "./Ffmpeg"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {download, get} from "./Http"
-import {logD, logE} from "../Log"
+import {logD, logE} from "../utils/Log"
 
 export class Downloader {
 
