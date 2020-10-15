@@ -2,7 +2,7 @@ import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {json, momentFormat, TimeOut, timer} from "../utils/Utils"
+import {json, momentFormat, momentFormatSafe, TimeOut, timer} from "../utils/Utils"
 import {Database, StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
@@ -16,80 +16,118 @@ import {logE} from "../utils/Log"
 // TODO: Should be able to be forced to start or stop download
 export class Stream extends EventEmitter {
 
+    /** Name of stream, must be unique so can be used as identifier */
     public name: string
+
+    /** Url of m3u8 playlist, this is used by {@link downloader} */
     public playlistUrl: string
+
+    /** The list of shows that have a scheduled time, see {@link Show} */
     public scheduledShows: Array<Show>
+
+    /** The list of shows that are currently active, ie, should be recorded */
     public activeShows: Array<Show>
+
+    /** Has the user forced to record even when no shows active? */
+    public isForced: boolean
+
+    /** The {@link FileConcatter} to use when forced to record */
+    public forcedFileConcatter: FileConcatter | null
+
+    /** Current state of Stream, see {@link StreamState} */
     public state: StreamState
-    private mainTimer: TimeOut
-    // Application output directory
-    public rootDirectory: string
+
+    /** The {@link TimeOut} that currently manages {@link activeShows} */
+    public mainTimer: TimeOut
+
+    /** Milliseconds used for {@link mainTimer}*/
+    public mainTimerIntervalMs: number
+
+    /** Directory where this stream will be downloaded */
     public streamDirectory: string
+
     // TODO at some point we can get rid of this below
     public segmentsDirectory: string
+
+    /** The {@link Downloader} that downloads segments from the {@link playlistUrl} */
     public downloader: Downloader
 
-    private constructor({name, playlistUrl, scheduledShows, offsetSeconds, rootDirectory}: {
+    /** Private because of async initializer code, use {@link new} instead */
+    private constructor({name, playlistUrl, scheduledShows, offsetSeconds}: {
         name: string
         playlistUrl: string
         scheduledShows: Array<Show>
         offsetSeconds: number
-        rootDirectory: string
     }) {
         super()
         this.name = name
         this.playlistUrl = playlistUrl
-        this.rootDirectory = rootDirectory
+        this.scheduledShows = scheduledShows.map(show => show.setOffsetSeconds(offsetSeconds))
+        this.activeShows = []
+        this.isForced = false
+        this.forcedFileConcatter = null
+        this.state = "waiting" // anything other than "paused"
+        this.mainTimerIntervalMs = 5000
+        this.mainTimer = timer(this.mainTimerIntervalMs, this.mainTimerCallback)
 
-        this.scheduledShows = scheduledShows.map(show => Show.fromSchedule(show, scheduledShows, offsetSeconds))
-
-        this.streamDirectory = path.join(this.rootDirectory, this.name)
+        this.streamDirectory = path.join(Database.getOutputDirectory(), this.name)
         this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
         mkdirpSync(this.streamDirectory)
         mkdirpSync(this.segmentsDirectory)
         this.segmentsDirectory = hideSync(this.segmentsDirectory)
 
-        this.mainTimer = timer(5000, this.mainTimerCallback)
     }
 
-    public async initialize(): Promise<void> {
+    /**
+     * Must be called after creation! {@link new} does this for us
+     * Only after this function is complete (successfully) can we begin downloading
+     */
+    private async initialize(): Promise<this> {
+        // Initialize downloader
         const playlistUrl = await Downloader.chooseStream(this.playlistUrl)
-        if (!playlistUrl) return logE(`Failed to initialize Stream, invalid playlistUrl:\n${this.playlistUrl}`)
+        if (!playlistUrl)
+            throw logE(`Failed to initialize Stream, invalid playlistUrl:\n${this.playlistUrl}`)
 
         this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
         this.downloader.onDownloadSegment = this.onDownloadSegment
+        return this
     }
 
+    // TODO: Ideally we'd like to write data from the download and not from the file
     private async onDownloadSegment(segmentPath: string) {
-        // A segment has been downloaded
-        // get active shows (find where the segment needs to be concatted)
-        // conact to each show
-        // delete segment
+        // A segment has been downloaded, lets send it to where it needs to go
         if (this.state !== "paused") {
+            // Send segment to active shows if we're not paused
             this.activeShows.forEach((show: Show) => {
-                if (show.isActive(true))
+                if (show.isActive(true)) // this is just a safety, should always be true
                     show.fileConcatter.concatFromFile(segmentPath)
             })
-            removeSync(segmentPath)
         }
+        if (this.isForced && this.forcedFileConcatter) {
+            this.forcedFileConcatter.concatFromFile(segmentPath)
+        }
+        // Delete segment, we're done with it
+        removeSync(segmentPath)
     }
 
     private async mainTimerCallback() {
         // Manage active shows
-        this.scheduledShows.forEach((show: Show) => {
+        this.scheduledShows.forEach(async (show: Show) => {
             if (show.isActive(true) && this.activeShows.notContains(show)) {
                 this.activeShows.push(show)
                 // Show has started
-                show.fileConcatter.masterFilePath = path.join(this.streamDirectory, show.name)
+                show.fileConcatter.initialize()
             } else if (!show.isActive(true) && this.activeShows.contains(show)) {
                 this.activeShows.remove(show)
                 // Show has finished
+                show.fileConcatter.end()
             }
         })
         if (this.activeShows.isEmpty() && this.state === "downloading") this.state = "waiting"
         else if (this.activeShows.isNotEmpty() && this.state === "waiting") this.state = "downloading"
     }
 
+    /** Indicates we are now ready to begin downloading shows when they become active */
     public async start(): Promise<void> {
         await this.downloader.start()
         if (this.state === "paused")
@@ -97,49 +135,62 @@ export class Stream extends EventEmitter {
             else this.state = "downloading"
     }
 
+    /** Indicates we want to pause downloading shows even if they are active */
     public async pause(): Promise<void> {
         await this.downloader.pause()
         this.state = "paused"
     }
 
+    /** Indicates we want to download stream anyway even if there are no active shows */
+    public async forceRecord(): Promise<void> {
+        await this.start()
+        this.isForced = true
+        this.forcedFileConcatter = new FileConcatter(path.join(this.streamDirectory, `${momentFormatSafe}.ts`))
+        this.forcedFileConcatter.initialize()
+    }
+
+    /** Indicates we want to go back to normal behavior, ie download only when there are active shows */
+    public async unForceRecord(): Promise<void> {
+        this.isForced = false
+        await this.forcedFileConcatter.end()
+        this.forcedFileConcatter = null
+    }
+
+    // TODO: Remove this function
     public toStreamEntry(): StreamEntry {
         return {
             name: this.name,
             playlistUrl: this.playlistUrl,
-            schedulePath: "null" // TODO: Remove this function
+            schedulePath: "null"
         }
     }
 
-    emit(event: StreamState): boolean {
+    public emit(event: StreamState): boolean {
         return super.emit(event, this)
     }
 
-    on(event: StreamState, listener: (stream?: Stream) => void): this {
+    public on(event: StreamState, listener: (stream?: Stream) => void): this {
         return super.on(event, listener)
     }
 
-    off(event: StreamState, listener: (stream?: Stream) => void): this {
+    public off(event: StreamState, listener: (stream?: Stream) => void): this {
         return super.off(event, listener)
     }
 
-    once(event: StreamState, listener: (stream?: Stream) => void): this {
+    public once(event: StreamState, listener: (stream?: Stream) => void): this {
         return super.once(event, listener)
     }
 
-    toString(): string {
-        return json(this.toStreamEntry(), 2)
-    }
+    public toString(): string { return json(this, 2) }
 
-    static async new({name, playlistUrl, scheduledShows, offsetSeconds, rootDirectory}: {
+    /** The correct way to instantiate a {@link Stream}, does all the initialization for us */
+    public static async new({name, playlistUrl, scheduledShows, offsetSeconds}: {
         name: string
         playlistUrl: string
         scheduledShows: Array<Show>
         offsetSeconds: number
-        rootDirectory: string
     }): Promise<Stream> {
-        const stream = new Stream({name, playlistUrl, scheduledShows, offsetSeconds, rootDirectory})
-        await stream.initialize()
-        return stream
+        return await (new Stream({name, playlistUrl, scheduledShows, offsetSeconds})).initialize()
     }
 }
 
@@ -178,6 +229,7 @@ export class Show {
                 public duration: Duration,
                 public offsetSeconds: number = 0) {
 
+        // TODO: File concatter needs the file! Join the file name as well
         this.fileConcatter = new FileConcatter(path.join(Database.getOutputDirectory(), this.name))
 
         // TODO: Calculate start and end times, we need the offsetSeconds
@@ -203,46 +255,9 @@ export class Show {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset)
     }
 
-    public static fromSchedule(show: Show, schedule: Array<Show>, offsetSeconds: number): Show {
-        const offsetMillis = offsetSeconds * 1000
-        const now: Date = new Date()
-
-        const todayDayIndex: number = now.getDay()
-        const showDayIndex: number = Days.indexOf(show.day)
-        let newTime: Date = now
-        if (showDayIndex > todayDayIndex) {
-            const differenceDays = showDayIndex - todayDayIndex
-            newTime = moment().add(differenceDays, "days").toDate()
-        }
-        if (showDayIndex < todayDayIndex) {
-            const differenceDays = todayDayIndex - showDayIndex
-            const offset = Days.length - differenceDays
-            newTime = moment().add(offset, "days").toDate()
-        }
-
-        const startTime: number = new Date(newTime.getFullYear(), newTime.getMonth(), newTime.getDate(), show.hour, show.minute).valueOf()
-        const offsetStartTime: number = startTime - offsetMillis
-
-        const thisShowIndex: number = schedule.indexOf(show)
-        const nextShowIndex: number = thisShowIndex == schedule.length - 1 ? 0 : thisShowIndex + 1
-        const nextShow = schedule[nextShowIndex]
-
-        const nextShowDayIndex: number = Days.indexOf(nextShow.day)
-        let nextShowTime: Date = now
-        if (nextShowDayIndex > todayDayIndex) {
-            const differenceDays = nextShowDayIndex - todayDayIndex
-            nextShowTime = moment().add(differenceDays, "days").toDate()
-        }
-        if (nextShowDayIndex < todayDayIndex) {
-            const differenceDays = todayDayIndex - nextShowDayIndex
-            const offset = Days.length - differenceDays
-            nextShowTime = moment().add(offset, "days").toDate()
-        }
-
-        const endTime: number = new Date(nextShowTime.getFullYear(), nextShowTime.getMonth(), nextShowTime.getDate(), nextShow.hour, nextShow.minute).valueOf()
-        const offsetEndTime: number = endTime + offsetMillis
-
-        return new Show(show, startTime, offsetStartTime, endTime, offsetEndTime)
+    public setOffsetSeconds(value: number): this {
+        // TODO: Implement!
+        return this
     }
 
     public toString(): string {
@@ -266,10 +281,13 @@ export type StreamState =
 // Concats data to a single file
 export class FileConcatter {
 
-    private writeStream: WriteStream
+    public writeStream: WriteStream
 
-    constructor(public masterFilePath: string) {
-        this.writeStream = createWriteStream(masterFilePath)
+    constructor(public masterFilePath: string) {}
+
+    public initialize(): this {
+        this.writeStream = createWriteStream(this.masterFilePath)
+        return this
     }
 
     public async concatFromFile(...filePaths: Array<string>): Promise<this> {
