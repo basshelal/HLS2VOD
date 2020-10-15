@@ -82,9 +82,7 @@ export class NumberRange implements Iterable<number> {
         return this
     }
 
-    forEach(callback: (number: number) => void): void {
-        for (let i of this) callback(i)
-    }
+    forEach(callback: (number: number) => void): void { for (let i of this) callback(i) }
 
     map<T>(callback: (number: number) => T): Array<T> {
         const result: Array<T> = []
@@ -92,9 +90,7 @@ export class NumberRange implements Iterable<number> {
         return result
     }
 
-    get toArray(): Array<number> {
-        return Array.from(this)
-    }
+    get toArray(): Array<number> { return Array.from(this) }
 }
 
 export function range(fromInclusive: number, toExclusive: number, step: number = 1): NumberRange {
