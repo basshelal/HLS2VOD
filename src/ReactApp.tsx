@@ -5,7 +5,7 @@ import {NavBar} from "./ui/components/NavBar"
 import {StreamsLayout} from "./ui/layouts/StreamsLayout"
 import {Footer} from "./ui/components/Footer"
 
-function App(): ReactElement {
+function ReactApp(): ReactElement {
     return (
         <>
             <GlobalStyle/>
@@ -20,4 +20,4 @@ function App(): ReactElement {
 const mainElement = document.createElement("div")
 mainElement.setAttribute("id", "root")
 document.body.appendChild(mainElement)
-render(<App/>, mainElement)
+render(<ReactApp/>, mainElement)
