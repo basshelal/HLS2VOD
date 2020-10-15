@@ -3,6 +3,10 @@ import * as path from "path"
 import moment from "moment"
 import {setInterval} from "timers"
 
+export type TimeOut = NodeJS.Timeout
+export type WritableStream = NodeJS.WritableStream
+export type ReadableStream = NodeJS.ReadableStream
+
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
 export const momentFormatShorter = "dddd Do MMMM YYYY, HH:mm:ss:SSS"
@@ -107,4 +111,4 @@ export function from(from: number) {
 
 export type NumberObject = { it: number }
 
-export function timer(millis: number, callback: (...args: any[]) => void): NodeJS.Timeout { return setInterval(callback, millis) }
+export function timer(millis: number, callback: (...args: any[]) => void): TimeOut { return setInterval(callback, millis) }

@@ -130,3 +130,33 @@ export const Streams = {
         )
     }
 }
+
+export class Database {
+
+    private constructor() {}
+
+    private static outputDirectory: string
+    private static offsetSeconds: number
+
+    public static getOutputDirectory(): string {
+        return this.outputDirectory
+    }
+
+    public static async setOutputDirectory(value: string) {
+        await Settings.setOutputDirectory(value)
+        this.outputDirectory = value
+    }
+
+    public static async getOffsetSeconds(): Promise<number> {
+        return this.offsetSeconds
+    }
+
+    public static async setOffsetSeconds(value: number) {
+        await Settings.setOffsetSeconds(value)
+        this.offsetSeconds = value
+    }
+
+    public static async initialize() {
+        // TODO: Set settings defaults & set Globals
+    }
+}

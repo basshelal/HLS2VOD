@@ -2,8 +2,8 @@ import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {json, momentFormat, timer} from "../utils/Utils"
-import {StreamEntry} from "../Database"
+import {json, momentFormat, TimeOut, timer} from "../utils/Utils"
+import {Database, StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
@@ -21,7 +21,7 @@ export class Stream extends EventEmitter {
     public scheduledShows: Array<Show>
     public activeShows: Array<Show>
     public state: StreamState
-    private mainTimer: NodeJS.Timeout
+    private mainTimer: TimeOut
     // Application output directory
     public rootDirectory: string
     public streamDirectory: string
@@ -65,11 +65,13 @@ export class Stream extends EventEmitter {
         // get active shows (find where the segment needs to be concatted)
         // conact to each show
         // delete segment
-        this.activeShows.forEach((show: Show) => {
-            if (show.isActive(true))
-                show.fileConcatter.concat(segmentPath)
-        })
-        removeSync(segmentPath)
+        if (this.state !== "paused") {
+            this.activeShows.forEach((show: Show) => {
+                if (show.isActive(true))
+                    show.fileConcatter.concatFromFile(segmentPath)
+            })
+            removeSync(segmentPath)
+        }
     }
 
     private async mainTimerCallback() {
@@ -84,13 +86,15 @@ export class Stream extends EventEmitter {
                 // Show has finished
             }
         })
-        if (this.activeShows.isEmpty()) this.state === "waiting"
-        else this.state === "downloading"
+        if (this.activeShows.isEmpty() && this.state === "downloading") this.state = "waiting"
+        else if (this.activeShows.isNotEmpty() && this.state === "waiting") this.state = "downloading"
     }
 
     public async start(): Promise<void> {
         await this.downloader.start()
-        if (this.state === "paused") this.state = "waiting"
+        if (this.state === "paused")
+            if (this.activeShows.isEmpty()) this.state = "waiting"
+            else this.state = "downloading"
     }
 
     public async pause(): Promise<void> {
@@ -102,7 +106,7 @@ export class Stream extends EventEmitter {
         return {
             name: this.name,
             playlistUrl: this.playlistUrl,
-            schedulePath: this.schedulePath
+            schedulePath: "null" // TODO: Remove this function
         }
     }
 
@@ -172,10 +176,9 @@ export class Show {
     constructor(public name: string,
                 public time: Moment,
                 public duration: Duration,
-                streamDirectory: string,
                 public offsetSeconds: number = 0) {
 
-        this.fileConcatter = new FileConcatter(path.join(streamDirectory, this.name))
+        this.fileConcatter = new FileConcatter(path.join(Database.getOutputDirectory(), this.name))
 
         // TODO: Calculate start and end times, we need the offsetSeconds
 
@@ -260,6 +263,7 @@ export type StreamState =
     /** Not downloading, even if shows are active */
     | "paused"
 
+// Concats data to a single file
 export class FileConcatter {
 
     private writeStream: WriteStream
@@ -268,10 +272,27 @@ export class FileConcatter {
         this.writeStream = createWriteStream(masterFilePath)
     }
 
-    public concat(...filePaths: Array<string>): this {
-        filePaths.forEach((file: string) => {
-            createReadStream(file).pipe(this.writeStream, {end: false})
-        })
+    public async concatFromFile(...filePaths: Array<string>): Promise<this> {
+        await Promise.all(filePaths.map((file: string) => (
+            new Promise((resolve, reject) => {
+                createReadStream(file).pipe(this.writeStream, {end: false})
+                    .on("finish", resolve)
+                    .on("error", reject)
+            }))
+        ))
         return this
+    }
+
+    public async concatData(data: any): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.writeStream.write(data, (error: Error) => {
+                if (error) reject(error)
+                else resolve()
+            })
+        })
+    }
+
+    public async end(): Promise<void> {
+        return new Promise<void>((resolve) => this.writeStream.end(() => resolve()))
     }
 }
