@@ -25,16 +25,19 @@ export class Settings {
 
     private static settingsDatabase: Nedb<SettingsEntry>
 
-    public static async initialize({filePath = getPath("database/settings.db")}: { filePath?: string }): Promise<void> {
+    public static async initialize({
+                                       dbPath = getPath("database/settings.db"),
+                                       initialOutputDir = getPath("streams"),
+                                       initialOffsetSeconds = 60
+                                   }: {
+        dbPath?: string, initialOutputDir?: string, initialOffsetSeconds?: number
+    }): Promise<void> {
         this.settingsDatabase = new Datastore({
-            filename: filePath,
+            filename: dbPath,
             autoload: true,
             onload: async (error) => {
-                try {
-                    await this.getOutputDirectory()
-                } catch (e) {
-                    await this.setOutputDirectory(getPath("streams"))
-                }
+                try { await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(initialOutputDir) }
+                try { await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(initialOffsetSeconds)}
             }
         })
         this.isInitialized = true
@@ -109,9 +112,9 @@ export class Streams {
 
     private static streamsDatabase: Nedb<StreamEntry>
 
-    public static async initialize({filePath = getPath("database/streams.db")}: { filePath?: string }): Promise<void> {
+    public static async initialize({dbPath = getPath("database/streams.db")}: { dbPath?: string }): Promise<void> {
         this.streamsDatabase = new Datastore({
-            filename: getPath("database/streams.db"),
+            filename: dbPath,
             autoload: true,
             onload: (error) => {
                 // TODO: Implement
@@ -185,14 +188,6 @@ export class Database {
         awaitAll(
             Settings.initialize({}),
             Streams.initialize({})
-        )
-        this.isInitialized = true
-    }
-
-    public static async testInitialize() {
-        awaitAll(
-            Settings.initialize({filePath: getPath("tests/database/settings.db")}),
-            Streams.initialize({filePath: getPath("tests/database/settings.db")})
         )
         this.isInitialized = true
     }
