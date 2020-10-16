@@ -51,13 +51,12 @@ export function logI(message: any, calledFrom: Function = emptyFunction) {
     })
 }
 
-export function logE(message: any, calledFrom: Function = emptyFunction): Error {
+export function logE(message: any, calledFrom: Function = emptyFunction) {
     log(message, calledFrom, () => {
         console.error(`${now()}\n` +
             chalk.red(`${message.toString()}\n`)
         )
     })
-    return new Error(message)
 }
 
 export function assert(condition: boolean, message: string, args?: IArguments, func?: Function) {

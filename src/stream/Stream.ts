@@ -2,7 +2,7 @@ import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {json, momentFormat, momentFormatSafe, TimeOut, timer} from "../utils/Utils"
+import {awaitAll, json, momentFormat, momentFormatSafe, TimeOut, timer} from "../utils/Utils"
 import {Database, StreamEntry} from "../Database"
 import * as path from "path"
 import {hideSync} from "hidefile"
@@ -69,13 +69,6 @@ export class Stream extends EventEmitter {
         this.state = "waiting" // anything other than "paused"
         this.mainTimerIntervalMs = 5000
         this.mainTimer = timer(this.mainTimerIntervalMs, this.mainTimerCallback)
-
-        this.streamDirectory = path.join(Database.getOutputDirectory(), this.name)
-        this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
-        mkdirpSync(this.streamDirectory)
-        mkdirpSync(this.segmentsDirectory)
-        this.segmentsDirectory = hideSync(this.segmentsDirectory)
-
     }
 
     /**
@@ -85,11 +78,21 @@ export class Stream extends EventEmitter {
     private async initialize(): Promise<this> {
         // Initialize downloader
         const playlistUrl = await Downloader.chooseStream(this.playlistUrl)
-        if (!playlistUrl)
-            throw logE(`Failed to initialize Stream, invalid playlistUrl:\n${this.playlistUrl}`)
+        if (!playlistUrl) {
+            logE(`Failed to initialize Stream, invalid playlistUrl:\n${this.playlistUrl}`)
+            // TODO: throw some kind of error!
+        }
 
         this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
         this.downloader.onDownloadSegment = this.onDownloadSegment
+
+        // Initialize directories
+        this.streamDirectory = path.join(await Database.Settings.getOutputDirectory(), this.name)
+        this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
+        mkdirpSync(this.streamDirectory)
+        mkdirpSync(this.segmentsDirectory)
+        this.segmentsDirectory = hideSync(this.segmentsDirectory)
+
         return this
     }
 
@@ -112,7 +115,7 @@ export class Stream extends EventEmitter {
 
     private async mainTimerCallback() {
         // Manage active shows
-        this.scheduledShows.forEach(async (show: Show) => {
+        this.scheduledShows.forEach((show: Show) => {
             if (show.isActive(true) && this.activeShows.notContains(show)) {
                 this.activeShows.push(show)
                 // Show has started
@@ -199,20 +202,20 @@ export const Schedule = {
         return new Promise<Array<Show>>((resolve, reject) => {
             fs.readFile(jsonFilePath, ((error: NodeJS.ErrnoException, data: Buffer) => {
                 if (error) reject(error)
-                else resolve(getScheduleFromFileData(JSON.parse(data.toString())))
+                else getScheduleFromFileData(JSON.parse(data.toString())).then(it => resolve(it))
             }))
         })
     },
     async fromCSV(csvFilePath: string): Promise<Array<Show>> {
         return new Promise<Array<Show>>(resolve =>
-            csv().fromFile(csvFilePath).then(data => resolve(getScheduleFromFileData(data)))
+            csv().fromFile(csvFilePath).then(data => getScheduleFromFileData(data).then(it => resolve(it)))
         )
     }
 }
 
-function getScheduleFromFileData(data: any): Array<Show> {
+async function getScheduleFromFileData(data: any): Promise<Array<Show>> {
     if (Array.isArray(data))
-        return data.map(it => new Show(it.name, it.time, it.duration))
+        return awaitAll(...data.map((it) => Show.new({name: it.name, time: it.time, duration: it.duration})))
     else return []
 }
 
@@ -224,13 +227,10 @@ export class Show {
     public offsetEndTime: number
     public fileConcatter: FileConcatter
 
-    constructor(public name: string,
-                public time: Moment,
-                public duration: Duration,
-                public offsetSeconds: number = 0) {
-
-        // TODO: File concatter needs the file! Join the file name as well
-        this.fileConcatter = new FileConcatter(path.join(Database.getOutputDirectory(), this.name))
+    private constructor(public name: string,
+                        public time: Moment,
+                        public duration: Duration,
+                        public offsetSeconds: number = 0) {
 
         // TODO: Calculate start and end times, we need the offsetSeconds
 
@@ -267,6 +267,21 @@ export class Show {
         obj["endTimeFormatted"] = moment(this.endTime).format(momentFormat)
         obj["offsetEndTimeFormatted"] = moment(this.offsetEndTime).format(momentFormat)
         return json(obj, 2)
+    }
+
+    public async initialize(): Promise<this> {
+        // TODO: File concatter needs the file! Join the file name as well
+        this.fileConcatter = new FileConcatter(path.join(await Database.Settings.getOutputDirectory(), name))
+        return this
+    }
+
+    public static async new({name, time, duration, offsetSeconds = 0}: {
+        name: string
+        time: moment.Moment
+        duration: moment.Duration
+        offsetSeconds?: number
+    }): Promise<Show> {
+        return await (new Show(name, time, duration, offsetSeconds)).initialize()
     }
 }
 

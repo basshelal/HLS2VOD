@@ -182,6 +182,7 @@ export class Downloader {
         this.onDownloadSegment(destinationPath)
     }
 
+    // TODO: Merge all this into one place, use the same static initialize method style we use across the app
     static async chooseStream(streamUrl: string,
                               maxBandwidth: "worst" | "best" | number = "best"): Promise<string | null> {
         const streams: string = await get(streamUrl)

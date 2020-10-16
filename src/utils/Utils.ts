@@ -12,7 +12,8 @@ export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
 export const momentFormatShorter = "dddd Do MMMM YYYY, HH:mm:ss:SSS"
 
 export function getPath(pathString: string): string {
-    return path.join(electron.app.getAppPath(), pathString)
+    if (electron.app) return path.join(electron.app.getAppPath(), pathString)
+    else return path.join("./", pathString)
 }
 
 export function now(): string { return moment().format(momentFormat) }
@@ -108,3 +109,5 @@ export function from(from: number) {
 export type NumberObject = { it: number }
 
 export function timer(millis: number, callback: (...args: any[]) => void): TimeOut { return setInterval(callback, millis) }
+
+export function awaitAll(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }
