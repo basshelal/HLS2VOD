@@ -2,7 +2,7 @@ import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {awaitAll, json, momentFormat, momentFormatSafe, TimeOut, timer} from "../utils/Utils"
+import {awaitAll, fileMoment, json, momentFormat, TimeOut, timer} from "../utils/Utils"
 import {Database, StreamEntry} from "../Database"
 import * as path from "path"
 import {EventEmitter} from "events"
@@ -130,7 +130,7 @@ export class Stream extends EventEmitter {
     public async forceRecord(): Promise<void> {
         await this.start()
         this.isForced = true
-        this.forcedFileConcatter = new FileConcatter(path.join(this.streamDirectory, `${moment().format(momentFormatSafe)}.ts`))
+        this.forcedFileConcatter = new FileConcatter(path.join(this.streamDirectory, `${fileMoment()}.ts`))
         this.forcedFileConcatter.initialize()
     }
 
@@ -254,8 +254,7 @@ export class Show {
     }
 
     public async initialize(): Promise<this> {
-        // TODO: File concatter needs the file! Join the file name as well
-        this.fileConcatter = new FileConcatter(path.join(await Database.Settings.getOutputDirectory(), this.name))
+        this.fileConcatter = new FileConcatter(path.join(await Database.Settings.getOutputDirectory(), this.name, `${fileMoment()}`))
         return this
     }
 

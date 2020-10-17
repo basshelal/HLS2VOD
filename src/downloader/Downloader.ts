@@ -6,6 +6,7 @@ import {logD, logE} from "../utils/Log"
 import {EventEmitter} from "events"
 import {Stream} from "../stream/Stream"
 
+// TODO: Downloading can be done entirely using FFmpeg! It accepts .m3u8 urls and will do encoding inline
 export class Downloader extends EventEmitter {
 
     public playlistUrl: string

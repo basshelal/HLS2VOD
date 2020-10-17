@@ -1,30 +1,33 @@
 import {Database} from "../src/Database"
 import {Stream} from "../src/stream/Stream"
-import {awaitAll, delay, getPath} from "../src/utils/Utils"
+import {delay, getPath} from "../src/utils/Utils"
 import path from "path"
-import {pathExistsSync} from "fs-extra"
+import {pathExistsSync, removeSync} from "fs-extra"
 import Extensions from "../src/utils/Extensions"
+import {readdirSync} from "fs"
+import {logD} from "../src/utils/Log"
 
 const databaseDir = getPath("tests/database")
+const outputDir = getPath("tests/streams")
 const testStream = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
 
 beforeAll(async () => {
     Extensions()
     // Initialize Database for testing
-    await awaitAll(
+    await Promise.all([
         Database.Settings.initialize({
             dbPath: path.join(databaseDir, `settings.db`),
-            initialOutputDir: path.join(databaseDir, `/streams/`),
+            initialOutputDir: outputDir,
             initialOffsetSeconds: 60
-        }),
-        Database.Streams.initialize({dbPath: path.join(databaseDir, `streams.db`)})
-    )
+        }), Database.Streams.initialize({dbPath: path.join(databaseDir, `streams.db`)})])
     Database.isInitialized = true
+    logD("BeforeAll done!")
 })
 
 afterAll(async () => {
     // Delete Database when finished
     //  removeSync(databaseDir)
+    removeSync(outputDir)
 })
 
 test("Stream Initialization", async () => {
@@ -35,8 +38,6 @@ test("Stream Initialization", async () => {
         offsetSeconds: 60
     })
 
-    stream.forceRecord()
-
     expect(stream).toBeDefined()
     expect(stream.name).toBe("Test Stream")
     expect(stream.playlistUrl).toBe(testStream)
@@ -45,14 +46,27 @@ test("Stream Initialization", async () => {
     expect(stream.downloader).toBeDefined()
     expect(stream.downloader.onDownloadSegment).toBeDefined()
     expect(stream.streamDirectory).toBeDefined()
-
     expect(pathExistsSync(stream.streamDirectory)).toBeTruthy()
 
-    console.log(stream)
+    removeSync(stream.streamDirectory)
+})
 
-    await delay(60_000)
+test("Stream Downloading", async () => {
+    const stream: Stream = await Stream.new({
+        name: "Test Stream",
+        playlistUrl: testStream,
+        scheduledShows: [],
+        offsetSeconds: 60
+    })
+
+    await stream.forceRecord()
+
+    await delay(10_000)
 
     await stream.unForceRecord()
 
-    // removeSync(stream.streamDirectory)
-}, 100_000)
+    expect(readdirSync(stream.streamDirectory).length > 0).toBeTruthy()
+
+    removeSync(stream.streamDirectory)
+}, 15_000)
+

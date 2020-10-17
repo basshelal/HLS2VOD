@@ -4,9 +4,9 @@
     "target": "ESNext",
     "sourceMap": true,
     "lib": [
+      "esnext",
       "dom",
-      "dom.iterable",
-      "esnext"
+      "dom.iterable"
     ],
     "allowJs": false,
     "skipLibCheck": true,

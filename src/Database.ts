@@ -70,7 +70,8 @@ export class Settings {
             this.settingsDatabase.find<SettingsEntry>({key: "outputDirectory"},
                 (err: Error, documents: Array<SettingsEntry>) => {
                     if (err) reject(err)
-                    else if (!documents || documents.length == 0) reject("Documents is null or empty")
+                    else if (!documents) reject(`Output Directory documents is null`)
+                    else if (documents.length === 0) reject(`Output Directory documents is empty`)
                     else resolve(documents[0].value)
                 })
         )
@@ -96,7 +97,8 @@ export class Settings {
             this.settingsDatabase.find<SettingsEntry>({key: "offsetSeconds"},
                 (err: Error, documents: Array<SettingsEntry>) => {
                     if (err) reject(err)
-                    else if (!documents || documents.length == 0) reject("Documents is null or empty")
+                    else if (!documents) reject(`Offset Seconds documents is null`)
+                    else if (documents.length === 0) reject(`Offset Seconds documents is empty`)
                     else resolve(Number.parseInt(documents[0].value))
                 })
         )

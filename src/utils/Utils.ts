@@ -11,6 +11,8 @@ export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
 export const momentFormatShorter = "dddd Do MMMM YYYY, HH:mm:ss:SSS"
 
+export function fileMoment(): string { return moment().format(momentFormatSafe) }
+
 export function getPath(pathString: string): string {
     if (electron.app) return path.join(electron.app.getAppPath(), pathString)
     else return path.join("./", pathString)
