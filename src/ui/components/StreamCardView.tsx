@@ -9,6 +9,7 @@ import IconButton from "@material-ui/core/IconButton"
 import Typography from "@material-ui/core/Typography"
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
+import {Button} from "@material-ui/core"
 
 /*
  * Card Showing a Stream:
@@ -54,6 +55,7 @@ export const StreamCardView: FunctionComponent = (props: PropsWithChildren<{}>) 
         <Card className={classes.root}>
             <CardContent>
                 <Typography align="center" variant="h4">Stream Name</Typography>
+                <Typography align="center" variant="h6">State</Typography>
             </CardContent>
             <CardActions>
                 <IconButton className={clsx(classes.expand, {[classes.expandOpen]: expanded})}
@@ -66,7 +68,11 @@ export const StreamCardView: FunctionComponent = (props: PropsWithChildren<{}>) 
             </CardActions>
             <Collapse in={expanded} timeout="auto">
                 <CardContent>
-                    <Typography paragraph>Content:</Typography>
+                    <Typography align="center">Next Show:</Typography>
+                    <Button>Pause</Button>
+                    <Button>Force Record</Button>
+                    <Button>Edit Stream</Button>
+                    <Button>View Output</Button>
                 </CardContent>
             </Collapse>
         </Card>

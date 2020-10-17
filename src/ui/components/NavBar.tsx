@@ -23,6 +23,7 @@ import createPalette from "@material-ui/core/styles/createPalette"
 const drawerWidth: number = 240
 const navigationItems: Array<string> = ["Streams", "Settings", "About"]
 
+// TODO: For navigation use React Router and make a separate layout for each page
 function styles(): ClassNameMap {
     return makeStyles((theme: Theme) =>
         createStyles({
