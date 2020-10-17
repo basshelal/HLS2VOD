@@ -6,25 +6,14 @@ import CardActions from "@material-ui/core/CardActions"
 import Typography from "@material-ui/core/Typography"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
 import {Button} from "@material-ui/core"
-import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
-
-/*
- * Card Showing a Stream:
- * Stream Name
- * Stream State (Recording, paused etc)
- * Next Show
- * Edit utils (Edit url, Edit schedule, Edit name, delete etc)
- * Recording controls (Start, Pause, Stop)
- * View Output button
- * Info messages
- */
+import {Edit, FiberManualRecord, FolderOpen, GetApp, Pause} from "@material-ui/icons"
 
 function styles(): ClassNameMap {
     return makeStyles((theme: Theme) =>
         createStyles({
             root: {
                 maxWidth: 700,
-                alignSelf: "center"
+                margin: "12px"
             }
         })
     )()
@@ -40,7 +29,7 @@ export const StreamCardView: FunctionComponent = (props: PropsWithChildren<{}>) 
               onMouseOver={() => setRaised(true)} onMouseLeave={() => setRaised(false)}>
             <CardContent>
                 <Typography align="center" variant="h4">Stream Name</Typography>
-                <Typography align="center" variant="h6">State</Typography>
+                <Typography align="center" variant="h6"><GetApp/>State</Typography>
             </CardContent>
             <CardActions>
                 <Button><Edit/>Edit Stream</Button>

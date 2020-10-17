@@ -13,7 +13,7 @@ export const StreamsLayout: FC = (props: PropsWithChildren<StreamsLayoutProps>) 
         <Container style={{alignItems: "center"}}>
             <Typography variant="h4">All Streams</Typography>
             <StreamList/>
-            <AddStreamButton/>
+            <AddStreamButton onFinish={(string) => console.log(string)}/>
         </Container>
     )
 }
