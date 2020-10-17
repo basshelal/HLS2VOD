@@ -1,15 +1,12 @@
-import React, {FunctionComponent, PropsWithChildren, useState} from "react"
+import React, {FunctionComponent, PropsWithChildren, useRef, useState} from "react"
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles"
-import clsx from "clsx"
 import Card from "@material-ui/core/Card"
 import CardContent from "@material-ui/core/CardContent"
 import CardActions from "@material-ui/core/CardActions"
-import Collapse from "@material-ui/core/Collapse"
-import IconButton from "@material-ui/core/IconButton"
 import Typography from "@material-ui/core/Typography"
-import ExpandMoreIcon from "@material-ui/icons/ExpandMore"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
 import {Button} from "@material-ui/core"
+import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
 
 /*
  * Card Showing a Stream:
@@ -28,20 +25,6 @@ function styles(): ClassNameMap {
             root: {
                 maxWidth: 700,
                 alignSelf: "center"
-            },
-            media: {
-                height: 0,
-                paddingTop: "56.25%" // 16:9
-            },
-            expand: {
-                transform: "rotate(0deg)",
-                marginLeft: "auto",
-                transition: theme.transitions.create("transform", {
-                    duration: theme.transitions.duration.shortest
-                })
-            },
-            expandOpen: {
-                transform: "rotate(180deg)"
             }
         })
     )()
@@ -49,32 +32,22 @@ function styles(): ClassNameMap {
 
 export const StreamCardView: FunctionComponent = (props: PropsWithChildren<{}>) => {
     const classes = styles()
-    const [expanded, setExpanded] = useState<boolean>(false)
+    const [raised, setRaised] = useState<boolean>(false)
+    const cardRef = useRef(null)
 
     return (
-        <Card className={classes.root}>
+        <Card className={classes.root} raised={raised} ref={cardRef}
+              onMouseOver={() => setRaised(true)} onMouseLeave={() => setRaised(false)}>
             <CardContent>
                 <Typography align="center" variant="h4">Stream Name</Typography>
                 <Typography align="center" variant="h6">State</Typography>
             </CardContent>
             <CardActions>
-                <IconButton className={clsx(classes.expand, {[classes.expandOpen]: expanded})}
-                            onClick={() => {setExpanded(!expanded)}}
-                            title={expanded ? "show less" : "show more"}
-                            aria-expanded={expanded}
-                            aria-label={expanded ? "show less" : "show more"}>
-                    <ExpandMoreIcon/>
-                </IconButton>
+                <Button><Edit/>Edit Stream</Button>
+                <Button><Pause/>Pause</Button>
+                <Button><FiberManualRecord/>Force Record</Button>
+                <Button><FolderOpen/>View Output</Button>
             </CardActions>
-            <Collapse in={expanded} timeout="auto">
-                <CardContent>
-                    <Typography align="center">Next Show:</Typography>
-                    <Button>Pause</Button>
-                    <Button>Force Record</Button>
-                    <Button>Edit Stream</Button>
-                    <Button>View Output</Button>
-                </CardContent>
-            </Collapse>
         </Card>
     )
 }
