@@ -1,15 +1,17 @@
 import {Database} from "../src/Database"
 import {Stream} from "../src/stream/Stream"
-import {awaitAll, getPath} from "../src/utils/Utils"
+import {awaitAll, delay, getPath} from "../src/utils/Utils"
 import path from "path"
-import {pathExistsSync, removeSync} from "fs-extra"
+import {pathExistsSync} from "fs-extra"
+import Extensions from "../src/utils/Extensions"
 
 const databaseDir = getPath("tests/database")
-const testStream = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
+const testStream = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8"
 
 beforeAll(async () => {
+    Extensions()
     // Initialize Database for testing
-    awaitAll(
+    await awaitAll(
         Database.Settings.initialize({
             dbPath: path.join(databaseDir, `settings.db`),
             initialOutputDir: path.join(databaseDir, `/streams/`),
@@ -22,7 +24,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
     // Delete Database when finished
-    removeSync(databaseDir)
+    //  removeSync(databaseDir)
 })
 
 test("Stream Initialization", async () => {
@@ -32,6 +34,8 @@ test("Stream Initialization", async () => {
         scheduledShows: [],
         offsetSeconds: 60
     })
+
+    stream.forceRecord()
 
     expect(stream).toBeDefined()
     expect(stream.name).toBe("Test Stream")
@@ -46,5 +50,11 @@ test("Stream Initialization", async () => {
     expect(pathExistsSync(stream.streamDirectory)).toBeTruthy()
     expect(pathExistsSync(stream.segmentsDirectory)).toBeTruthy()
 
-    removeSync(stream.streamDirectory)
-})
+    console.log(stream)
+
+    await delay(30_000)
+
+    stream.unForceRecord()
+
+    // removeSync(stream.streamDirectory)
+}, 60_000)

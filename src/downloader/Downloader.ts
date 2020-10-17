@@ -6,8 +6,10 @@ import PQueue from "p-queue"
 import {URL} from "url"
 import {download, get} from "./Http"
 import {logD, logE} from "../utils/Log"
+import {EventEmitter} from "events"
+import {Stream} from "../stream/Stream"
 
-export class Downloader {
+export class Downloader extends EventEmitter {
 
     public playlistUrl: string
     public segmentDirectory: string
@@ -20,8 +22,9 @@ export class Downloader {
     private timeoutHandle?: number
     private refreshHandle?: number
 
-    constructor(playlistUrl: string, segmentDirectory: string,
-                timeoutDuration: number = 600, playlistRefreshInterval: number = 2) {
+    private constructor(playlistUrl: string, segmentDirectory: string,
+                        timeoutDuration: number = 600, playlistRefreshInterval: number = 2) {
+        super()
         this.playlistUrl = playlistUrl
         this.segmentDirectory = segmentDirectory
         this.timeoutDuration = timeoutDuration
@@ -182,9 +185,28 @@ export class Downloader {
         this.onDownloadSegment(destinationPath)
     }
 
-    // TODO: Merge all this into one place, use the same static initialize method style we use across the app
-    static async chooseStream(streamUrl: string,
-                              maxBandwidth: "worst" | "best" | number = "best"): Promise<string | null> {
+    public emit(event: DownloaderEvent): boolean {
+        return super.emit(event, this)
+    }
+
+    public on(event: DownloaderEvent, listener: (stream?: Stream) => void): this {
+        return super.on(event, listener)
+    }
+
+    public off(event: DownloaderEvent, listener: (stream?: Stream) => void): this {
+        return super.off(event, listener)
+    }
+
+    public once(event: DownloaderEvent, listener: (stream?: Stream) => void): this {
+        return super.once(event, listener)
+    }
+
+    public static async new(streamUrl: string,
+                            segmentDirectory: string,
+                            timeoutDuration: number = 600,
+                            playlistRefreshInterval: number = 2,
+                            maxBandwidth: "worst" | "best" | number = "best"): Promise<Downloader> {
+        // TODO: Throw Errors depending on what went wrong
         const streams: string = await get(streamUrl)
 
         const parser = new m3u8.Parser()
@@ -196,10 +218,12 @@ export class Downloader {
         const isValid = (manifest.segments && manifest.segments.length > 0)
             || (manifest.playlists && manifest.playlists.length > 0)
 
-        if (!isValid) return null
+        if (!isValid) throw Error(`StreamUrl provided is not valid`)
+
+        let playlistUrl: string
 
         // If we already provided a playlist URL
-        if (manifest.segments && manifest.segments.length > 0) return streamUrl
+        if (manifest.segments && manifest.segments.length > 0) playlistUrl = streamUrl
 
         // Find the most relevant playlist
         if (manifest.playlists && manifest.playlists.length > 0) {
@@ -212,10 +236,18 @@ export class Downloader {
                 compareFn = (prev, current) => (prev.attributes.BANDWIDTH > current.attributes.BANDWIDTH || current.attributes.BANDWIDTH > maxBandwidth) ? prev : current
             }
             const uri = manifest.playlists.reduce(compareFn).uri
-            return new URL(uri, streamUrl).href
+            playlistUrl = new URL(uri, streamUrl).href
+        } else {
+            logE(`No stream or playlist found in URL: ${streamUrl}`)
+            throw Error(`StreamUrl provided is not valid`)
         }
 
-        logE(`No stream or playlist found in URL: ${streamUrl}`)
-        return null
+        return new Downloader(playlistUrl,
+            segmentDirectory,
+            timeoutDuration,
+            playlistRefreshInterval)
+
     }
 }
+
+export type DownloaderEvent = "downloadedSegment"

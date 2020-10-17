@@ -110,4 +110,6 @@ export type NumberObject = { it: number }
 
 export function timer(millis: number, callback: (...args: any[]) => void): TimeOut { return setInterval(callback, millis) }
 
-export function awaitAll(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }
+export function delay(millis: number): Promise<TimeOut> { return new Promise(resolve => setTimeout(() => resolve(), millis)) }
+
+export async function awaitAll(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }

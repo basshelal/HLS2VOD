@@ -9,11 +9,7 @@ import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
 import moment, {Duration, Moment} from "moment"
 import {mkdirpSync, removeSync} from "fs-extra"
-import {logE} from "../utils/Log"
 
-// TODO merging .ts files should (or could) be done inline instead of at the end
-// TODO should be able to have multiple active shows, so we'll need a show checker and a segment writer
-// TODO: Should be able to be forced to start or stop download
 export class Stream extends EventEmitter {
 
     /** Name of stream, must be unique so can be used as identifier */
@@ -63,7 +59,7 @@ export class Stream extends EventEmitter {
         this.name = name
         this.playlistUrl = playlistUrl
         this.scheduledShows = scheduledShows.map(show => show.setOffsetSeconds(offsetSeconds))
-        this.activeShows = []
+        this.activeShows = new Array<Show>()
         this.isForced = false
         this.forcedFileConcatter = null
         this.state = "waiting" // anything other than "paused"
@@ -76,16 +72,6 @@ export class Stream extends EventEmitter {
      * Only after this function is complete (successfully) can we begin downloading
      */
     private async initialize(): Promise<this> {
-        // Initialize downloader
-        const playlistUrl = await Downloader.chooseStream(this.playlistUrl)
-        if (!playlistUrl) {
-            logE(`Failed to initialize Stream, invalid playlistUrl:\n${this.playlistUrl}`)
-            // TODO: throw some kind of error!
-        }
-
-        this.downloader = new Downloader(playlistUrl, this.segmentsDirectory)
-        this.downloader.onDownloadSegment = this.onDownloadSegment
-
         // Initialize directories
         this.streamDirectory = path.join(await Database.Settings.getOutputDirectory(), this.name)
         this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
@@ -93,11 +79,17 @@ export class Stream extends EventEmitter {
         mkdirpSync(this.segmentsDirectory)
         this.segmentsDirectory = hideSync(this.segmentsDirectory)
 
+        // Initialize downloader
+        this.downloader = await Downloader.new(this.playlistUrl, this.segmentsDirectory)
+        this.downloader.onDownloadSegment = this.onDownloadSegment
+
         return this
     }
 
     // TODO: Ideally we'd like to write data from the download and not from the file
-    private async onDownloadSegment(segmentPath: string) {
+    private onDownloadSegment = (segmentPath: string) => {
+        console.log(this)
+
         // A segment has been downloaded, lets send it to where it needs to go
         if (this.state !== "paused") {
             // Send segment to active shows if we're not paused
@@ -113,7 +105,7 @@ export class Stream extends EventEmitter {
         removeSync(segmentPath)
     }
 
-    private async mainTimerCallback() {
+    private mainTimerCallback = () => {
         // Manage active shows
         this.scheduledShows.forEach((show: Show) => {
             if (show.isActive(true) && this.activeShows.notContains(show)) {
@@ -148,7 +140,7 @@ export class Stream extends EventEmitter {
     public async forceRecord(): Promise<void> {
         await this.start()
         this.isForced = true
-        this.forcedFileConcatter = new FileConcatter(path.join(this.streamDirectory, `${momentFormatSafe}.ts`))
+        this.forcedFileConcatter = new FileConcatter(path.join(this.streamDirectory, `${moment().format(momentFormatSafe)}.ts`))
         this.forcedFileConcatter.initialize()
     }
 
@@ -159,7 +151,7 @@ export class Stream extends EventEmitter {
         this.forcedFileConcatter = null
     }
 
-    // TODO: Remove this function
+    // TODO: Reimplement this like a serialize() function for when we save to DB
     public toStreamEntry(): StreamEntry {
         return {
             name: this.name,
@@ -271,7 +263,7 @@ export class Show {
 
     public async initialize(): Promise<this> {
         // TODO: File concatter needs the file! Join the file name as well
-        this.fileConcatter = new FileConcatter(path.join(await Database.Settings.getOutputDirectory(), name))
+        this.fileConcatter = new FileConcatter(path.join(await Database.Settings.getOutputDirectory(), this.name))
         return this
     }
 
