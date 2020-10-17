@@ -1,10 +1,7 @@
-import * as fs from "fs-extra"
-import * as path from "path"
 import * as m3u8 from "m3u8-parser"
-import {Ffmpeg} from "./Ffmpeg"
 import PQueue from "p-queue"
 import {URL} from "url"
-import {download, get} from "./Http"
+import {downloadSegmentData, get} from "./Http"
 import {logD, logE} from "../utils/Log"
 import {EventEmitter} from "events"
 import {Stream} from "../stream/Stream"
@@ -12,8 +9,7 @@ import {Stream} from "../stream/Stream"
 export class Downloader extends EventEmitter {
 
     public playlistUrl: string
-    public segmentDirectory: string
-    public onDownloadSegment: (destinationPath: string) => void
+    public onDownloadSegment: (arrayBuffer: ArrayBuffer) => void
 
     private queue: PQueue = new PQueue()
     private timeoutDuration: number
@@ -22,11 +18,9 @@ export class Downloader extends EventEmitter {
     private timeoutHandle?: number
     private refreshHandle?: number
 
-    private constructor(playlistUrl: string, segmentDirectory: string,
-                        timeoutDuration: number = 600, playlistRefreshInterval: number = 2) {
+    private constructor(playlistUrl: string, timeoutDuration: number = 600, playlistRefreshInterval: number = 2) {
         super()
         this.playlistUrl = playlistUrl
-        this.segmentDirectory = segmentDirectory
         this.timeoutDuration = timeoutDuration
         this.playlistRefreshInterval = playlistRefreshInterval
     }
@@ -47,74 +41,6 @@ export class Downloader extends EventEmitter {
 
     public resume() {
         this.queue.start()
-    }
-
-    public async merge(fromChunkName: string, toChunkName: string, outputDirectory: string, outputFileName: string): Promise<void> {
-        const segmentsDir = this.segmentDirectory
-        const mergedSegmentsFile: string = path.join(segmentsDir, "merged.ts")
-
-        // Get all segments
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
-        segments.sort()
-
-        let firstSegmentIndex: number = segments.indexOf(fromChunkName)
-        let lastSegmentIndex: number = segments.indexOf(toChunkName)
-
-        logD(`Merging Segments from ${fromChunkName} to ${toChunkName} to output in ${outputDirectory} called ${outputFileName}`)
-        logD(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
-
-        if (firstSegmentIndex < 0 || lastSegmentIndex < 0) return
-
-        if (lastSegmentIndex + 1 <= segments.length) lastSegmentIndex += 1
-
-        segments = segments.slice(firstSegmentIndex, lastSegmentIndex)
-
-        fs.mkdirpSync(outputDirectory)
-
-        segments.remove(mergedSegmentsFile)
-
-        logD(`Merging ${segments}`)
-
-        // Merge TS files
-        await Ffmpeg.mergeFiles(segments, mergedSegmentsFile)
-
-        logD("Finished Merging")
-
-        logD(`Transmuxing to mp4`)
-
-        // Transmux
-        await Ffmpeg.transmuxTsToMp4(mergedSegmentsFile, path.join(outputDirectory, outputFileName))
-
-        fs.removeSync(mergedSegmentsFile)
-    }
-
-    public deleteSegments(fromChunkName: string, toChunkNameExclusive: string) {
-        let segmentsDir = this.segmentDirectory
-
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
-        segments.sort()
-
-        let firstSegmentIndex: number = segments.indexOf(fromChunkName)
-        let lastSegmentIndex: number = segments.indexOf(toChunkNameExclusive)
-
-        logD(`Deleting Segments from ${fromChunkName} to ${toChunkNameExclusive}`)
-        logD(`Indexes are from ${firstSegmentIndex} to ${lastSegmentIndex}`)
-
-        if (firstSegmentIndex === -1 || lastSegmentIndex === -1) return
-
-        segments = segments.slice(firstSegmentIndex, lastSegmentIndex)
-
-        segments.forEach(it => fs.removeSync(it))
-    }
-
-    public deleteAllSegments() {
-        let segmentsDir = this.segmentDirectory
-
-        let segments: Array<string> = fs.readdirSync(segmentsDir).map(it => path.join(segmentsDir, it))
-
-        logD("Deleting All Segments")
-
-        segments.forEach(it => fs.removeSync(it))
     }
 
     private async refreshPlayList(): Promise<void> {
@@ -170,19 +96,9 @@ export class Downloader extends EventEmitter {
     }
 
     private async downloadSegment(segmentUrl: string): Promise<void> {
-        // Get filename from URL
-        const question = segmentUrl.indexOf("?")
-        let filename = question > 0 ? segmentUrl.substr(0, question) : segmentUrl
-        const slash = filename.lastIndexOf("/")
-        filename = filename.substr(slash + 1)
-
-        const destinationPath: string = path.join(this.segmentDirectory, filename)
-
-        // Download file
-        await download(segmentUrl, destinationPath)
-        // TODO: Why download to a file that we will delete when we can have downloads directly to the videos??
-        logD(`Downloaded: ${segmentUrl} to ${destinationPath}`)
-        this.onDownloadSegment(destinationPath)
+        const buffer: ArrayBuffer = await downloadSegmentData(segmentUrl)
+        logD(`Downloaded: ${segmentUrl}, buffer size ${buffer.byteLength} bytes`)
+        this.onDownloadSegment(buffer)
     }
 
     public emit(event: DownloaderEvent): boolean {
@@ -202,7 +118,6 @@ export class Downloader extends EventEmitter {
     }
 
     public static async new(streamUrl: string,
-                            segmentDirectory: string,
                             timeoutDuration: number = 600,
                             playlistRefreshInterval: number = 2,
                             maxBandwidth: "worst" | "best" | number = "best"): Promise<Downloader> {
@@ -243,7 +158,6 @@ export class Downloader extends EventEmitter {
         }
 
         return new Downloader(playlistUrl,
-            segmentDirectory,
             timeoutDuration,
             playlistRefreshInterval)
 

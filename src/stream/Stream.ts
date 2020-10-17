@@ -5,10 +5,10 @@ import csv from "csvtojson"
 import {awaitAll, json, momentFormat, momentFormatSafe, TimeOut, timer} from "../utils/Utils"
 import {Database, StreamEntry} from "../Database"
 import * as path from "path"
-import {hideSync} from "hidefile"
 import {EventEmitter} from "events"
 import moment, {Duration, Moment} from "moment"
-import {mkdirpSync, removeSync} from "fs-extra"
+import {mkdirpSync} from "fs-extra"
+import {Ffmpeg} from "../downloader/Ffmpeg"
 
 export class Stream extends EventEmitter {
 
@@ -42,9 +42,6 @@ export class Stream extends EventEmitter {
     /** Directory where this stream will be downloaded */
     public streamDirectory: string
 
-    // TODO at some point we can get rid of this below
-    public segmentsDirectory: string
-
     /** The {@link Downloader} that downloads segments from the {@link playlistUrl} */
     public downloader: Downloader
 
@@ -74,35 +71,27 @@ export class Stream extends EventEmitter {
     private async initialize(): Promise<this> {
         // Initialize directories
         this.streamDirectory = path.join(await Database.Settings.getOutputDirectory(), this.name)
-        this.segmentsDirectory = path.join(this.streamDirectory, ".segments")
         mkdirpSync(this.streamDirectory)
-        mkdirpSync(this.segmentsDirectory)
-        this.segmentsDirectory = hideSync(this.segmentsDirectory)
 
         // Initialize downloader
-        this.downloader = await Downloader.new(this.playlistUrl, this.segmentsDirectory)
+        this.downloader = await Downloader.new(this.playlistUrl)
         this.downloader.onDownloadSegment = this.onDownloadSegment
 
         return this
     }
 
-    // TODO: Ideally we'd like to write data from the download and not from the file
-    private onDownloadSegment = (segmentPath: string) => {
-        console.log(this)
-
+    private onDownloadSegment = (arrayBuffer: ArrayBuffer) => {
         // A segment has been downloaded, lets send it to where it needs to go
         if (this.state !== "paused") {
             // Send segment to active shows if we're not paused
             this.activeShows.forEach((show: Show) => {
                 if (show.isActive(true)) // this is just a safety, should always be true
-                    show.fileConcatter.concatFromFile(segmentPath)
+                    show.fileConcatter.concatData(arrayBuffer)
             })
         }
         if (this.isForced && this.forcedFileConcatter) {
-            this.forcedFileConcatter.concatFromFile(segmentPath)
+            this.forcedFileConcatter.concatData(arrayBuffer)
         }
-        // Delete segment, we're done with it
-        removeSync(segmentPath)
     }
 
     private mainTimerCallback = () => {
@@ -116,6 +105,7 @@ export class Stream extends EventEmitter {
                 this.activeShows.remove(show)
                 // Show has finished
                 show.fileConcatter.end()
+                // TODO: Transmux to mp4
             }
         })
         if (this.activeShows.isEmpty() && this.state === "downloading") this.state = "waiting"
@@ -148,6 +138,8 @@ export class Stream extends EventEmitter {
     public async unForceRecord(): Promise<void> {
         this.isForced = false
         await this.forcedFileConcatter.end()
+        await Ffmpeg.transmuxTsToMp4(this.forcedFileConcatter.masterFilePath, this.forcedFileConcatter.masterFilePath + ".mp4")
+        // TODO: Delete .ts file :/
         this.forcedFileConcatter = null
     }
 

@@ -14,3 +14,7 @@ export async function download(url: string, filePath: string): Promise<void> {
         stream.on("error", reject)
     })
 }
+
+export async function downloadSegmentData(url: string): Promise<ArrayBuffer> {
+    return ((await axios(url, {responseType: "arraybuffer"})).data as ArrayBuffer)
+}

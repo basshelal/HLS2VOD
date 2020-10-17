@@ -6,7 +6,7 @@ import {pathExistsSync} from "fs-extra"
 import Extensions from "../src/utils/Extensions"
 
 const databaseDir = getPath("tests/database")
-const testStream = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8"
+const testStream = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
 
 beforeAll(async () => {
     Extensions()
@@ -45,16 +45,14 @@ test("Stream Initialization", async () => {
     expect(stream.downloader).toBeDefined()
     expect(stream.downloader.onDownloadSegment).toBeDefined()
     expect(stream.streamDirectory).toBeDefined()
-    expect(stream.segmentsDirectory).toBeDefined()
 
     expect(pathExistsSync(stream.streamDirectory)).toBeTruthy()
-    expect(pathExistsSync(stream.segmentsDirectory)).toBeTruthy()
 
     console.log(stream)
 
-    await delay(30_000)
+    await delay(60_000)
 
-    stream.unForceRecord()
+    await stream.unForceRecord()
 
     // removeSync(stream.streamDirectory)
-}, 60_000)
+}, 100_000)
