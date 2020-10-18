@@ -114,4 +114,4 @@ export function timer(millis: number, callback: (...args: any[]) => void): TimeO
 
 export function delay(millis: number): Promise<TimeOut> { return new Promise(resolve => setTimeout(() => resolve(), millis)) }
 
-export async function awaitAll(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }
+export async function promises(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }

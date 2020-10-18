@@ -2,7 +2,7 @@ import {Downloader} from "../downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {awaitAll, fileMoment, json, momentFormat, TimeOut, timer} from "../utils/Utils"
+import {fileMoment, json, momentFormat, promises, TimeOut, timer} from "../utils/Utils"
 import {Database, StreamEntry} from "../Database"
 import * as path from "path"
 import {EventEmitter} from "events"
@@ -199,7 +199,7 @@ export const Schedule = {
 
 async function getScheduleFromFileData(data: any): Promise<Array<Show>> {
     if (Array.isArray(data))
-        return awaitAll(...data.map((it) => Show.new({name: it.name, time: it.time, duration: it.duration})))
+        return promises(...data.map((it) => Show.new({name: it.name, time: it.time, duration: it.duration})))
     else return []
 }
 

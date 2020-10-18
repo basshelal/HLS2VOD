@@ -1,19 +1,17 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
 import {Schedule, Stream} from "./stream/Stream"
-import {Settings, SettingsEntryKey, StreamEntry, Streams} from "./Database"
+import {Database, Settings, StreamEntry, Streams} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
 import Extensions from "./utils/Extensions"
+import {logD} from "./utils/Log"
 
 Extensions()
 
 const activeStreams: Array<Stream> = []
 const alHiwarUrl = "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8"
-
-const defaultOutputDirectory = path.join(electron.app.getPath("downloads"), "HLS2VOD")
-const defaultOffsetSeconds = 120
 
 const schedulePath = path.join(electron.app.getAppPath(), "res/schedule.csv")
 
@@ -36,15 +34,13 @@ function send<T>(name: string, args: T) {
 async function addStream(streamEntry: StreamEntry): Promise<Stream> {
     const settings = await Settings.getAllSettings()
     const offsetSeconds = parseInt(settings.get("offsetSeconds"))
-    const outputDirectory = settings.get("outputDirectory")
     const schedule = await Schedule.fromCSV(streamEntry.schedulePath)
 
     const stream = await Stream.new({
         name: streamEntry.name,
         playlistUrl: streamEntry.playlistUrl,
         scheduledShows: schedule,
-        offsetSeconds: offsetSeconds,
-        rootDirectory: outputDirectory
+        offsetSeconds: offsetSeconds
     })
     await Streams.addStream(stream)
     return stream
@@ -83,32 +79,15 @@ function startElectronApp() {
             )
         }
 
-        // browserWindow.loadFile(getPath("./src/layouts/home/home.html"))
-
-        const streams: Array<StreamEntry> = await Streams.getAllStreams()
-        let settings: Map<SettingsEntryKey, string> = await Settings.getAllSettings()
-
-        if (!settings.get("offsetSeconds")) {
-            await Settings.setOffsetSeconds(defaultOffsetSeconds)
-            settings = await Settings.getAllSettings()
-        }
-        if (!settings.get("outputDirectory")) {
-            await Settings.setOutputDirectory(defaultOutputDirectory)
-            settings = await Settings.getAllSettings()
-        }
+        await Database.initialize()
 
         browserWindow.webContents.once("did-finish-load", () => {
-            if (streams.length === 0) {
-                addStream(alHiwar)
-                streams.push(alHiwar)
-            }
-            send("displayStreams", streams)
-            send("displaySettings", settings)
+            logD("Finished Loading!")
         })
 
         browserWindow.once("close", async (event: Electron.Event) => {
             event.preventDefault()
-            await Promise.all(activeStreams.map(it => it.stopDownloading()))
+            // Finalization code here
             browserWindow.close()
             electron.app.quit()
         })

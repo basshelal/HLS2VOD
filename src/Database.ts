@@ -1,7 +1,7 @@
 import Datastore from "nedb"
 import Nedb from "nedb"
 import {Stream} from "./stream/Stream"
-import {awaitAll, getPath} from "./utils/Utils"
+import {getPath, promises} from "./utils/Utils"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 
@@ -187,7 +187,7 @@ export class Database {
     public static Streams = Streams
 
     public static async initialize() {
-        awaitAll(
+        await promises(
             Settings.initialize({}),
             Streams.initialize({})
         )
