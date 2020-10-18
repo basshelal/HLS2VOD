@@ -1,6 +1,6 @@
 import Datastore from "nedb"
 import Nedb from "nedb"
-import {Stream} from "./stream/Stream"
+import {Stream, StreamEntry} from "./stream/Stream"
 import {getPath, promises} from "./utils/Utils"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
@@ -8,12 +8,6 @@ export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 export interface SettingsEntry {
     key: SettingsEntryKey
     value: string
-}
-
-export interface StreamEntry {
-    name: string,
-    playlistUrl: string,
-    schedulePath: string,
 }
 
 // TODO: Cache values in memory and use a mirror methodology??

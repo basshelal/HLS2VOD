@@ -1,3 +1,4 @@
+/*
 // @ts-ignore
 const database = require("../../../Database")
 const electron = require("electron")
@@ -123,4 +124,4 @@ saveSettingsButton.onclick = () => {
     settings.set("outputDirectory", outputDirectoryTextArea.value)
     sendToMain("saveSettings", settings)
     settingsModal.close()
-}
+}*/

@@ -1,4 +1,5 @@
 import * as electron from "electron"
+import {StreamEntry} from "../stream/Stream"
 
 export const AppName: string = "HLS2VOD"
 

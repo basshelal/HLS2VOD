@@ -3,12 +3,21 @@ import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
 import {fileMoment, json, momentFormat, promises, TimeOut, timer} from "../utils/Utils"
-import {Database, StreamEntry} from "../Database"
+import {Database} from "../Database"
 import * as path from "path"
 import {EventEmitter} from "events"
 import moment, {Duration, Moment} from "moment"
 import {mkdirpSync} from "fs-extra"
 import {Ffmpeg} from "../downloader/Ffmpeg"
+
+export interface StreamEntry {
+    name: string
+    playlistUrl: string
+    state: StreamState
+    scheduledShows: Array<ShowEntry>
+    isForced: boolean
+    streamDirectory: string
+}
 
 export class Stream extends EventEmitter {
 
@@ -143,12 +152,14 @@ export class Stream extends EventEmitter {
         this.forcedFileConcatter = null
     }
 
-    // TODO: Reimplement this like a serialize() function for when we save to DB
     public toStreamEntry(): StreamEntry {
         return {
             name: this.name,
             playlistUrl: this.playlistUrl,
-            schedulePath: "null"
+            state: this.state,
+            scheduledShows: this.scheduledShows.map(show => show.toShowEntry()),
+            isForced: this.isForced,
+            streamDirectory: this.streamDirectory
         }
     }
 
@@ -181,16 +192,19 @@ export class Stream extends EventEmitter {
     }
 }
 
-export const Schedule = {
-    async fromJson(jsonFilePath: string): Promise<Array<Show>> {
+export class Schedule {
+    private constructor() {}
+
+    public static async fromJson(jsonFilePath: string): Promise<Array<Show>> {
         return new Promise<Array<Show>>((resolve, reject) => {
             fs.readFile(jsonFilePath, ((error: NodeJS.ErrnoException, data: Buffer) => {
                 if (error) reject(error)
                 else getScheduleFromFileData(JSON.parse(data.toString())).then(it => resolve(it))
             }))
         })
-    },
-    async fromCSV(csvFilePath: string): Promise<Array<Show>> {
+    }
+
+    public static async fromCSV(csvFilePath: string): Promise<Array<Show>> {
         return new Promise<Array<Show>>(resolve =>
             csv().fromFile(csvFilePath).then(data => getScheduleFromFileData(data).then(it => resolve(it)))
         )
@@ -199,8 +213,17 @@ export const Schedule = {
 
 async function getScheduleFromFileData(data: any): Promise<Array<Show>> {
     if (Array.isArray(data))
-        return promises(...data.map((it) => Show.new({name: it.name, time: it.time, duration: it.duration})))
+        return promises(...data.map((it) => {
+            return Show.new({name: it.name, time: it.time, duration: it.duration})
+        }))
     else return []
+}
+
+export interface ShowEntry {
+    startTime: number
+    offsetStartTime: number
+    endTime: number
+    offsetEndTime: number
 }
 
 export class Show {
@@ -215,6 +238,8 @@ export class Show {
                         public time: Moment,
                         public duration: Duration,
                         public offsetSeconds: number = 0) {
+
+        this.startTime = time.date()
 
         // TODO: Calculate start and end times, we need the offsetSeconds
 
@@ -258,10 +283,19 @@ export class Show {
         return this
     }
 
+    public toShowEntry(): ShowEntry {
+        return {
+            startTime: this.startTime,
+            offsetStartTime: this.offsetStartTime,
+            endTime: this.endTime,
+            offsetEndTime: this.offsetEndTime
+        }
+    }
+
     public static async new({name, time, duration, offsetSeconds = 0}: {
         name: string
-        time: moment.Moment
-        duration: moment.Duration
+        time: Moment
+        duration: Duration
         offsetSeconds?: number
     }): Promise<Show> {
         return await (new Show(name, time, duration, offsetSeconds)).initialize()

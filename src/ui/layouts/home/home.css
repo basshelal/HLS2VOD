@@ -1,3 +1,4 @@
+/*
 @import url('https://fonts.googleapis.com/css2?family=Roboto');
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
 
@@ -24,23 +25,23 @@ header > * {
     font-size: 7rem;
 }
 
-/* label focus color */
+!* label focus color *!
 .input-field textarea:focus + label {
     color: var(--primary-color-light) !important;
 }
 
-/* label underline focus color */
+!* label underline focus color *!
 .input-field textarea:focus {
     border-bottom: 1px solid var(--primary-color-light) !important;
     box-shadow: 0 1px 0 0 var(--primary-color-light) !important;
 }
 
-/* label focus color */
+!* label focus color *!
 .input-field input:focus + label {
     color: var(--primary-color-light) !important;
 }
 
-/* label underline focus color */
+!* label underline focus color *!
 .input-field input:focus {
     border-bottom: 1px solid var(--primary-color-light) !important;
     box-shadow: 0 1px 0 0 var(--primary-color-light) !important;
@@ -63,3 +64,4 @@ header > * {
 .modal-content {
     width: 90% !important;
 }
+*/

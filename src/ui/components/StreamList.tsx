@@ -1,22 +1,23 @@
 import React, {FC, PropsWithChildren, useState} from "react"
 import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
-import {handleFromMain, UIGlobals} from "../UICommons"
+import {handleFromMain, sendToMain, UIGlobals} from "../UICommons"
 import {Events} from "../../Events"
-import {StreamEntry} from "../../Database"
+import {StreamEntry} from "../../stream/Stream"
 
 export interface StreamListProps {
 
 }
 
-let handler = (streamEntries: Array<StreamEntry>) => {}
+let handler: (streamEntries: Array<StreamEntry>) => void = (streamEntries: Array<StreamEntry>) => {}
 
-handleFromMain<Array<StreamEntry>>(Events.GetStreams,
-    async (event, streamEntries) => handler(streamEntries))
+handleFromMain<Array<StreamEntry>>(Events.GetStreams, (event, streamEntries) => handler(streamEntries))
 
 export const StreamList: FC = (props: PropsWithChildren<StreamListProps>) => {
 
     const [streamEntries, setStreamEntries] = useState<Array<StreamEntry>>([])
+
+    sendToMain<Array<StreamEntry>>(Events.GetStreams).then(returned => setStreamEntries(returned))
 
     handler = (streamEntries: Array<StreamEntry>) => {
         UIGlobals.StreamEntries = streamEntries

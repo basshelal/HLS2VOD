@@ -1,7 +1,7 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
-import {Schedule, Stream} from "./stream/Stream"
-import {Database, Settings, StreamEntry, Streams} from "./Database"
+import {Schedule, Stream, StreamEntry} from "./stream/Stream"
+import {Database, Settings, Streams} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
@@ -69,6 +69,12 @@ electron.app.whenReady().then(async () => {
 
     await Database.initialize()
 
+    /*await addStream({
+        name: "NEW",
+        playlistUrl: "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8",
+        schedulePath: getPath("res/schedule.csv")
+    })*/
+
     browserWindow.webContents.once("did-finish-load", async () => {
         // Web contents have loaded
         const streamEntries: Array<StreamEntry> = await Database.Streams.getAllStreams()
@@ -102,3 +108,7 @@ handleFromBrowser<StreamEntry>("outputButtonClicked",
         const rootDirectory = await Settings.getOutputDirectory()
         electron.shell.openItem(path.join(rootDirectory, streamEntry.name))
     })
+
+handleFromBrowser(Events.GetStreams, async (event) => {
+    return await Database.Streams.getAllStreams()
+})

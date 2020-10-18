@@ -3,9 +3,10 @@ import {Button} from "@material-ui/core"
 import Dialog from "@material-ui/core/Dialog"
 import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
-import DialogContentText from "@material-ui/core/DialogContentText"
 import TextField from "@material-ui/core/TextField"
 import DialogActions from "@material-ui/core/DialogActions"
+import moment from "moment"
+import {json} from "../../utils/Utils"
 
 interface StreamData {
     streamName: string
@@ -48,6 +49,9 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
             props.onFinish(streamData)
     }
 
+
+    console.log(json(moment().toObject()))
+
     return (
         <div>
             <Button variant="outlined" color="primary" onClick={() => {setOpen(true)}}>
@@ -56,7 +60,6 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
             <Dialog open={open} onClose={handleCancelled}>
                 <DialogTitle>New Stream</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>Add a new stream</DialogContentText>
                     <TextField
                         autoFocus
                         margin="dense"
