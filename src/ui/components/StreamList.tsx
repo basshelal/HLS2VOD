@@ -10,7 +10,7 @@ export interface StreamListProps {
 export const StreamList: FC = (props: PropsWithChildren<StreamListProps>) => {
     return (
         <Container>
-            {from(0).to(10).map((number: number) => (<StreamCardView/>))}
+            {from(0).to(10).map((number: number) => (<StreamCardView key={number}/>))}
         </Container>
     )
 }

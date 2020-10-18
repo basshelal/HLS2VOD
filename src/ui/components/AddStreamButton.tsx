@@ -7,28 +7,32 @@ import DialogContentText from "@material-ui/core/DialogContentText"
 import TextField from "@material-ui/core/TextField"
 import DialogActions from "@material-ui/core/DialogActions"
 
-interface NewStreamForm {
+interface StreamData {
     streamName: string
     playlistUrl: string
     schedulePath: string
 }
 
-const emptyStreamForm: NewStreamForm = {streamName: "", playlistUrl: "", schedulePath: ""}
+const emptyStreamData: StreamData = {streamName: "", playlistUrl: "", schedulePath: ""}
 
 export interface AddStreamButtonProps {
-    onFinish: (streamForm: NewStreamForm) => void
+    onFinish: (streamData: StreamData) => void
+}
+
+function validateStreamData(streamData: StreamData): boolean {
+    return true // TODO: implement
 }
 
 export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
     const [open, setOpen] = useState(false)
-    const [formData, setData] = useState<NewStreamForm>(emptyStreamForm)
+    const [streamData, setData] = useState<StreamData>(emptyStreamData)
 
-    const changeData = (changedStreamForm: { streamName?: string, playlistUrl?: string, schedulePath?: string }) => {
-        setData((prevState: NewStreamForm) => {
-            const result: NewStreamForm = prevState
-            if (changedStreamForm.streamName) result.streamName = changedStreamForm.streamName
-            if (changedStreamForm.playlistUrl) result.playlistUrl = changedStreamForm.playlistUrl
-            if (changedStreamForm.schedulePath) result.schedulePath = changedStreamForm.schedulePath
+    const changeData = (changedData: { streamName?: string, playlistUrl?: string, schedulePath?: string }) => {
+        setData((prevState: StreamData) => {
+            const result: StreamData = prevState
+            if (changedData.streamName) result.streamName = changedData.streamName
+            if (changedData.playlistUrl) result.playlistUrl = changedData.playlistUrl
+            if (changedData.schedulePath) result.schedulePath = changedData.schedulePath
             return result
         })
     }
@@ -40,7 +44,8 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
     const handleClose = () => {
         setOpen(false)
         // TODO: Validate!
-        props.onFinish(formData)
+        if (validateStreamData(streamData))
+            props.onFinish(streamData)
     }
 
     return (
@@ -58,6 +63,7 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
                         id="streamName"
                         label="Stream Name"
                         fullWidth
+                        defaultValue={streamData.streamName}
                         onChange={event => changeData({streamName: event.target.value})}
                     />
                     <TextField
@@ -65,6 +71,7 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
                         id="playlistUrl"
                         label="Playlist Url"
                         fullWidth
+                        defaultValue={streamData.playlistUrl}
                         onChange={event => changeData({playlistUrl: event.target.value})}
                     />
                     <TextField
@@ -72,9 +79,11 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
                         id="schedulePath"
                         label="Schedule Path"
                         fullWidth
+                        defaultValue={streamData.schedulePath}
                         onChange={event => changeData({schedulePath: event.target.value})}
                     />
                     <Button>Browse Schedule</Button>
+                    {/* TODO Electron directory picker here, using React web one isn't good */}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="primary">
