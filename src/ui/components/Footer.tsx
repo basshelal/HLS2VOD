@@ -1,5 +1,4 @@
 import React, {FC} from "react"
-import {Button} from "@material-ui/core"
 
 const footerHeight = 60
 const footerPadding = 2
@@ -28,7 +27,6 @@ export const Footer: FC = (props) => {
                 height: `${footerHeight}px`,
                 width: "100%"
             }}>{props.children}
-                <Button>Hello World!</Button>
             </div>
         </div>
     )

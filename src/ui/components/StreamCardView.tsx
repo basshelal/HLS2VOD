@@ -1,4 +1,4 @@
-import React, {FunctionComponent, PropsWithChildren, useRef, useState} from "react"
+import React, {FC, PropsWithChildren, useRef, useState} from "react"
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles"
 import Card from "@material-ui/core/Card"
 import CardContent from "@material-ui/core/CardContent"
@@ -19,7 +19,7 @@ function styles(): ClassNameMap {
     )()
 }
 
-export const StreamCardView: FunctionComponent = (props: PropsWithChildren<{}>) => {
+export const StreamCardView: FC = (props: PropsWithChildren<{}>) => {
     const classes = styles()
     const [raised, setRaised] = useState<boolean>(false)
     const cardRef = useRef(null)
