@@ -9,7 +9,7 @@ import {Button} from "@material-ui/core"
 import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
 
 interface StreamCardViewProps {
-    // TODO: Pass the Stream
+    streamEntry: StreamEntry
 }
 
 function styles(): ClassNameMap {
@@ -26,12 +26,13 @@ function styles(): ClassNameMap {
 export const StreamCardView: FC<StreamCardViewProps> = (props: PropsWithChildren<StreamCardViewProps>) => {
     const classes = styles()
     const [raised, setRaised] = useState<boolean>(false)
+    const streamEntry: StreamEntry = props.streamEntry
 
     return (
         <Card className={classes.root} raised={raised}
               onMouseOver={() => setRaised(true)} onMouseLeave={() => setRaised(false)}>
             <CardContent>
-                <Typography align="center" variant="h4">Stream Name</Typography>
+                <Typography align="center" variant="h4" title="Stream Name">{streamEntry.name}</Typography>
                 <Typography align="center" variant="h6">State</Typography>
             </CardContent>
             <CardActions>

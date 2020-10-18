@@ -4,10 +4,9 @@ import {GlobalStyle} from "./ui/GlobalStyle"
 import {NavBar} from "./ui/components/NavBar"
 import {StreamsLayout} from "./ui/layouts/StreamsLayout"
 import {Footer} from "./ui/components/Footer"
-import {now} from "./utils/Utils"
 
 interface ReactAppProps {
-    message?: string
+
 }
 
 const ReactApp: FC<ReactAppProps> = (props) => {
@@ -25,4 +24,4 @@ const ReactApp: FC<ReactAppProps> = (props) => {
 const mainElement = document.createElement("div")
 mainElement.setAttribute("id", "root")
 document.body.appendChild(mainElement)
-render(<ReactApp message={now()}/>, mainElement)
+render(<ReactApp/>, mainElement)
