@@ -6,7 +6,7 @@ import {fileMoment, json, momentFormat, promises, TimeOut, timer} from "../utils
 import {Database} from "../Database"
 import * as path from "path"
 import {EventEmitter} from "events"
-import moment, {Duration, Moment} from "moment"
+import moment, {duration, Duration, Moment} from "moment"
 import {mkdirpSync, removeSync} from "fs-extra"
 import {Ffmpeg} from "../downloader/Ffmpeg"
 
@@ -192,6 +192,15 @@ export class Stream extends EventEmitter {
     }): Promise<Stream> {
         return await (new Stream({name, playlistUrl, scheduledShows, offsetSeconds})).initialize()
     }
+
+    public static async fromStreamEntry(streamEntry: StreamEntry): Promise<Stream> {
+        return Stream.new({
+            name: streamEntry.name,
+            playlistUrl: streamEntry.playlistUrl,
+            scheduledShows: await Promise.all(streamEntry.scheduledShows.map(async (showEntry) => await Show.fromShowEntry(showEntry))),
+            offsetSeconds: 0
+        })
+    }
 }
 
 export class Schedule {
@@ -222,6 +231,7 @@ async function getScheduleFromFileData(data: any): Promise<Array<Show>> {
 }
 
 export interface ShowEntry {
+    name: string
     startTime: number
     offsetStartTime: number
     endTime: number
@@ -285,6 +295,7 @@ export class Show {
 
     public toShowEntry(): ShowEntry {
         return {
+            name: this.name,
             startTime: this.startTime,
             offsetStartTime: this.offsetStartTime,
             endTime: this.endTime,
@@ -303,6 +314,19 @@ export class Show {
         moment(5, "HH:mm")
         moment.duration()
         return await (new Show(name, time, duration, offsetSeconds)).initialize()
+    }
+
+    public static async fromShowEntry(showEntry: ShowEntry): Promise<Show> {
+        const show = await Show.new({
+            name: showEntry.name,
+            time: moment(showEntry.startTime),
+            duration: duration()
+        })
+        show.startTime = showEntry.startTime
+        show.offsetStartTime = showEntry.offsetStartTime
+        show.endTime = showEntry.endTime
+        show.offsetEndTime = showEntry.offsetEndTime
+        return show
     }
 }
 
