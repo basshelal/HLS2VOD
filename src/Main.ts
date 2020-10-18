@@ -10,6 +10,12 @@ import {Events} from "./Events"
 
 Extensions()
 
+let activeStreams: Array<Stream> = []
+
+function findActiveStream(name: string): Stream | undefined {
+    return activeStreams.find(it => it.name === name)
+}
+
 let browserWindow: BrowserWindow
 
 function handleFromBrowser<T>(name: string, listener: (event: IpcMainInvokeEvent, args: T) => Promise<T> | any) {
@@ -90,6 +96,52 @@ electron.app.whenReady().then(async () => {
     })
 })
 
+// Start Stream
+handleFromBrowser<StreamEntry>(Events.StartStream, async (event, streamEntry: StreamEntry) => {
+    const found = findActiveStream(streamEntry.name)
+    if (found) {
+        await found.start()
+        return found.toStreamEntry()
+    } else return null
+})
+
+// Pause Stream
+handleFromBrowser<StreamEntry>(Events.PauseStream, async (event, streamEntry: StreamEntry) => {
+    const found = findActiveStream(streamEntry.name)
+    if (found) {
+        await found.pause()
+        return found.toStreamEntry()
+    } else return null
+})
+
+// Force Record Stream
+handleFromBrowser<StreamEntry>(Events.ForceRecordStream, async (event, streamEntry: StreamEntry) => {
+    const found = findActiveStream(streamEntry.name)
+    if (found) {
+        await found.forceRecord()
+        return found.toStreamEntry()
+    } else return null
+})
+
+// UnForce Record Stream
+handleFromBrowser<StreamEntry>(Events.UnForceRecordStream, async (event, streamEntry: StreamEntry) => {
+    const found = findActiveStream(streamEntry.name)
+    if (found) {
+        await found.unForceRecord()
+        return found.toStreamEntry()
+    } else return null
+})
+
+// View Stream Dir
+handleFromBrowser<StreamEntry>(Events.ViewStreamDir, async (event, streamEntry: StreamEntry) => {
+    const found = findActiveStream(streamEntry.name)
+    if (found) {
+        electron.shell.openItem(found.streamDirectory)
+        return found.toStreamEntry()
+    } else return null
+})
+
+
 handleFromBrowser<StreamEntry>("addStream",
     async (event, streamEntry) => {
         await addStream(streamEntry)
@@ -102,12 +154,6 @@ handleFromBrowser<Map<string, string>>("saveSettings",
         const outputDirectory = settings.get("outputDirectory")
         Settings.setOffsetSeconds(offsetSeconds)
         Settings.setOutputDirectory(outputDirectory)
-    })
-
-handleFromBrowser<StreamEntry>("outputButtonClicked",
-    async (event, streamEntry) => {
-        const rootDirectory = await Settings.getOutputDirectory()
-        electron.shell.openItem(path.join(rootDirectory, streamEntry.name))
     })
 
 handleFromBrowser(Events.GetStreams, async (event) => {

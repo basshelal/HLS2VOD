@@ -11,4 +11,5 @@ export class Events {
     public static UnForceRecordStream = "UnForceRecordStream"
     public static PauseStream = "PauseStream"
     public static StartStream = "StartStream"
+    public static ViewStreamDir = "ViewStreamDir"
 }
