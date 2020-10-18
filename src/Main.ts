@@ -1,6 +1,6 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
-import {Schedule, Stream, StreamEntry} from "./stream/Stream"
+import {Schedule, Show, Stream, StreamEntry} from "./stream/Stream"
 import {Database, Settings, Streams} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
@@ -23,7 +23,7 @@ function sendToBrowser<T>(name: string, args: T) {
 async function addStream(streamEntry: StreamEntry): Promise<Stream> {
     const settings = await Settings.getAllSettings()
     const offsetSeconds = parseInt(settings.get("offsetSeconds"))
-    const schedule = await Schedule.fromCSV(streamEntry.schedulePath)
+    const schedule: Array<Show> = streamEntry.schedulePath ? await Schedule.fromCSV(streamEntry.schedulePath) : []
 
     const stream = await Stream.new({
         name: streamEntry.name,
@@ -70,9 +70,10 @@ electron.app.whenReady().then(async () => {
     await Database.initialize()
 
     /*await addStream({
-        name: "NEW",
+        name: "TESTING",
         playlistUrl: "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8",
-        schedulePath: getPath("res/schedule.csv")
+        schedulePath: getPath("res/schedule.csv"),
+        state: "paused", scheduledShows: [], isForced: false, streamDirectory: getPath("./Stream")
     })*/
 
     browserWindow.webContents.once("did-finish-load", async () => {

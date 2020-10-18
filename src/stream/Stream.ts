@@ -7,13 +7,14 @@ import {Database} from "../Database"
 import * as path from "path"
 import {EventEmitter} from "events"
 import moment, {Duration, Moment} from "moment"
-import {mkdirpSync} from "fs-extra"
+import {mkdirpSync, removeSync} from "fs-extra"
 import {Ffmpeg} from "../downloader/Ffmpeg"
 
 export interface StreamEntry {
     name: string
     playlistUrl: string
     state: StreamState
+    schedulePath?: string
     scheduledShows: Array<ShowEntry>
     isForced: boolean
     streamDirectory: string
@@ -114,7 +115,8 @@ export class Stream extends EventEmitter {
                 this.activeShows.remove(show)
                 // Show has finished
                 show.fileConcatter.end()
-                // TODO: Transmux to mp4
+                Ffmpeg.transmuxTsToMp4(show.fileConcatter.masterFilePath, show.fileConcatter.masterFilePath + ".mp4")
+                removeSync(show.fileConcatter.masterFilePath)
             }
         })
         if (this.activeShows.isEmpty() && this.state === "downloading") this.state = "waiting"
@@ -148,7 +150,7 @@ export class Stream extends EventEmitter {
         this.isForced = false
         await this.forcedFileConcatter.end()
         await Ffmpeg.transmuxTsToMp4(this.forcedFileConcatter.masterFilePath, this.forcedFileConcatter.masterFilePath + ".mp4")
-        // TODO: Delete .ts file :/
+        removeSync(this.forcedFileConcatter.masterFilePath)
         this.forcedFileConcatter = null
     }
 
@@ -240,12 +242,8 @@ export class Show {
                         public offsetSeconds: number = 0) {
 
         this.startTime = time.date()
-
-        // TODO: Calculate start and end times, we need the offsetSeconds
-
-        // Time is in day HH:mm format => Monday 23:59
-        moment(5, "HH:mm")
-        moment.duration()
+        this.endTime = time.add(duration).date()
+        this.setOffsetSeconds(offsetSeconds)
     }
 
     public hasStarted(withOffset: boolean = true): boolean {
@@ -265,7 +263,9 @@ export class Show {
     }
 
     public setOffsetSeconds(value: number): this {
-        // TODO: Implement!
+        this.offsetSeconds = value
+        this.offsetStartTime = moment(this.startTime).subtract(value, "seconds").date()
+        this.offsetEndTime = moment(this.endTime).add(value, "seconds").date()
         return this
     }
 
@@ -298,6 +298,10 @@ export class Show {
         duration: Duration
         offsetSeconds?: number
     }): Promise<Show> {
+        // TODO: Parse string data into moment
+        // Time is in day HH:mm format => Monday 23:59
+        moment(5, "HH:mm")
+        moment.duration()
         return await (new Show(name, time, duration, offsetSeconds)).initialize()
     }
 }

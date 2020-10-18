@@ -113,7 +113,7 @@ export class Streams {
             filename: dbPath,
             autoload: true,
             onload: (error) => {
-                // TODO: Implement
+
             }
         })
         this.isInitialized = true

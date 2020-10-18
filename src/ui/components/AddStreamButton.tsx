@@ -5,8 +5,6 @@ import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import DialogActions from "@material-ui/core/DialogActions"
-import moment from "moment"
-import {json} from "../../utils/Utils"
 
 interface StreamData {
     streamName: string
@@ -21,7 +19,9 @@ export interface AddStreamButtonProps {
 }
 
 function validateStreamData(streamData: StreamData): boolean {
-    return true // TODO: implement
+    let isValid: boolean = false
+    if (streamData.streamName !== "" && streamData.playlistUrl !== "") isValid = true
+    return isValid
 }
 
 export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
@@ -44,13 +44,9 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
 
     const handleClose = () => {
         setOpen(false)
-        // TODO: Validate!
         if (validateStreamData(streamData))
             props.onFinish(streamData)
     }
-
-
-    console.log(json(moment().toObject()))
 
     return (
         <div>
