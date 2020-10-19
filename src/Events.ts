@@ -5,6 +5,7 @@ export class Events {
     public static UpdateSettings = "SetSettings"
     public static GetStreams = "GetStreams"
     public static NewStream = "NewStream"
+    public static RefreshAllStreams = "RefreshAllStreams"
     public static UpdateStream = "UpdateStream"
     public static DeleteStream = "DeleteStream"
     public static ForceRecordStream = "ForceRecordStream"
