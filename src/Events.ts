@@ -12,4 +12,5 @@ export class Events {
     public static PauseStream = "PauseStream"
     public static StartStream = "StartStream"
     public static ViewStreamDir = "ViewStreamDir"
+    public static BrowseSchedule = "BrowseSchedule"
 }

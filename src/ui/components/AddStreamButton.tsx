@@ -29,6 +29,7 @@ function validateStreamData(streamData: StreamData): boolean {
 export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
     const [open, setOpen] = useState(false)
     const [streamData, setData] = useState<StreamData>(emptyStreamData)
+    const [schedulePathText, setSchedulePathText] = useState<string>("")
 
     const changeData = (changedData: { streamName?: string, playlistUrl?: string, schedulePath?: string }) => {
         setData((prevState: StreamData) => {
@@ -83,10 +84,19 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
                         label="Schedule Path"
                         fullWidth
                         defaultValue={streamData.schedulePath}
-                        onChange={event => changeData({schedulePath: event.target.value})}
+                        value={schedulePathText}
+                        onChange={event => {
+                            setSchedulePathText(event.target.value)
+                            changeData({schedulePath: event.target.value})
+                        }}
                     />
-                    <Button>Browse Schedule</Button>
-                    {/* TODO Electron directory picker here, using React web one isn't good */}
+                    <Button onClick={async () => {
+                        const result: string | undefined = await sendToMain<string>(Events.BrowseSchedule)
+                        if (result) {
+                            setSchedulePathText(result)
+                            changeData({schedulePath: result})
+                        }
+                    }}>Browse Schedule</Button>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleSubmit} color="primary">

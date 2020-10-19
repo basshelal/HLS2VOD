@@ -1,5 +1,5 @@
 import * as electron from "electron"
-import {BrowserWindow, IpcMainInvokeEvent} from "electron"
+import {BrowserWindow, dialog, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
 import {Schedule, Show, Stream, StreamEntry} from "./stream/Stream"
 import {Database} from "./Database"
 import * as path from "path"
@@ -25,6 +25,14 @@ function handleFromBrowser<T>(name: string, listener: (event: IpcMainInvokeEvent
 
 function sendToBrowser<T>(name: string, args: T) {
     browserWindow.webContents.send(name, args)
+}
+
+async function openDirectoryPicker(): Promise<OpenDialogReturnValue> {
+    return dialog.showOpenDialog(browserWindow, {properties: ["openDirectory"]})
+}
+
+async function openFilePicker(): Promise<OpenDialogReturnValue> {
+    return dialog.showOpenDialog(browserWindow, {properties: ["openFile"]})
 }
 
 async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
@@ -144,11 +152,19 @@ handleFromBrowser<StreamEntry>(Events.ViewStreamDir, async (event, streamEntry: 
 
 // Add New Stream
 handleFromBrowser<StreamData>(Events.NewStream, async (event, streamData: StreamData) => {
-    const stream: Stream = await addStream(streamData.name, streamData.playlistUrl, streamData.schedulePath)
+    const schedulePath: string = streamData.schedulePath === "" ? undefined : streamData.schedulePath
+    const stream: Stream = await addStream(streamData.name, streamData.playlistUrl, schedulePath)
     return stream.toStreamEntry()
 })
 
 // Get Streams
 handleFromBrowser(Events.GetStreams, async (event) => {
     return await Database.Streams.getAllStreams()
+})
+
+// Browse Schedule
+handleFromBrowser(Events.BrowseSchedule, async (event) => {
+    const pickerResult = await openFilePicker()
+    if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
+    else return pickerResult.filePaths[0]
 })
