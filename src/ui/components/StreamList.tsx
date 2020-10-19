@@ -1,28 +1,27 @@
 import React, {FC, PropsWithChildren, useState} from "react"
 import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
-import {handleFromMain, sendToMain} from "../UICommons"
+import {sendToMain} from "../UICommons"
 import {Events} from "../../Events"
 import {StreamEntry} from "../../stream/Stream"
+import {delay, now} from "../../utils/Utils"
 
 export interface StreamListProps {
 
 }
 
-let handler: (streamEntries: Array<StreamEntry>) => void = (streamEntries: Array<StreamEntry>) => {}
-
-handleFromMain<Array<StreamEntry>>(Events.GetStreams, (event, streamEntries) => handler(streamEntries))
-
 export const StreamList: FC = (props: PropsWithChildren<StreamListProps>) => {
+
+    // TODO: This renders forever because a state change re-renders
+
+    console.log(now())
 
     const [streamEntries, setStreamEntries] = useState<Array<StreamEntry>>([])
 
-    sendToMain<Array<StreamEntry>>(Events.GetStreams).then(returned => setStreamEntries(returned))
-
-    handler = (streamEntries: Array<StreamEntry>) => {
-        setStreamEntries(streamEntries)
-        console.log(streamEntries)
-    }
+    sendToMain<Array<StreamEntry>>(Events.GetStreams).then(returned => {
+        console.log(returned)
+        delay(5000).then(() => setStreamEntries(returned))
+    })
 
     return (
         <Container>

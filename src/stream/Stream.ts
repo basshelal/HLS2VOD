@@ -223,9 +223,8 @@ export class Schedule {
 
 async function getScheduleFromFileData(data: any): Promise<Array<Show>> {
     if (Array.isArray(data))
-        return promises(...data.map((it) => {
-            return Show.fromFile({name: it.name, time: it.time, duration: it.duration})
-        }))
+        return promises(...data.filter(it => it.name && it.startTime && it.durationMinutes)
+            .map((it) => Show.fromFile({name: it.name, time: it.startTime, duration: it.durationMinutes})))
     else return []
 }
 
@@ -326,7 +325,7 @@ export class Show {
 
     public static async fromFile({name, time, duration}: { name: string, time: string, duration: string }): Promise<Show> {
         const startTime = moment(time, "dddd HH:mm")
-        const momentDuration = moment.duration(duration)
+        const momentDuration = moment.duration(duration, "minutes")
         return await Show.new({name: name, time: startTime, duration: momentDuration})
     }
 }

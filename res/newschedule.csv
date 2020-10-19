@@ -1,4 +1,4 @@
-name,         startTime,          duration
+name,         startTime,          durationMinutes
 
-Monday #0,    Monday 00:00,         1 hour
-Monday #1,    Monday 00:30,         1 hour
+Monday #0,    Monday 00:00,         60
+Monday #1,    Monday 00:30,         60

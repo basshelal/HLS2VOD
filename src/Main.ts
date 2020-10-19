@@ -7,9 +7,10 @@ import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-
 import url from "url"
 import Extensions from "./utils/Extensions"
 import {Events} from "./Events"
-import {getPath} from "./utils/Utils"
+import {getPath, json} from "./utils/Utils"
 import {StreamData} from "./ui/components/AddStreamButton"
 import {logD} from "./utils/Log"
+import {SettingsData} from "./ui/components/SettingsButton"
 
 Extensions()
 
@@ -165,6 +166,25 @@ handleFromBrowser(Events.GetStreams, async (event) => {
 // Browse Schedule
 handleFromBrowser(Events.BrowseSchedule, async (event) => {
     const pickerResult = await openFilePicker()
+    if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
+    else return pickerResult.filePaths[0]
+})
+
+// Get All Settings
+handleFromBrowser(Events.GetSettings, async (event) => {
+    return await Database.Settings.getAllSettings()
+})
+
+// Update Settings
+handleFromBrowser(Events.UpdateSettings, async (event, settingsData: SettingsData) => {
+    await Database.Settings.setOffsetSeconds(settingsData.offsetSeconds)
+    await Database.Settings.setOutputDirectory(settingsData.outputDir)
+})
+
+// Browse Output Dir
+handleFromBrowser(Events.BrowseOutputDir, async (event) => {
+    const pickerResult = await openDirectoryPicker()
+    logD(json(pickerResult))
     if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
     else return pickerResult.filePaths[0]
 })

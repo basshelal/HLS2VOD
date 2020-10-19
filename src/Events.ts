@@ -13,4 +13,5 @@ export class Events {
     public static StartStream = "StartStream"
     public static ViewStreamDir = "ViewStreamDir"
     public static BrowseSchedule = "BrowseSchedule"
+    public static BrowseOutputDir = "BrowseOutputDir"
 }

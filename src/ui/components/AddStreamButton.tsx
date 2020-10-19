@@ -48,7 +48,7 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
     const handleSubmit = async () => {
         if (validateStreamData(streamData)) {
             await sendToMain(Events.NewStream, streamData)
-            setData(emptyStreamData)
+            setData({name: "", playlistUrl: "", schedulePath: ""})
         }
         setOpen(false)
     }

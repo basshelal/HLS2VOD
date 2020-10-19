@@ -37,11 +37,11 @@ export class Settings {
         this.isInitialized = true
     }
 
-    public static async getAllSettings(): Promise<Map<SettingsEntryKey, string>> {
-        return new Promise<Map<SettingsEntryKey, string>>((resolve, reject) => {
+    public static async getAllSettings(): Promise<Array<SettingsEntry>> {
+        return new Promise<Array<SettingsEntry>>((resolve, reject) => {
             this.settingsDatabase.find({}, (err: Error, documents: Array<SettingsEntry>) => {
                 if (err) reject(err)
-                else resolve(new Map(documents.map(it => [it.key, it.value])))
+                else resolve(documents)
             })
         })
     }

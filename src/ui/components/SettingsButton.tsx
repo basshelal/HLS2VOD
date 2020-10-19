@@ -1,7 +1,106 @@
-import React, {FC} from "react"
+import React, {FC, useState} from "react"
 import {Button} from "@material-ui/core"
+import Dialog from "@material-ui/core/Dialog"
+import DialogTitle from "@material-ui/core/DialogTitle"
+import DialogContent from "@material-ui/core/DialogContent"
+import TextField from "@material-ui/core/TextField"
+import {sendToMain} from "../UICommons"
+import {Events} from "../../Events"
+import DialogActions from "@material-ui/core/DialogActions"
+import {SettingsEntry} from "../../Database"
+import {json} from "../../utils/Utils"
 
+export interface SettingsData {
+    offsetSeconds: number
+    outputDir: string
+}
+
+const emptySettingsData: SettingsData = {offsetSeconds: 0, outputDir: ""}
+
+function validateSettings(settingsData: SettingsData): boolean {
+    let isValid: boolean = false
+    if (settingsData.offsetSeconds >= 0 && settingsData.outputDir !== "") isValid = true
+    return isValid
+}
 
 export const SettingsButton: FC = (props) => {
-    return (<Button>Settings</Button>)
+
+    const [open, setOpen] = useState(false)
+    const [settingsData, setData] = useState<SettingsData>(emptySettingsData)
+    const [outputDirText, setOutputDirText] = useState<string>("")
+
+    const changeData = (changedData: { offsetSeconds?: number, outputDir?: string }) => {
+        setData((prevState: SettingsData) => {
+            const result: SettingsData = prevState
+            if (changedData.offsetSeconds) result.offsetSeconds = changedData.offsetSeconds
+            if (changedData.outputDir) result.outputDir = changedData.outputDir
+            return result
+        })
+    }
+
+    const handleCancelled = () => {
+        setOpen(false)
+    }
+
+    const handleSubmit = async () => {
+        if (validateSettings(settingsData)) {
+            await sendToMain(Events.UpdateSettings, settingsData)
+            setData(settingsData)
+        }
+        setOpen(false)
+    }
+
+    sendToMain<Array<SettingsEntry>>(Events.GetSettings)
+        .then(returned => {
+            const offsetSeconds = parseInt(returned.find(it => it.key === "offsetSeconds").value)
+            const outputDir = returned.find(it => it.key === "outputDirectory").value
+            changeData({offsetSeconds: offsetSeconds, outputDir: outputDir})
+            setOutputDirText(outputDir)
+        })
+
+    return (
+        <div>
+            <Button variant="outlined" color="primary" onClick={() => {setOpen(true)}}>
+                Settings
+            </Button>
+            <Dialog open={open} onClose={handleCancelled}>
+                <DialogTitle>Settings</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="offsetSeconds"
+                        label="Offset Seconds"
+                        fullWidth
+                        defaultValue={settingsData.offsetSeconds}
+                        onChange={event => changeData({offsetSeconds: parseInt(event.target.value)})}
+                    />
+                    <TextField
+                        margin="dense"
+                        id="outputDir"
+                        label="Output Directory"
+                        fullWidth
+                        value={outputDirText}
+                        onChange={event => {
+                            setOutputDirText(event.target.value)
+                            changeData({outputDir: event.target.value})
+                        }}
+                    />
+                    <Button onClick={async () => {
+                        const result: string | undefined = await sendToMain<string>(Events.BrowseOutputDir)
+                        console.log(json(result))
+                        if (result) {
+                            setOutputDirText(result)
+                            changeData({outputDir: result})
+                        }
+                    }}>Browse Output Directory</Button>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleSubmit} color="primary">
+                        Save Settings
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </div>
+    )
 }
