@@ -1,13 +1,14 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent} from "electron"
 import {Schedule, Show, Stream, StreamEntry} from "./stream/Stream"
-import {Database, Settings, Streams} from "./Database"
+import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
 import Extensions from "./utils/Extensions"
 import {Events} from "./Events"
 import {getPath} from "./utils/Utils"
+import {StreamData} from "./ui/components/AddStreamButton"
 
 Extensions()
 
@@ -26,8 +27,7 @@ function sendToBrowser<T>(name: string, args: T) {
 }
 
 async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
-    const settings = await Settings.getAllSettings()
-    const offsetSeconds = parseInt(settings.get("offsetSeconds"))
+    const offsetSeconds = await Database.Settings.getOffsetSeconds()
     const schedule: Array<Show> = schedulePath ? await Schedule.fromCSV(schedulePath) : []
 
     const stream = await Stream.new({
@@ -36,7 +36,8 @@ async function addStream(name: string, playlistUrl: string, schedulePath?: strin
         scheduledShows: schedule,
         offsetSeconds: offsetSeconds
     })
-    await Streams.addStream(stream)
+    await Database.Streams.addStream(stream)
+    if (!findStream(stream.name)) streams.push(stream)
     return stream
 }
 
@@ -145,21 +146,13 @@ handleFromBrowser<StreamEntry>(Events.ViewStreamDir, async (event, streamEntry: 
     } else return null
 })
 
+// Add New Stream
+handleFromBrowser<StreamData>(Events.NewStream, async (event, streamData: StreamData) => {
+    const stream: Stream = await addStream(streamData.name, streamData.playlistUrl, streamData.schedulePath)
+    return stream.toStreamEntry()
+})
 
-handleFromBrowser<StreamEntry>("addStream",
-    async (event, streamEntry) => {
-        await addStream(streamEntry.name, streamEntry.playlistUrl, streamEntry.schedulePath)
-        return streamEntry
-    })
-
-handleFromBrowser<Map<string, string>>("saveSettings",
-    (event, settings) => {
-        const offsetSeconds = parseInt(settings.get("offsetSeconds"))
-        const outputDirectory = settings.get("outputDirectory")
-        Settings.setOffsetSeconds(offsetSeconds)
-        Settings.setOutputDirectory(outputDirectory)
-    })
-
+// Get Streams
 handleFromBrowser(Events.GetStreams, async (event) => {
     return await Database.Streams.getAllStreams()
 })

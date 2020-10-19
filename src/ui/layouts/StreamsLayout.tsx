@@ -22,7 +22,7 @@ export const StreamsLayout: FC = (props: PropsWithChildren<StreamsLayoutProps>) 
             <Typography style={{color: "black"}} variant="h4">All Streams</Typography>
             <SettingsButton/>
             <StreamList/>
-            <AddStreamButton onFinish={(string) => console.log(string)}/>
+            <AddStreamButton/>
         </Container>
     )
 }

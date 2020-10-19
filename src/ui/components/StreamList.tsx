@@ -1,7 +1,7 @@
 import React, {FC, PropsWithChildren, useState} from "react"
 import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
-import {handleFromMain, sendToMain, UIGlobals} from "../UICommons"
+import {handleFromMain, sendToMain} from "../UICommons"
 import {Events} from "../../Events"
 import {StreamEntry} from "../../stream/Stream"
 
@@ -20,7 +20,6 @@ export const StreamList: FC = (props: PropsWithChildren<StreamListProps>) => {
     sendToMain<Array<StreamEntry>>(Events.GetStreams).then(returned => setStreamEntries(returned))
 
     handler = (streamEntries: Array<StreamEntry>) => {
-        UIGlobals.StreamEntries = streamEntries
         setStreamEntries(streamEntries)
         console.log(streamEntries)
     }

@@ -5,22 +5,24 @@ import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import DialogActions from "@material-ui/core/DialogActions"
+import {sendToMain} from "../UICommons"
+import {Events} from "../../Events"
 
-interface StreamData {
-    streamName: string
+export interface StreamData {
+    name: string
     playlistUrl: string
     schedulePath: string
 }
 
-const emptyStreamData: StreamData = {streamName: "", playlistUrl: "", schedulePath: ""}
+const emptyStreamData: StreamData = {name: "", playlistUrl: "", schedulePath: ""}
 
 export interface AddStreamButtonProps {
-    onFinish: (streamData: StreamData) => void
+
 }
 
 function validateStreamData(streamData: StreamData): boolean {
     let isValid: boolean = false
-    if (streamData.streamName !== "" && streamData.playlistUrl !== "") isValid = true
+    if (streamData.name !== "" && streamData.playlistUrl !== "") isValid = true
     return isValid
 }
 
@@ -31,7 +33,7 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
     const changeData = (changedData: { streamName?: string, playlistUrl?: string, schedulePath?: string }) => {
         setData((prevState: StreamData) => {
             const result: StreamData = prevState
-            if (changedData.streamName) result.streamName = changedData.streamName
+            if (changedData.streamName) result.name = changedData.streamName
             if (changedData.playlistUrl) result.playlistUrl = changedData.playlistUrl
             if (changedData.schedulePath) result.schedulePath = changedData.schedulePath
             return result
@@ -42,10 +44,12 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
         setOpen(false)
     }
 
-    const handleClose = () => {
+    const handleSubmit = async () => {
+        if (validateStreamData(streamData)) {
+            await sendToMain(Events.NewStream, streamData)
+            setData(emptyStreamData)
+        }
         setOpen(false)
-        if (validateStreamData(streamData))
-            props.onFinish(streamData)
     }
 
     return (
@@ -62,7 +66,7 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
                         id="streamName"
                         label="Stream Name"
                         fullWidth
-                        defaultValue={streamData.streamName}
+                        defaultValue={streamData.name}
                         onChange={event => changeData({streamName: event.target.value})}
                     />
                     <TextField
@@ -85,7 +89,7 @@ export const AddStreamButton: FC<AddStreamButtonProps> = (props) => {
                     {/* TODO Electron directory picker here, using React web one isn't good */}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose} color="primary">
+                    <Button onClick={handleSubmit} color="primary">
                         Add Stream
                     </Button>
                 </DialogActions>

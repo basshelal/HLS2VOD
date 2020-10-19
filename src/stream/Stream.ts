@@ -216,9 +216,8 @@ export class Schedule {
     }
 
     public static async fromCSV(csvFilePath: string): Promise<Array<Show>> {
-        return new Promise<Array<Show>>(resolve =>
-            csv().fromFile(csvFilePath).then(data => getScheduleFromFileData(data).then(it => resolve(it)))
-        )
+        const jsonFromCSV = await csv().fromFile(csvFilePath)
+        return await getScheduleFromFileData(jsonFromCSV)
     }
 }
 
