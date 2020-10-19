@@ -2,6 +2,7 @@
   "name": "hls2vod",
   "version": "0.0.1",
   "private": true,
+  "homepage": "./",
   "main": "./dist/main.js",
   "scripts": {
     "dev": "npm-run-all -p dev:react electron:serve",
@@ -15,6 +16,7 @@
     "build:react": "webpack --config webpack/react.webpack.js",
     "package": "npm-run-all build package:dist",
     "package:dist": "electron-builder --dir",
+    "electron-pack": "build --em.main=build/electron.js",
     "test": "cross-env NODE_ENV=SKIP_PREFLIGHT_CHECK=true jest"
   },
   "dependencies": {
@@ -68,21 +70,33 @@
     "@types/react-router-dom": "^5.1.6",
     "@types/styled-components": "^5.1.0",
     "acorn": "^7.0.0",
-    "babel-jest": "^26.5.2",
+    "babel-jest": "^24.9.0",
     "babel-loader": "^8.1.0",
     "cross-env": "^7.0.2",
     "electron": "^8.5.2",
     "electron-builder": "^22.7.0",
     "electron-devtools-installer": "^3.1.0",
     "html-webpack-plugin": "^4.2.0",
-    "jest": "^26.5.3",
+    "jest": "^24.9.0",
     "npm-run-all": "^4.1.5",
     "ts-jest": "^26.4.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7",
     "wait-on": "^5.0.1",
-    "webpack": "^4.42.1",
+    "webpack": "^4.42.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
+  },
+  "build": {
+    "asar": false,
+    "extends": null,
+    "appId": "com.github.basshelal.hls2vod",
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
   }
 }

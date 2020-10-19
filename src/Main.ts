@@ -9,6 +9,7 @@ import Extensions from "./utils/Extensions"
 import {Events} from "./Events"
 import {getPath} from "./utils/Utils"
 import {StreamData} from "./ui/components/AddStreamButton"
+import {logD} from "./utils/Log"
 
 Extensions()
 
@@ -64,6 +65,7 @@ electron.app.whenReady().then(async () => {
     if (process.env.NODE_ENV === "development") {
         browserWindow.loadURL("http://localhost:4000")
     } else {
+        logD("Loading html")
         browserWindow.loadURL(
             url.format({
                 pathname: path.join(__dirname, "renderer/index.html"),
