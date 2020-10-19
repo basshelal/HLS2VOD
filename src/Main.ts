@@ -81,12 +81,6 @@ electron.app.whenReady().then(async () => {
     await Database.Settings.setOutputDirectory(getPath("./Streams"))
     await Database.Settings.setOffsetSeconds(120)
 
-    await addStream(
-        "TESTING",
-        "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8",
-        getPath("res/newschedule.csv")
-    )
-
     browserWindow.webContents.once("did-finish-load", async () => {
         // Web contents have loaded
         const streamEntries: Array<StreamEntry> = await Database.Streams.getAllStreams()
