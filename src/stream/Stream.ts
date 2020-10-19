@@ -224,7 +224,7 @@ export class Schedule {
 async function getScheduleFromFileData(data: any): Promise<Array<Show>> {
     if (Array.isArray(data))
         return promises(...data.map((it) => {
-            return Show.new({name: it.name, time: it.time, duration: it.duration})
+            return Show.fromFile({name: it.name, time: it.time, duration: it.duration})
         }))
     else return []
 }
@@ -308,10 +308,6 @@ export class Show {
         duration: Duration
         offsetSeconds?: number
     }): Promise<Show> {
-        // TODO: Parse string data into moment
-        // Time is in day HH:mm format => Monday 23:59
-        moment(5, "HH:mm")
-        moment.duration()
         return await (new Show(name, time, duration, offsetSeconds)).initialize()
     }
 
@@ -326,6 +322,12 @@ export class Show {
         show.endTime = showEntry.endTime
         show.offsetEndTime = showEntry.offsetEndTime
         return show
+    }
+
+    public static async fromFile({name, time, duration}: { name: string, time: string, duration: string }): Promise<Show> {
+        const startTime = moment(time, "dddd HH:mm")
+        const momentDuration = moment.duration(duration)
+        return await Show.new({name: name, time: startTime, duration: momentDuration})
     }
 }
 

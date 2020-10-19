@@ -84,7 +84,7 @@ electron.app.whenReady().then(async () => {
     await addStream(
         "TESTING",
         "https://mn-nl.mncdn.com/alhiwar_live/smil:alhiwar.smil/playlist.m3u8",
-        getPath("res/schedule.csv")
+        getPath("res/newschedule.csv")
     )
 
     browserWindow.webContents.once("did-finish-load", async () => {
