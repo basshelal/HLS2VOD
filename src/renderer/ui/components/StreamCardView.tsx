@@ -7,9 +7,9 @@ import Typography from "@material-ui/core/Typography"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
 import {Button} from "@material-ui/core"
 import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
-import {StreamEntry} from "../../stream/Stream"
+import {StreamEntry} from "../../../main/Stream"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../Events"
+import {Events} from "../../../shared/Events"
 
 interface StreamCardViewProps {
     streamEntry: StreamEntry

@@ -8,7 +8,7 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
     mainFields: ['main', 'module', 'browser']
   },
-  entry: path.resolve(rootPath, 'src', 'ReactApp.tsx'),
+  entry: path.resolve(rootPath, 'src', "renderer", 'ReactApp.tsx'),
   target: 'electron-renderer',
   devtool: 'source-map',
   module: {

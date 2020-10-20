@@ -1,16 +1,16 @@
 import * as electron from "electron"
 import {BrowserWindow, dialog, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
-import {Schedule, Show, Stream, StreamEntry} from "./stream/Stream"
+import {Schedule, Show, Stream, StreamEntry} from "./Stream"
 import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
-import Extensions from "./utils/Extensions"
-import {Events} from "./Events"
-import {getPath, json} from "./utils/Utils"
-import {StreamData} from "./ui/components/AddStreamButton"
-import {logD} from "./utils/Log"
-import {SettingsData} from "./ui/components/SettingsButton"
+import Extensions from "../shared/utils/Extensions"
+import {Events} from "../shared/Events"
+import {getPath, json} from "../shared/utils/Utils"
+import {StreamData} from "../renderer/ui/components/AddStreamButton"
+import {logD} from "../shared/utils/Log"
+import {SettingsData} from "../renderer/ui/components/SettingsButton"
 
 Extensions()
 

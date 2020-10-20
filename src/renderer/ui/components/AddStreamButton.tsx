@@ -6,7 +6,7 @@ import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import DialogActions from "@material-ui/core/DialogActions"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../Events"
+import {Events} from "../../../shared/Events"
 
 export interface StreamData {
     name: string

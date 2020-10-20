@@ -5,10 +5,10 @@ import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../Events"
+import {Events} from "../../../shared/Events"
 import DialogActions from "@material-ui/core/DialogActions"
-import {SettingsEntry} from "../../Database"
-import {json} from "../../utils/Utils"
+import {SettingsEntry} from "../../../main/Database"
+import {json} from "../../../shared/utils/Utils"
 
 export interface SettingsData {
     offsetSeconds: number

@@ -2,9 +2,9 @@ import * as m3u8 from "m3u8-parser"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {downloadSegmentData, get} from "./Http"
-import {logD, logE} from "../utils/Log"
+import {logD, logE} from "../../shared/utils/Log"
 import {EventEmitter} from "events"
-import {Stream} from "../stream/Stream"
+import {Stream} from "../Stream"
 
 // TODO: Downloading can be done entirely using FFmpeg! It accepts .m3u8 urls and will do encoding inline
 export class Downloader extends EventEmitter {

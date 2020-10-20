@@ -1,14 +1,14 @@
-import {Downloader} from "../downloader/Downloader"
+import {Downloader} from "./downloader/Downloader"
 import * as fs from "fs"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import csv from "csvtojson"
-import {fileMoment, json, momentFormat, promises, TimeOut, timer} from "../utils/Utils"
-import {Database} from "../Database"
+import {fileMoment, json, momentFormat, promises, TimeOut, timer} from "../shared/utils/Utils"
+import {Database} from "./Database"
 import * as path from "path"
 import {EventEmitter} from "events"
 import moment, {duration, Duration, Moment} from "moment"
 import {mkdirpSync, removeSync} from "fs-extra"
-import {Ffmpeg} from "../downloader/Ffmpeg"
+import {Ffmpeg} from "./downloader/Ffmpeg"
 
 export interface StreamEntry {
     name: string

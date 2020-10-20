@@ -1,7 +1,7 @@
 import Datastore from "nedb"
 import Nedb from "nedb"
-import {Stream, StreamEntry} from "./stream/Stream"
-import {getPath, promises} from "./utils/Utils"
+import {Stream, StreamEntry} from "./Stream"
+import {getPath, promises} from "../shared/utils/Utils"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 

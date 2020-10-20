@@ -5,8 +5,8 @@ import {StreamList} from "../components/StreamList"
 import {AddStreamButton} from "../components/AddStreamButton"
 import {SettingsButton} from "../components/SettingsButton"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../Events"
-import {SettingsEntry} from "../../Database"
+import {Events} from "../../../shared/Events"
+import {SettingsEntry} from "../../../main/Database"
 
 export interface StreamsLayoutProps {
 

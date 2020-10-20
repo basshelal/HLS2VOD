@@ -2,8 +2,8 @@ import React, {Component} from "react"
 import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
 import {handleFromMain, sendToMain} from "../UICommons"
-import {Events} from "../../Events"
-import {StreamEntry} from "../../stream/Stream"
+import {Events} from "../../../shared/Events"
+import {StreamEntry} from "../../../main/Stream"
 
 export interface StreamListProps {
 
