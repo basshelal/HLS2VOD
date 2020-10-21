@@ -6,7 +6,7 @@ import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
 import Extensions from "../shared/utils/Extensions"
-import {Events} from "../shared/Events"
+import {EventBus, Events} from "../shared/Events"
 import {getPath, json} from "../shared/utils/Utils"
 import {StreamData} from "../renderer/ui/components/AddStreamButton"
 import {logD} from "../shared/utils/Log"
@@ -62,6 +62,7 @@ electron.app.whenReady().then(async () => {
             nodeIntegration: true
         }
     })
+    EventBus.browserWindow = browserWindow
     if (process.env.NODE_ENV === "development") {
         installExtension(REACT_DEVELOPER_TOOLS)
             .then((name) => console.log(`Added Extension:  ${name}`))
