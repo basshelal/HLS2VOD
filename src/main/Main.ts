@@ -154,8 +154,8 @@ handleFromBrowser<StreamEntry>(Events.ViewStreamDir, async (event, streamEntry: 
 
 // Add New Stream
 handleFromBrowser<StreamData>(Events.NewStream, async (event, streamData: StreamData) => {
-    const schedulePath: string = streamData.schedulePath === "" ? undefined : streamData.schedulePath
-    const stream: Stream = await addStream(streamData.name, streamData.playlistUrl, schedulePath)
+    const schedulePath: string | undefined = streamData.schedulePath === "" ? undefined : streamData.schedulePath
+    const stream: Stream = await addStream(streamData.streamName, streamData.playlistUrl, schedulePath)
     sendToBrowser(Events.RefreshAllStreams, null)
     return stream.toStreamEntry()
 })
