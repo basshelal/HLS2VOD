@@ -2,6 +2,7 @@ import {ipcRenderer} from "electron"
 import {StreamEntry} from "../main/Stream"
 import {DialogStreamEntry} from "./ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"
+import {SettingsEntry} from "../main/Database"
 
 export class RequestSender {
     private constructor() {}
@@ -22,5 +23,8 @@ export class RequestSender {
         return this.send<string | undefined>(Requests.BrowseOutputDir)
     }
 
+    public static async getAllSettings(): Promise<Array<SettingsEntry>> {
+        return this.send<Array<SettingsEntry>>(Requests.GetSettings)
+    }
 
 }

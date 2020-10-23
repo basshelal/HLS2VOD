@@ -7,22 +7,29 @@ import {sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
 import DialogActions from "@material-ui/core/DialogActions"
 
+interface AddStreamDialogProps extends DialogProps {
+    onAddStream?: (streamEntry: DialogStreamEntry) => void
+}
+
 export interface DialogStreamEntry {
     streamName: string
     playlistUrl: string
     schedulePath: string
 }
 
-export class AddStreamDialog extends Component<DialogProps, DialogStreamEntry> {
+export class AddStreamDialog extends Component<AddStreamDialogProps, DialogStreamEntry> {
 
-    constructor(props: DialogProps) {
+    constructor(props: AddStreamDialogProps) {
         super(props)
+        this.browseSchedule = this.browseSchedule.bind(this)
+        this.validateStreamEntry = this.validateStreamEntry.bind(this)
+        this.onSubmit = this.onSubmit.bind(this)
         this.state = {streamName: "", playlistUrl: "", schedulePath: ""}
     }
 
     public async browseSchedule(): Promise<string | undefined> {
         const result: string | undefined = await sendToMain<string>(Requests.BrowseSchedule)
-        if (result) {this.setState({schedulePath: result})}
+        if (result) this.setState({schedulePath: result})
         return result
     }
 
@@ -35,6 +42,7 @@ export class AddStreamDialog extends Component<DialogProps, DialogStreamEntry> {
     public async onSubmit() {
         if (this.validateStreamEntry()) {
             await sendToMain(Requests.NewStream, this.state)
+            if (this.props.onAddStream) this.props.onAddStream(this.state)
             this.setState({})
         }
     }
@@ -69,10 +77,10 @@ export class AddStreamDialog extends Component<DialogProps, DialogStreamEntry> {
                         value={this.state.schedulePath}
                         onChange={event => this.setState({schedulePath: event.target.value})}
                     />
-                    <Button onClick={() => this.browseSchedule()}>Browse Schedule</Button>
+                    <Button onClick={this.browseSchedule}>Browse Schedule</Button>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => this.onSubmit()} color="primary">Add Stream</Button>
+                    <Button onClick={this.onSubmit} color="primary">Add Stream</Button>
                 </DialogActions>
             </Dialog>
         )

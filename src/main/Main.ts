@@ -1,5 +1,5 @@
 import * as electron from "electron"
-import {BrowserWindow, dialog, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
+import {BrowserWindow, dialog, IpcMainInvokeEvent} from "electron"
 import {Schedule, Show, Stream, StreamEntry} from "./Stream"
 import {Database} from "./Database"
 import * as path from "path"
@@ -22,18 +22,6 @@ let browserWindow: BrowserWindow
 
 function handleFromBrowser<T>(name: string, listener: (event: IpcMainInvokeEvent, args: T) => Promise<T> | any) {
     electron.ipcMain.handle(name, listener)
-}
-
-function sendToBrowser<T>(name: string, args: T) {
-    browserWindow.webContents.send(name, args)
-}
-
-async function openDirectoryPicker(): Promise<OpenDialogReturnValue> {
-    return dialog.showOpenDialog(browserWindow, {properties: ["openDirectory"]})
-}
-
-async function openFilePicker(): Promise<OpenDialogReturnValue> {
-    return dialog.showOpenDialog(browserWindow, {properties: ["openFile"]})
 }
 
 // TODO: This is ugly! Fix!
@@ -95,12 +83,6 @@ electron.app.whenReady().then(async () => {
     await Database.Settings.setOutputDirectory(getPath("./Streams"))
     await Database.Settings.setOffsetSeconds(120)
 
-    browserWindow.webContents.once("did-finish-load", async () => {
-        // Web contents have loaded
-        const streamEntries: Array<StreamEntry> = await Database.Streams.getAllStreams()
-        sendToBrowser(Requests.GetStreams, streamEntries)
-    })
-
     browserWindow.once("close", async (event: Electron.Event) => {
         event.preventDefault()
         // Finalization code here
@@ -156,14 +138,9 @@ handleFromBrowser<StreamEntry>(Requests.ViewStreamDir, async (event, streamEntry
 
 // Browse Schedule
 handleFromBrowser(Requests.BrowseSchedule, async (event) => {
-    const pickerResult = await openFilePicker()
+    const pickerResult = await dialog.showOpenDialog(browserWindow, {properties: ["openFile"]})
     if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
     else return pickerResult.filePaths[0]
-})
-
-// Get All Settings
-handleFromBrowser(Requests.GetSettings, async (event) => {
-    return await Database.Settings.getAllSettings()
 })
 
 // Update Settings
