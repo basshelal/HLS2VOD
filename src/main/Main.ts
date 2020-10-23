@@ -7,7 +7,7 @@ import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-
 import url from "url"
 import Extensions from "../shared/utils/Extensions"
 import {EventBus, Events} from "../shared/Events"
-import {getPath, json} from "../shared/utils/Utils"
+import {getPath} from "../shared/utils/Utils"
 import {StreamData} from "../renderer/ui/components/AddStreamButton"
 import {logD} from "../shared/utils/Log"
 import {SettingsData} from "../renderer/ui/components/SettingsButton"
@@ -63,6 +63,7 @@ electron.app.whenReady().then(async () => {
         }
     })
     EventBus.browserWindow = browserWindow
+    EventBus.initializeMainHandles()
     if (process.env.NODE_ENV === "development") {
         installExtension(REACT_DEVELOPER_TOOLS)
             .then((name) => console.log(`Added Extension:  ${name}`))
@@ -160,11 +161,6 @@ handleFromBrowser<StreamData>(Events.NewStream, async (event, streamData: Stream
     return stream.toStreamEntry()
 })
 
-// Get Streams
-handleFromBrowser(Events.GetStreams, async (event) => {
-    return await Database.Streams.getAllStreams()
-})
-
 // Browse Schedule
 handleFromBrowser(Events.BrowseSchedule, async (event) => {
     const pickerResult = await openFilePicker()
@@ -181,12 +177,4 @@ handleFromBrowser(Events.GetSettings, async (event) => {
 handleFromBrowser(Events.UpdateSettings, async (event, settingsData: SettingsData) => {
     await Database.Settings.setOffsetSeconds(settingsData.offsetSeconds)
     await Database.Settings.setOutputDirectory(settingsData.outputDir)
-})
-
-// Browse Output Dir
-handleFromBrowser(Events.BrowseOutputDir, async (event) => {
-    const pickerResult = await openDirectoryPicker()
-    logD(json(pickerResult))
-    if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
-    else return pickerResult.filePaths[0]
 })

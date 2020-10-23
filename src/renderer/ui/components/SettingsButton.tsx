@@ -5,10 +5,9 @@ import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../../shared/Events"
+import {EventBus, Events} from "../../../shared/Events"
 import DialogActions from "@material-ui/core/DialogActions"
 import {SettingsEntry} from "../../../main/Database"
-import {json} from "../../../shared/utils/Utils"
 
 export interface SettingsData {
     offsetSeconds: number
@@ -87,8 +86,7 @@ export const SettingsButton: FC = (props) => {
                         }}
                     />
                     <Button onClick={async () => {
-                        const result: string | undefined = await sendToMain<string>(Events.BrowseOutputDir)
-                        console.log(json(result))
+                        const result: string | undefined = await EventBus.browseOutputDir()
                         if (result) {
                             setOutputDirText(result)
                             changeData({outputDir: result})
