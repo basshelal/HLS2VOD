@@ -5,12 +5,12 @@ import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
-import Extensions from "../shared/utils/Extensions"
+import Extensions from "../shared/Extensions"
 import {Requests} from "../shared/Requests"
-import {getPath} from "../shared/utils/Utils"
-import {logD} from "../shared/utils/Log"
+import {getPath} from "../shared/Utils"
+import {logD} from "../shared/Log"
 import {SettingsData} from "../renderer/ui/components/SettingsButton"
-import {RequestHandler} from "../shared/RequestHandler"
+import {RequestHandler} from "./RequestHandler"
 
 Extensions()
 

@@ -1,10 +1,10 @@
 import {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
-import {Unit} from "./utils/Utils"
-import {StreamEntry} from "../main/Stream"
-import {Database} from "../main/Database"
+import {Unit} from "../shared/Utils"
+import {StreamEntry} from "./Stream"
+import {Database} from "./Database"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
-import {Requests} from "./Requests"
-import {addStream} from "../main/Main"
+import {Requests} from "../shared/Requests"
+import {addStream} from "./Main"
 
 export class RequestHandler {
     private constructor() {}

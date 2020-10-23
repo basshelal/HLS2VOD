@@ -1,11 +1,11 @@
 import {Database} from "../src/main/Database"
 import {Stream} from "../src/main/Stream"
-import {delay, getPath} from "../src/shared/utils/Utils"
+import {delay, getPath} from "../src/shared/Utils"
 import path from "path"
 import {pathExistsSync, removeSync} from "fs-extra"
-import Extensions from "../src/shared/utils/Extensions"
+import Extensions from "../src/shared/Extensions"
 import {readdirSync} from "fs"
-import {logD} from "../src/shared/utils/Log"
+import {logD} from "../src/shared/Log"
 
 const databaseDir = getPath("tests/database")
 const outputDir = getPath("tests/streams")

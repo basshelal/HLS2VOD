@@ -8,7 +8,7 @@ import {sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
 import DialogActions from "@material-ui/core/DialogActions"
 import {SettingsEntry} from "../../../main/Database"
-import {RequestSender} from "../../../shared/RequestSender"
+import {RequestSender} from "../../RequestSender"
 
 export interface SettingsData {
     offsetSeconds: number

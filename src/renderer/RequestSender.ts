@@ -1,7 +1,7 @@
 import {ipcRenderer} from "electron"
 import {StreamEntry} from "../main/Stream"
-import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
-import {Requests} from "./Requests"
+import {DialogStreamEntry} from "./ui/components/AddStreamDialog"
+import {Requests} from "../shared/Requests"
 
 export class RequestSender {
     private constructor() {}

@@ -1,7 +1,7 @@
-import {getPath} from "../../shared/utils/Utils"
+import {getPath} from "../../shared/Utils"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
 import {spawn} from "child_process"
-import {logD, logE} from "../../shared/utils/Log"
+import {logD, logE} from "../../shared/Log"
 
 export class Ffmpeg {
     private constructor() {}

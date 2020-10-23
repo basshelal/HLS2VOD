@@ -2,7 +2,7 @@ import * as m3u8 from "m3u8-parser"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {downloadSegmentData, get} from "./Http"
-import {logD, logE} from "../../shared/utils/Log"
+import {logD, logE} from "../../shared/Log"
 import {EventEmitter} from "events"
 import {Stream} from "../Stream"
 
