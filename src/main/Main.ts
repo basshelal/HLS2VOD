@@ -6,11 +6,11 @@ import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
 import Extensions from "../shared/utils/Extensions"
-import {EventBus, Events} from "../shared/Events"
+import {Requests} from "../shared/Requests"
 import {getPath} from "../shared/utils/Utils"
-import {StreamData} from "../renderer/ui/components/AddStreamButton"
 import {logD} from "../shared/utils/Log"
 import {SettingsData} from "../renderer/ui/components/SettingsButton"
+import {RequestHandler} from "../shared/RequestHandler"
 
 Extensions()
 
@@ -36,7 +36,8 @@ async function openFilePicker(): Promise<OpenDialogReturnValue> {
     return dialog.showOpenDialog(browserWindow, {properties: ["openFile"]})
 }
 
-async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
+// TODO: This is ugly! Fix!
+export async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
     const offsetSeconds = await Database.Settings.getOffsetSeconds()
     const schedule: Array<Show> = schedulePath ? await Schedule.fromCSV(schedulePath) : []
 
@@ -62,8 +63,8 @@ electron.app.whenReady().then(async () => {
             nodeIntegration: true
         }
     })
-    EventBus.browserWindow = browserWindow
-    EventBus.initializeMainHandles()
+    RequestHandler.browserWindow = browserWindow
+    RequestHandler.initializeMainHandles()
     if (process.env.NODE_ENV === "development") {
         installExtension(REACT_DEVELOPER_TOOLS)
             .then((name) => console.log(`Added Extension:  ${name}`))
@@ -97,7 +98,7 @@ electron.app.whenReady().then(async () => {
     browserWindow.webContents.once("did-finish-load", async () => {
         // Web contents have loaded
         const streamEntries: Array<StreamEntry> = await Database.Streams.getAllStreams()
-        sendToBrowser(Events.GetStreams, streamEntries)
+        sendToBrowser(Requests.GetStreams, streamEntries)
     })
 
     browserWindow.once("close", async (event: Electron.Event) => {
@@ -109,7 +110,7 @@ electron.app.whenReady().then(async () => {
 })
 
 // Start Stream
-handleFromBrowser<StreamEntry>(Events.StartStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<StreamEntry>(Requests.StartStream, async (event, streamEntry: StreamEntry) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.start()
@@ -118,7 +119,7 @@ handleFromBrowser<StreamEntry>(Events.StartStream, async (event, streamEntry: St
 })
 
 // Pause Stream
-handleFromBrowser<StreamEntry>(Events.PauseStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<StreamEntry>(Requests.PauseStream, async (event, streamEntry: StreamEntry) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.pause()
@@ -127,7 +128,7 @@ handleFromBrowser<StreamEntry>(Events.PauseStream, async (event, streamEntry: St
 })
 
 // Force Record Stream
-handleFromBrowser<StreamEntry>(Events.ForceRecordStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<StreamEntry>(Requests.ForceRecordStream, async (event, streamEntry: StreamEntry) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.forceRecord()
@@ -136,7 +137,7 @@ handleFromBrowser<StreamEntry>(Events.ForceRecordStream, async (event, streamEnt
 })
 
 // UnForce Record Stream
-handleFromBrowser<StreamEntry>(Events.UnForceRecordStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<StreamEntry>(Requests.UnForceRecordStream, async (event, streamEntry: StreamEntry) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.unForceRecord()
@@ -145,7 +146,7 @@ handleFromBrowser<StreamEntry>(Events.UnForceRecordStream, async (event, streamE
 })
 
 // View Stream Dir
-handleFromBrowser<StreamEntry>(Events.ViewStreamDir, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<StreamEntry>(Requests.ViewStreamDir, async (event, streamEntry: StreamEntry) => {
     const found = findStream(streamEntry.name)
     if (found) {
         electron.shell.openItem(found.streamDirectory)
@@ -153,28 +154,20 @@ handleFromBrowser<StreamEntry>(Events.ViewStreamDir, async (event, streamEntry: 
     } else return null
 })
 
-// Add New Stream
-handleFromBrowser<StreamData>(Events.NewStream, async (event, streamData: StreamData) => {
-    const schedulePath: string | undefined = streamData.schedulePath === "" ? undefined : streamData.schedulePath
-    const stream: Stream = await addStream(streamData.streamName, streamData.playlistUrl, schedulePath)
-    sendToBrowser(Events.RefreshAllStreams, null)
-    return stream.toStreamEntry()
-})
-
 // Browse Schedule
-handleFromBrowser(Events.BrowseSchedule, async (event) => {
+handleFromBrowser(Requests.BrowseSchedule, async (event) => {
     const pickerResult = await openFilePicker()
     if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
     else return pickerResult.filePaths[0]
 })
 
 // Get All Settings
-handleFromBrowser(Events.GetSettings, async (event) => {
+handleFromBrowser(Requests.GetSettings, async (event) => {
     return await Database.Settings.getAllSettings()
 })
 
 // Update Settings
-handleFromBrowser(Events.UpdateSettings, async (event, settingsData: SettingsData) => {
+handleFromBrowser(Requests.UpdateSettings, async (event, settingsData: SettingsData) => {
     await Database.Settings.setOffsetSeconds(settingsData.offsetSeconds)
     await Database.Settings.setOutputDirectory(settingsData.outputDir)
 })

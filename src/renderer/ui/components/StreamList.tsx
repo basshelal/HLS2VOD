@@ -2,7 +2,7 @@ import React, {Component} from "react"
 import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
 import {handleFromMain, sendToMain} from "../UICommons"
-import {Events} from "../../../shared/Events"
+import {Requests} from "../../../shared/Requests"
 import {StreamEntry} from "../../../main/Stream"
 
 export interface StreamListProps {
@@ -17,11 +17,11 @@ export class StreamList extends Component {
         super(props)
         this.state = {streamEntries: []}
         this.fetchData()
-        handleFromMain(Events.RefreshAllStreams, () => this.fetchData())
+        handleFromMain(Requests.RefreshAllStreams, () => this.fetchData())
     }
 
     public fetchData() {
-        sendToMain<Array<StreamEntry>>(Events.GetStreams).then(returned => {
+        sendToMain<Array<StreamEntry>>(Requests.GetStreams).then(returned => {
             this.setState({streamEntries: returned})
         })
     }

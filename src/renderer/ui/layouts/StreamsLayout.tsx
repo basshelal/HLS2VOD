@@ -5,7 +5,7 @@ import {StreamList} from "../components/StreamList"
 import {AddStreamButton} from "../components/AddStreamButton"
 import {SettingsButton} from "../components/SettingsButton"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../../shared/Events"
+import {Requests} from "../../../shared/Requests"
 import {SettingsEntry} from "../../../main/Database"
 
 export interface StreamsLayoutProps {
@@ -13,7 +13,7 @@ export interface StreamsLayoutProps {
 }
 
 function saveSettings(settings: Array<SettingsEntry>): Promise<Array<SettingsEntry>> {
-    return sendToMain(Events.UpdateSettings, settings)
+    return sendToMain(Requests.UpdateSettings, settings)
 }
 
 export const StreamsLayout: FC = (props: PropsWithChildren<StreamsLayoutProps>) => {

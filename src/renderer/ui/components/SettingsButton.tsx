@@ -5,9 +5,10 @@ import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import {sendToMain} from "../UICommons"
-import {EventBus, Events} from "../../../shared/Events"
+import {Requests} from "../../../shared/Requests"
 import DialogActions from "@material-ui/core/DialogActions"
 import {SettingsEntry} from "../../../main/Database"
+import {RequestSender} from "../../../shared/RequestSender"
 
 export interface SettingsData {
     offsetSeconds: number
@@ -43,13 +44,13 @@ export const SettingsButton: FC = (props) => {
 
     const handleSubmit = async () => {
         if (validateSettings(settingsData)) {
-            await sendToMain(Events.UpdateSettings, settingsData)
+            await sendToMain(Requests.UpdateSettings, settingsData)
             setData(settingsData)
         }
         setOpen(false)
     }
 
-    sendToMain<Array<SettingsEntry>>(Events.GetSettings)
+    sendToMain<Array<SettingsEntry>>(Requests.GetSettings)
         .then(returned => {
             const offsetSeconds = parseInt(returned.find(it => it.key === "offsetSeconds").value)
             const outputDir = returned.find(it => it.key === "outputDirectory").value
@@ -86,7 +87,7 @@ export const SettingsButton: FC = (props) => {
                         }}
                     />
                     <Button onClick={async () => {
-                        const result: string | undefined = await EventBus.browseOutputDir()
+                        const result: string | undefined = await RequestSender.browseOutputDir()
                         if (result) {
                             setOutputDirText(result)
                             changeData({outputDir: result})

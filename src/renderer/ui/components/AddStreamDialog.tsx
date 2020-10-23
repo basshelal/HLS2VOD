@@ -4,7 +4,7 @@ import DialogTitle from "@material-ui/core/DialogTitle"
 import DialogContent from "@material-ui/core/DialogContent"
 import TextField from "@material-ui/core/TextField"
 import {sendToMain} from "../UICommons"
-import {Events} from "../../../shared/Events"
+import {Requests} from "../../../shared/Requests"
 import DialogActions from "@material-ui/core/DialogActions"
 
 export interface DialogStreamEntry {
@@ -21,7 +21,7 @@ export class AddStreamDialog extends Component<DialogProps, DialogStreamEntry> {
     }
 
     public async browseSchedule(): Promise<string | undefined> {
-        const result: string | undefined = await sendToMain<string>(Events.BrowseSchedule)
+        const result: string | undefined = await sendToMain<string>(Requests.BrowseSchedule)
         if (result) {this.setState({schedulePath: result})}
         return result
     }
@@ -34,7 +34,7 @@ export class AddStreamDialog extends Component<DialogProps, DialogStreamEntry> {
 
     public async onSubmit() {
         if (this.validateStreamEntry()) {
-            await sendToMain(Events.NewStream, this.state)
+            await sendToMain(Requests.NewStream, this.state)
             this.setState({})
         }
     }
