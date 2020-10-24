@@ -1,32 +1,26 @@
 import {Database} from "../src/main/Database"
 import {Stream} from "../src/main/Stream"
-import {delay, getPath} from "../src/shared/Utils"
-import path from "path"
-import {pathExistsSync, removeSync} from "fs-extra"
+import {delay} from "../src/shared/Utils"
+import {mkdirpSync, pathExistsSync, removeSync} from "fs-extra"
 import Extensions from "../src/shared/Extensions"
 import {readdirSync} from "fs"
 import {logD} from "../src/shared/Log"
+import {databaseDir, initializeDatabase, outputDir, testStream} from "./TestUtils"
 
-const databaseDir = getPath("tests/database")
-const outputDir = getPath("tests/streams")
-const testStream = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
 
 beforeAll(async () => {
     Extensions()
     // Initialize Database for testing
-    await Promise.all([
-        Database.Settings.initialize({
-            dbPath: path.join(databaseDir, `settings.db`),
-            initialOutputDir: outputDir,
-            initialOffsetSeconds: 60
-        }), Database.Streams.initialize({dbPath: path.join(databaseDir, `streams.db`)})])
+    mkdirpSync(databaseDir)
+    mkdirpSync(outputDir)
+    await initializeDatabase()
     Database.isInitialized = true
     logD("BeforeAll done!")
 })
 
 afterAll(async () => {
     // Delete Database when finished
-    //  removeSync(databaseDir)
+    removeSync(databaseDir)
     removeSync(outputDir)
 })
 

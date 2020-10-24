@@ -2,6 +2,7 @@ import * as electron from "electron"
 import * as path from "path"
 import moment from "moment"
 import {setInterval} from "timers"
+import {removeSync} from "fs-extra"
 
 export type Unit = void
 export type TimeOut = NodeJS.Timeout
@@ -116,3 +117,5 @@ export function timer(millis: number, callback: (...args: any[]) => void): TimeO
 export function delay(millis: number): Promise<TimeOut> { return new Promise(resolve => setTimeout(() => resolve(), millis)) }
 
 export async function promises(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }
+
+export function removeAllSync(...paths: Array<string>) { paths.forEach(it => removeSync(it)) }

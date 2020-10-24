@@ -37,6 +37,7 @@ export class Settings {
         })
     }
 
+    // TODO: Make a function that returns an object instead of an array for easy querying
     public static async getAllSettings(): Promise<Array<SettingsEntry>> {
         return new Promise<Array<SettingsEntry>>((resolve, reject) => {
             this.settingsDatabase.find({}, (err: Error | null, documents: Array<SettingsEntry>) => {
