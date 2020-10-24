@@ -5,19 +5,19 @@ import {getPath, promises} from "../shared/Utils"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 
-export interface SettingsEntry {
+export interface SettingsEntry<T = any> {
     key: SettingsEntryKey
-    value: string
+    value: T
 }
-
-// TODO: Cache values in memory and use a mirror methodology??
 
 export class Settings {
     private constructor() {}
 
-    public static isInitialized = false
-
     private static settingsDatabase: Nedb<SettingsEntry>
+
+    public static isInitialized = false
+    public static outputDirectory: string
+    public static offsetSeconds: number
 
     public static async initialize({
                                        dbPath = getPath("database/settings.db"),
@@ -29,17 +29,17 @@ export class Settings {
         this.settingsDatabase = new Datastore({
             filename: dbPath,
             autoload: true,
-            onload: async (error) => {
-                try { await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(initialOutputDir) }
-                try { await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(initialOffsetSeconds)}
+            onload: async (error: Error | null) => {
+                try { this.outputDirectory = await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(initialOutputDir) }
+                try {this.offsetSeconds = await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(initialOffsetSeconds)}
+                this.isInitialized = true
             }
         })
-        this.isInitialized = true
     }
 
     public static async getAllSettings(): Promise<Array<SettingsEntry>> {
         return new Promise<Array<SettingsEntry>>((resolve, reject) => {
-            this.settingsDatabase.find({}, (err: Error, documents: Array<SettingsEntry>) => {
+            this.settingsDatabase.find({}, (err: Error | null, documents: Array<SettingsEntry>) => {
                 if (err) reject(err)
                 else resolve(documents)
             })
@@ -50,19 +50,23 @@ export class Settings {
 
     public static async setOutputDirectory(newOutputDirectory: string): Promise<string> {
         return new Promise<string>((resolve, reject) =>
-            this.settingsDatabase.update<SettingsEntry>({key: "outputDirectory"},
+            this.settingsDatabase.update<SettingsEntry<string>>({key: "outputDirectory"},
                 {key: "outputDirectory", value: newOutputDirectory},
                 {upsert: true, returnUpdatedDocs: true},
-                (err: Error, numberOfUpdated: number, affectedDocuments: any) => {
+                (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
-                    else resolve((affectedDocuments as SettingsEntry).value)
+                    else {
+                        const result: string = (affectedDocuments as SettingsEntry<string>).value
+                        this.outputDirectory = result
+                        resolve(result)
+                    }
                 }))
     }
 
     public static async getOutputDirectory(): Promise<string> {
         return new Promise<string>((resolve, reject) =>
-            this.settingsDatabase.find<SettingsEntry>({key: "outputDirectory"},
-                (err: Error, documents: Array<SettingsEntry>) => {
+            this.settingsDatabase.find<SettingsEntry<string>>({key: "outputDirectory"},
+                (err: Error | null, documents: Array<SettingsEntry>) => {
                     if (err) reject(err)
                     else if (!documents) reject(`Output Directory documents is null`)
                     else if (documents.length === 0) reject(`Output Directory documents is empty`)
@@ -77,18 +81,22 @@ export class Settings {
 
     public static async setOffsetSeconds(newOffsetSeconds: number): Promise<number> {
         return new Promise<number>((resolve, reject) =>
-            this.settingsDatabase.update<SettingsEntry>({key: "offsetSeconds"},
+            this.settingsDatabase.update<SettingsEntry<number>>({key: "offsetSeconds"},
                 {key: "offsetSeconds", value: newOffsetSeconds},
                 {upsert: true, returnUpdatedDocs: true},
-                (err: Error, numberOfUpdated: number, affectedDocuments: any) => {
+                (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
-                    else resolve(Number.parseInt((affectedDocuments as SettingsEntry).value))
+                    else {
+                        const result: number = Number.parseInt((affectedDocuments as SettingsEntry).value)
+                        this.offsetSeconds = result
+                        resolve(result)
+                    }
                 }))
     }
 
     public static async getOffsetSeconds(): Promise<number> {
         return new Promise<number>((resolve, reject) =>
-            this.settingsDatabase.find<SettingsEntry>({key: "offsetSeconds"},
+            this.settingsDatabase.find<SettingsEntry<number>>({key: "offsetSeconds"},
                 (err: Error, documents: Array<SettingsEntry>) => {
                     if (err) reject(err)
                     else if (!documents) reject(`Offset Seconds documents is null`)
@@ -104,28 +112,33 @@ export class Settings {
 export class Streams {
     private constructor() {}
 
-    public static isInitialized = false
-
     private static streamsDatabase: Nedb<StreamEntry>
+
+    public static isInitialized = false
+    public static streams: Array<StreamEntry>
 
     public static async initialize({dbPath = getPath("database/streams.db")}: { dbPath?: string }): Promise<void> {
         this.streamsDatabase = new Datastore({
             filename: dbPath,
             autoload: true,
-            onload: (error) => {
-
+            onload: async (error: Error | null) => {
+                this.streams = await this.getAllStreams()
+                this.isInitialized = true
             }
         })
-        this.isInitialized = true
     }
 
     public static async addStream(stream: Stream): Promise<void> {
+        const streamEntry: StreamEntry = stream.toStreamEntry()
         return new Promise<void>((resolve, reject) =>
-            this.streamsDatabase.update({name: stream.name}, stream.toStreamEntry(),
+            this.streamsDatabase.update({name: stream.name}, streamEntry,
                 {upsert: true},
-                (err: Error) => {
+                (err: Error | null) => {
                     if (err) reject(err)
-                    else resolve()
+                    else {
+                        this.streams.push(streamEntry)
+                        resolve()
+                    }
                 }
             )
         )
@@ -141,33 +154,32 @@ export class Streams {
     }
 
     public static async deleteStream(stream: Stream): Promise<void> {
+        const streamEntry: StreamEntry = stream.toStreamEntry()
         return new Promise<void>((resolve, reject) =>
-            this.streamsDatabase.remove(stream.toStreamEntry(), (err: Error) => {
+            this.streamsDatabase.remove(streamEntry, (err: Error | null) => {
                 if (err) reject(err)
-                else resolve()
+                else {
+                    this.streams.remove(streamEntry)
+                    resolve()
+                }
             })
         )
     }
 
     public static async updateStream(streamName: string, updatedStream: Stream): Promise<StreamEntry> {
+        const streamEntry: StreamEntry = updatedStream.toStreamEntry()
         return new Promise<StreamEntry>((resolve, reject) =>
-            this.streamsDatabase.update({name: streamName}, updatedStream.toStreamEntry(),
+            this.streamsDatabase.update({name: streamName}, streamEntry,
                 {upsert: false, returnUpdatedDocs: true},
-                (err: Error, numberOfUpdated: number, affectedDocuments: any) => {
+                (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
-                    else resolve(affectedDocuments as StreamEntry)
+                    else {
+                        const result: StreamEntry = affectedDocuments as StreamEntry
+                        this.streams.push(result)
+                        resolve(result)
+                    }
                 }
             )
-        )
-    }
-
-    public static async getStreamByName(streamName: string): Promise<StreamEntry> {
-        return new Promise<StreamEntry>((resolve, reject) =>
-            this.streamsDatabase.find<StreamEntry>({name: streamName}, (err: Error, documents: Array<StreamEntry>) => {
-                if (err) reject(err)
-                else if (!documents || documents.length == 0) reject("Documents is null or empty")
-                else resolve(documents[0])
-            })
         )
     }
 }
