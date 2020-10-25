@@ -1,6 +1,7 @@
 import {getPath, promises, removeAllSync} from "../src/shared/Utils"
 import {Database} from "../src/main/Database"
 import path from "path"
+import {mkdirpSync} from "fs-extra"
 
 export const databaseDir = getPath("tests/database")
 export const outputDir = getPath("tests/streams")
@@ -9,6 +10,8 @@ export const streamsDatabasePath = path.join(databaseDir, `streams.db`)
 export const testStream = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
 
 export async function initializeDatabase(): Promise<Array<any>> {
+    mkdirpSync(databaseDir)
+    mkdirpSync(outputDir)
     return promises(
         Database.Settings.initialize({
             dbPath: settingsDatabasePath,

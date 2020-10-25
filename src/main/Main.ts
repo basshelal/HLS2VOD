@@ -1,5 +1,5 @@
 import * as electron from "electron"
-import {BrowserWindow, dialog, IpcMainInvokeEvent} from "electron"
+import {BrowserWindow, dialog, IpcMainInvokeEvent, session} from "electron"
 import {Schedule, Show, Stream, StreamEntry} from "./Stream"
 import {Database} from "./Database"
 import * as path from "path"
@@ -7,7 +7,7 @@ import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-
 import url from "url"
 import Extensions from "../shared/Extensions"
 import {Requests} from "../shared/Requests"
-import {getPath} from "../shared/Utils"
+import {getPath, json} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {SettingsData} from "../renderer/ui/components/SettingsButton"
 import {RequestHandler} from "./RequestHandler"
@@ -64,6 +64,10 @@ electron.app.whenReady().then(async () => {
 
     if (process.env.NODE_ENV === "development") {
         browserWindow.loadURL("http://localhost:4000")
+        session.defaultSession.webRequest.onBeforeRequest({urls: ["*://*/*"]}, (details, callback) => {
+            logD(json(details))
+            callback({})
+        })
     } else {
         logD("Loading html")
         browserWindow.loadURL(

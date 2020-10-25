@@ -43,8 +43,8 @@ export class Ffmpeg {
                     resolve()
                 }
             })
-            ffmpeg.stdout?.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
-            ffmpeg.stderr?.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
+            if (ffmpeg.stdout) ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+            if (ffmpeg.stderr) ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
         })
     }
 
@@ -71,18 +71,18 @@ export class Ffmpeg {
                     reject(`ffmpeg closed with status ${code}, signal ${signal}`)
                 }
             })
-            ffmpeg.stdout?.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
-            ffmpeg.stderr?.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
+            if (ffmpeg.stdout) ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+            if (ffmpeg.stderr) ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
             resolve(ffmpeg)
         })
     }
 
-    public static async downloadStreamCopy(url: string, outputPath: string): Promise<ChildProcess> {
+    public static async downloadStream(url: string, outputPath: string): Promise<ChildProcess> {
         return Ffmpeg.spawnAsync(
+            "-y",
             "-i", url,
             "-c:a", "copy",
-            "c:v", "copy",
-            "-y",
+            "-c:v", "copy",
             outputPath
         )
     }

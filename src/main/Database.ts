@@ -13,6 +13,8 @@ export interface SettingsEntry<T = any> {
 export interface AllSettings {
     outputDirectory: string
     offsetSeconds: number
+    // appTheme: string
+    // fileExtension: string
 }
 
 export class Settings {

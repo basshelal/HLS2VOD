@@ -122,7 +122,6 @@ export class Downloader extends EventEmitter {
                             timeoutDuration: number = 600,
                             playlistRefreshInterval: number = 2,
                             maxBandwidth: "worst" | "best" | number = "best"): Promise<Downloader> {
-        // TODO: Throw Errors depending on what went wrong
         const streams: string = await get(streamUrl)
 
         const parser = new m3u8.Parser()
