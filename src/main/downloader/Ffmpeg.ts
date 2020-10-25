@@ -1,6 +1,6 @@
 import {getPath} from "../../shared/Utils"
 import {createReadStream, createWriteStream, WriteStream} from "fs"
-import {spawn} from "child_process"
+import {ChildProcess, spawn} from "child_process"
 import {logD, logE} from "../../shared/Log"
 
 export class Ffmpeg {
@@ -16,45 +16,88 @@ export class Ffmpeg {
         else return null
     }
 
-    static binPath = Ffmpeg.resolveBin()
+    public static binPath = Ffmpeg.resolveBin()
 
-    static spawn(args: Array<string>): Promise<void> {
+    // Resolves when ffmpeg closes
+    public static async spawnSync(...args: Array<string>): Promise<void> {
         return new Promise((resolve, reject) => {
             const ffmpegPath = Ffmpeg.binPath
-            if (!ffmpegPath) logE(`Ffmpeg path not found`)
+            if (!ffmpegPath) {
+                logE(`Ffmpeg path not found`)
+                reject(`Ffmpeg path not found`)
+                return
+            }
             logD(`Spawning ${ffmpegPath} ${args.join(" ")}`)
 
-            const ffmpeg = spawn(ffmpegPath, args)
-            ffmpeg.on("message", (msg) => logD(`ffmpeg message:, ${msg}`))
-            ffmpeg.on("error", (msg) => {
-                logE(`ffmpeg error: ${msg}`)
-                reject(msg)
+            const ffmpeg: ChildProcess = spawn(ffmpegPath, args)
+            ffmpeg.on("message", (msg) => logD(`ffmpeg message: ${msg}`))
+            ffmpeg.on("error", (error: Error) => {
+                logE(`ffmpeg error: ${error}`)
+                reject(error)
             })
-            ffmpeg.on("close", (status) => {
-                if (status !== 0) {
-                    logE(`ffmpeg closed with status ${status}`)
-                    reject(`ffmpeg closed with status ${status}`)
+            ffmpeg.on("close", (code: number, signal: NodeJS.Signals) => {
+                if (code !== 0) {
+                    logE(`ffmpeg closed with status ${code}, signal ${signal}`)
+                    reject(`ffmpeg closed with status ${code}, signal ${signal}`)
                 } else {
                     resolve()
                 }
             })
-
-            ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
-            ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
+            ffmpeg.stdout?.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+            ffmpeg.stderr?.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
         })
     }
 
-    static async transmuxTsToMp4(inputFile: string, outputFile: string): Promise<void> {
-        await Ffmpeg.spawn([
+    // Resolves immediately and returns ChildProcess
+    public static async spawnAsync(...args: Array<string>): Promise<ChildProcess> {
+        return new Promise<ChildProcess>((resolve, reject) => {
+            const ffmpegPath = Ffmpeg.binPath
+            if (!ffmpegPath) {
+                logE(`Ffmpeg path not found`)
+                reject(`Ffmpeg path not found`)
+                return
+            }
+            logD(`Spawning ${ffmpegPath} ${args.join(" ")}`)
+
+            const ffmpeg: ChildProcess = spawn(ffmpegPath, args)
+            ffmpeg.on("message", (msg) => logD(`ffmpeg message: ${msg}`))
+            ffmpeg.on("error", (error: Error) => {
+                logE(`ffmpeg error: ${error}`)
+                reject(error)
+            })
+            ffmpeg.on("close", (code: number, signal: NodeJS.Signals) => {
+                if (code !== 0) {
+                    logE(`ffmpeg closed with status ${code}, signal ${signal}`)
+                    reject(`ffmpeg closed with status ${code}, signal ${signal}`)
+                }
+            })
+            ffmpeg.stdout?.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+            ffmpeg.stderr?.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
+            resolve(ffmpeg)
+        })
+    }
+
+    public static async downloadStreamCopy(url: string, outputPath: string): Promise<ChildProcess> {
+        return Ffmpeg.spawnAsync(
+            "-i", url,
+            "-c:a", "copy",
+            "c:v", "copy",
+            "-y",
+            outputPath
+        )
+    }
+
+    public static async transmuxTsToMp4(inputFile: string, outputFile: string): Promise<void> {
+        await Ffmpeg.spawnSync(
             "-y",
             "-loglevel", "warning",
             "-i", inputFile,
             "-c", "copy",
             outputFile
-        ])
+        )
     }
 
-    static async copyToStream(inFile: string, outStream: WriteStream): Promise<void> {
+    public static async copyToStream(inFile: string, outStream: WriteStream): Promise<void> {
         return new Promise((resolve, reject) => {
             createReadStream(inFile)
                 .on("error", reject)
@@ -63,7 +106,7 @@ export class Ffmpeg {
         })
     }
 
-    static async mergeFiles(files: Array<string>, outputFile: string): Promise<void> {
+    public static async mergeFiles(files: Array<string>, outputFile: string): Promise<void> {
         const outStream = createWriteStream(outputFile)
         const promise = new Promise<void>((resolve, reject) => {
             outStream.on("finish", resolve).on("error", reject)

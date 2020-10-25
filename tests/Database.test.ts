@@ -26,3 +26,11 @@ test("Get All Settings", async () => {
     expect(offset).toEqual(60)
 
 })
+
+test("Get and Set Output Directory", () => {
+
+})
+
+test("Get and Set Offset Seconds", () => {
+
+})
