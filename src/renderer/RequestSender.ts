@@ -1,5 +1,5 @@
 import {ipcRenderer} from "electron"
-import {StreamEntry} from "../main/Stream"
+import {SerializedStream} from "../main/Stream"
 import {DialogStreamEntry} from "./ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"
 import {SettingsEntry} from "../main/Database"
@@ -11,8 +11,8 @@ export class RequestSender {
         return ipcRenderer.invoke(name, args)
     }
 
-    public static async getAllStreams(): Promise<Array<StreamEntry>> {
-        return this.send<Array<StreamEntry>>(Requests.GetStreams)
+    public static async getAllStreams(): Promise<Array<SerializedStream>> {
+        return this.send<Array<SerializedStream>>(Requests.GetStreams)
     }
 
     public static async newStream(stream: DialogStreamEntry): Promise<DialogStreamEntry> {

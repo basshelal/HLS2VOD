@@ -1,6 +1,6 @@
 import Datastore from "nedb"
 import Nedb from "nedb"
-import {Stream, StreamEntry} from "./Stream"
+import {SerializedStream, Stream} from "./Stream"
 import {getPath, promises} from "../shared/Utils"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
@@ -121,10 +121,10 @@ export class Settings {
 export class Streams {
     private constructor() {}
 
-    private static streamsDatabase: Nedb<StreamEntry>
+    private static streamsDatabase: Nedb<SerializedStream>
 
     public static isInitialized = false
-    public static streams: Array<StreamEntry>
+    public static streams: Array<SerializedStream>
 
     public static async initialize({dbPath = getPath("database/streams.db")}: { dbPath?: string }): Promise<void> {
         this.streamsDatabase = new Datastore({
@@ -138,7 +138,7 @@ export class Streams {
     }
 
     public static async addStream(stream: Stream): Promise<void> {
-        const streamEntry: StreamEntry = stream.toStreamEntry()
+        const streamEntry: SerializedStream = stream.toStreamEntry()
         return new Promise<void>((resolve, reject) =>
             this.streamsDatabase.update({name: stream.name}, streamEntry,
                 {upsert: true},
@@ -153,9 +153,9 @@ export class Streams {
         )
     }
 
-    public static async getAllStreams(): Promise<Array<StreamEntry>> {
-        return new Promise<Array<StreamEntry>>((resolve, reject) =>
-            this.streamsDatabase.find<StreamEntry>({}, (err: Error, documents: Array<StreamEntry>) => {
+    public static async getAllStreams(): Promise<Array<SerializedStream>> {
+        return new Promise<Array<SerializedStream>>((resolve, reject) =>
+            this.streamsDatabase.find<SerializedStream>({}, (err: Error, documents: Array<SerializedStream>) => {
                 if (err) reject(err)
                 else resolve(documents)
             })
@@ -163,7 +163,7 @@ export class Streams {
     }
 
     public static async deleteStream(stream: Stream): Promise<void> {
-        const streamEntry: StreamEntry = stream.toStreamEntry()
+        const streamEntry: SerializedStream = stream.toStreamEntry()
         return new Promise<void>((resolve, reject) =>
             this.streamsDatabase.remove(streamEntry, (err: Error | null) => {
                 if (err) reject(err)
@@ -175,15 +175,15 @@ export class Streams {
         )
     }
 
-    public static async updateStream(streamName: string, updatedStream: Stream): Promise<StreamEntry> {
-        const streamEntry: StreamEntry = updatedStream.toStreamEntry()
-        return new Promise<StreamEntry>((resolve, reject) =>
+    public static async updateStream(streamName: string, updatedStream: Stream): Promise<SerializedStream> {
+        const streamEntry: SerializedStream = updatedStream.toStreamEntry()
+        return new Promise<SerializedStream>((resolve, reject) =>
             this.streamsDatabase.update({name: streamName}, streamEntry,
                 {upsert: false, returnUpdatedDocs: true},
                 (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
                     else {
-                        const result: StreamEntry = affectedDocuments as StreamEntry
+                        const result: SerializedStream = affectedDocuments as SerializedStream
                         this.streams.push(result)
                         resolve(result)
                     }

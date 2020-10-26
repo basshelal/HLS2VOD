@@ -7,12 +7,12 @@ import Typography from "@material-ui/core/Typography"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
 import {Button} from "@material-ui/core"
 import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
-import {StreamEntry} from "../../../main/Stream"
+import {SerializedStream} from "../../../main/Stream"
 import {sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
 
 interface StreamCardViewProps {
-    streamEntry: StreamEntry
+    streamEntry: SerializedStream
 }
 
 function styles(): ClassNameMap {
@@ -26,20 +26,20 @@ function styles(): ClassNameMap {
     )()
 }
 
-function startStream(stream: StreamEntry): Promise<StreamEntry> { return sendToMain(Requests.StartStream, stream) }
+function startStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.StartStream, stream) }
 
-function pauseStream(stream: StreamEntry): Promise<StreamEntry> { return sendToMain(Requests.PauseStream, stream) }
+function pauseStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.PauseStream, stream) }
 
-function forceRecordStream(stream: StreamEntry): Promise<StreamEntry> { return sendToMain(Requests.ForceRecordStream, stream) }
+function forceRecordStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.ForceRecordStream, stream) }
 
-function unForceRecordStream(stream: StreamEntry): Promise<StreamEntry> { return sendToMain(Requests.UnForceRecordStream, stream) }
+function unForceRecordStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.UnForceRecordStream, stream) }
 
-function viewDir(stream: StreamEntry): Promise<StreamEntry> { return sendToMain(Requests.ViewStreamDir, stream) }
+function viewDir(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.ViewStreamDir, stream) }
 
 export const StreamCardView: FC<StreamCardViewProps> = (props: PropsWithChildren<StreamCardViewProps>) => {
     const classes = styles()
     const [raised, setRaised] = useState<boolean>(false)
-    const streamEntry: StreamEntry = props.streamEntry
+    const streamEntry: SerializedStream = props.streamEntry
 
     return (
         <Card className={classes.root} raised={raised}

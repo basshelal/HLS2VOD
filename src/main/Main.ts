@@ -1,6 +1,6 @@
 import * as electron from "electron"
 import {BrowserWindow, dialog, IpcMainInvokeEvent, session} from "electron"
-import {Schedule, Show, Stream, StreamEntry} from "./Stream"
+import {Schedule, SerializedStream, Show, Stream} from "./Stream"
 import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
@@ -96,7 +96,7 @@ electron.app.whenReady().then(async () => {
 })
 
 // Start Stream
-handleFromBrowser<StreamEntry>(Requests.StartStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<SerializedStream>(Requests.StartStream, async (event, streamEntry: SerializedStream) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.start()
@@ -105,7 +105,7 @@ handleFromBrowser<StreamEntry>(Requests.StartStream, async (event, streamEntry: 
 })
 
 // Pause Stream
-handleFromBrowser<StreamEntry>(Requests.PauseStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<SerializedStream>(Requests.PauseStream, async (event, streamEntry: SerializedStream) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.pause()
@@ -114,7 +114,7 @@ handleFromBrowser<StreamEntry>(Requests.PauseStream, async (event, streamEntry: 
 })
 
 // Force Record Stream
-handleFromBrowser<StreamEntry>(Requests.ForceRecordStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<SerializedStream>(Requests.ForceRecordStream, async (event, streamEntry: SerializedStream) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.forceRecord()
@@ -123,7 +123,7 @@ handleFromBrowser<StreamEntry>(Requests.ForceRecordStream, async (event, streamE
 })
 
 // UnForce Record Stream
-handleFromBrowser<StreamEntry>(Requests.UnForceRecordStream, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<SerializedStream>(Requests.UnForceRecordStream, async (event, streamEntry: SerializedStream) => {
     const found = findStream(streamEntry.name)
     if (found) {
         await found.unForceRecord()
@@ -132,7 +132,7 @@ handleFromBrowser<StreamEntry>(Requests.UnForceRecordStream, async (event, strea
 })
 
 // View Stream Dir
-handleFromBrowser<StreamEntry>(Requests.ViewStreamDir, async (event, streamEntry: StreamEntry) => {
+handleFromBrowser<SerializedStream>(Requests.ViewStreamDir, async (event, streamEntry: SerializedStream) => {
     const found = findStream(streamEntry.name)
     if (found) {
         electron.shell.openItem(found.streamDirectory)

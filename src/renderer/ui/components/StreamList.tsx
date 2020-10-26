@@ -3,7 +3,7 @@ import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
 import {handleFromMain, sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
-import {StreamEntry} from "../../../main/Stream"
+import {SerializedStream} from "../../../main/Stream"
 
 export interface StreamListProps {
 
@@ -11,7 +11,7 @@ export interface StreamListProps {
 
 export class StreamList extends Component {
 
-    state: { streamEntries: Array<StreamEntry> }
+    state: { streamEntries: Array<SerializedStream> }
 
     public constructor(props) {
         super(props)
@@ -21,7 +21,7 @@ export class StreamList extends Component {
     }
 
     public fetchData() {
-        sendToMain<Array<StreamEntry>>(Requests.GetStreams).then(returned => {
+        sendToMain<Array<SerializedStream>>(Requests.GetStreams).then(returned => {
             this.setState({streamEntries: returned})
         })
     }
@@ -29,7 +29,7 @@ export class StreamList extends Component {
     public render(): React.ReactNode {
         return (
             <Container>
-                {this.state.streamEntries.map((streamEntry: StreamEntry, index: number) => {
+                {this.state.streamEntries.map((streamEntry: SerializedStream, index: number) => {
                     return <StreamCardView streamEntry={streamEntry} key={streamEntry.name}/>
                 })}
             </Container>

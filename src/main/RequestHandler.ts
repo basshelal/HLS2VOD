@@ -1,6 +1,6 @@
 import {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
 import {Unit} from "../shared/Utils"
-import {StreamEntry} from "./Stream"
+import {SerializedStream} from "./Stream"
 import {Database, SettingsEntry} from "./Database"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"
@@ -23,8 +23,8 @@ export class RequestHandler {
     }
 
     public static getAllStreams(): Unit {
-        this.handle<Array<StreamEntry>>(Requests.GetStreams,
-            async (): Promise<Array<StreamEntry>> => await Database.Streams.getAllStreams())
+        this.handle<Array<SerializedStream>>(Requests.GetStreams,
+            async (): Promise<Array<SerializedStream>> => await Database.Streams.getAllStreams())
     }
 
     public static newStream(): Unit {

@@ -3,11 +3,7 @@ import * as path from "path"
 import moment from "moment"
 import {setInterval} from "timers"
 import {removeSync} from "fs-extra"
-
-export type Unit = void
-export type TimeOut = NodeJS.Timeout
-export type WritableStream = NodeJS.WritableStream
-export type ReadableStream = NodeJS.ReadableStream
+import {TimeOut} from "./Types"
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
