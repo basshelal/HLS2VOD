@@ -44,7 +44,7 @@ export class Stream
     /** Current state of Stream, see {@link StreamState} */
     public state: StreamState
 
-    /** The {@link TimeOut} that currently manages {@link activeShows} */
+    /** The {@link TimeOut} that manages the active shows and downloaders in {@link downloaders} */
     public activeShowManager: TimeOut
 
     /** Milliseconds used for {@link activeShowManager}*/
@@ -53,6 +53,7 @@ export class Stream
     /** Directory where this stream will be downloaded */
     public streamDirectory: string
 
+    /** Keeps track of active shows and their {@link StreamDownloader} */
     public downloaders: Map<string, StreamDownloader>
 
     public constructor({name, url, scheduledShows, offsetSeconds, outputDirectory}: {
@@ -83,11 +84,11 @@ export class Stream
                     streamUrl: this.url,
                     outputPath: path.join(showDir, `${fileMoment()}.mp4`)
                 })
-                await downloader.start()
                 this.downloaders.set(show.name, downloader)
+                if (this.state !== "paused") await downloader.start()
             } else if (!show.isActive(true) && this.downloaders.has(show.name)) {
                 const downloader = this.downloaders.get(show.name)
-                if (downloader) downloader.stop()
+                if (downloader && downloader.isDownloading) downloader.stop()
                 this.downloaders.delete(show.name)
             }
         })
@@ -99,12 +100,20 @@ export class Stream
     public async start(): Promise<void> {
         if (this.state === "paused") {
             if (this.downloaders.isEmpty()) this.state = "waiting"
-            else this.state = "downloading"
+            else {
+                this.downloaders.forEach((downloader: StreamDownloader) => {
+                    downloader.start()
+                })
+                this.state = "downloading"
+            }
         }
     }
 
     /** Indicates we want to pause downloading shows even if they are active */
     public async pause(): Promise<void> {
+        this.downloaders.forEach((downloader: StreamDownloader) => {
+            downloader.stop()
+        })
         this.state = "paused"
     }
 
@@ -132,7 +141,7 @@ export class Stream
         }
     }
 
-    /*override*/
+    /** Serialize to a {@link SerializedStream}, implemented from {@link Serializable} */
     public serialize(): SerializedStream {
         return {
             name: this.name,
@@ -144,12 +153,14 @@ export class Stream
         }
     }
 
-    public static async fromSerializedStream(serializedStream: SerializedStream, outputDirectory: string): Promise<Stream> {
+    public static async fromSerializedStream(serializedStream: SerializedStream,
+                                             outputDirectory: string, offsetSeconds: number): Promise<Stream> {
         return new Stream({
             name: serializedStream.name,
             url: serializedStream.url,
-            scheduledShows: await Promise.all(serializedStream.scheduledShows.map(async (showEntry) => await Show.fromShowEntry(showEntry))),
-            offsetSeconds: 0,
+            scheduledShows: serializedStream.scheduledShows.map((serializedShow: SerializedShow) =>
+                Show.fromSerializedShow(serializedShow, offsetSeconds)),
+            offsetSeconds: offsetSeconds,
             outputDirectory: outputDirectory
         })
     }

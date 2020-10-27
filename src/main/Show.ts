@@ -24,15 +24,15 @@ export class Show
     /** Show end time with offset in unix epoch milliseconds format */
     public offsetEndTime: number
 
-    public constructor({name, time, duration, offsetSeconds}: {
+    public constructor({name, startTimeMoment, duration, offsetSeconds}: {
         name: string,
-        time: Moment,
+        startTimeMoment: Moment,
         duration: Duration,
         offsetSeconds: number
     }) {
         this.name = name
-        this.startTime = time.date()
-        this.endTime = time.add(duration).date()
+        this.startTime = startTimeMoment.date()
+        this.endTime = startTimeMoment.add(duration).date()
         this.offsetStartTime = moment(this.startTime).subtract(offsetSeconds, "seconds").date()
         this.offsetEndTime = moment(this.endTime).add(offsetSeconds, "seconds").date()
     }
@@ -78,24 +78,30 @@ export class Show
         }
     }
 
-    // TODO: Implement or delete
-    public static async fromShowEntry(showEntry: SerializedShow): Promise<Show> {
-        const show = await Show.new({
-            name: showEntry.name,
-            time: moment(showEntry.startTime),
-            duration: duration()
+    public static fromSerializedShow(serializedShow: SerializedShow, offsetSeconds: number): Show {
+        const show = new Show({
+            name: serializedShow.name,
+            startTimeMoment: moment(serializedShow.startTime),
+            duration: duration(),
+            offsetSeconds: offsetSeconds
         })
-        show.startTime = showEntry.startTime
-        show.offsetStartTime = showEntry.offsetStartTime
-        show.endTime = showEntry.endTime
-        show.offsetEndTime = showEntry.offsetEndTime
+        show.startTime = serializedShow.startTime
+        show.offsetStartTime = serializedShow.offsetStartTime
+        show.endTime = serializedShow.endTime
+        show.offsetEndTime = serializedShow.offsetEndTime
         return show
     }
 
-    // TODO: Implement or delete
-    public static async fromFile({name, time, duration}: { name: string, time: string, duration: string }): Promise<Show> {
+    public static async fromFile({name, time, duration, offsetSeconds}: {
+        name: string, time: string, duration: string, offsetSeconds: number
+    }): Promise<Show> {
         const startTime = moment(time, "dddd HH:mm")
         const momentDuration = moment.duration(duration, "minutes")
-        return await Show.new({name: name, time: startTime, duration: momentDuration})
+        return new Show({
+            name: name,
+            startTimeMoment: startTime,
+            duration: momentDuration,
+            offsetSeconds: offsetSeconds
+        })
     }
 }
