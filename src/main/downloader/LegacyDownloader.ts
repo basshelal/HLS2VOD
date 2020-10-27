@@ -1,16 +1,14 @@
+// @ts-ignore
 import * as m3u8 from "m3u8-parser"
 import PQueue from "p-queue"
 import {URL} from "url"
 import {downloadSegmentData, get} from "./Http"
 import {logD, logE} from "../../shared/Log"
-import {EventEmitter} from "events"
-import {Stream} from "../Stream"
 
-// TODO: Downloading can be done entirely using FFmpeg! It accepts .m3u8 urls and will do encoding inline
-export class Downloader extends EventEmitter {
+export class LegacyDownloader {
 
     public playlistUrl: string
-    public onDownloadSegment: (arrayBuffer: ArrayBuffer) => void
+    public onDownloadSegment: (arrayBuffer: ArrayBuffer) => void = () => {}
 
     private queue: PQueue = new PQueue()
     private timeoutDuration: number
@@ -20,7 +18,6 @@ export class Downloader extends EventEmitter {
     private refreshHandle?: number
 
     private constructor(playlistUrl: string, timeoutDuration: number = 600, playlistRefreshInterval: number = 2) {
-        super()
         this.playlistUrl = playlistUrl
         this.timeoutDuration = timeoutDuration
         this.playlistRefreshInterval = playlistRefreshInterval
@@ -48,7 +45,7 @@ export class Downloader extends EventEmitter {
         const playlist = await this.loadPlaylist()
 
         const interval = playlist.targetDuration || this.playlistRefreshInterval
-        const segments = playlist.segments!.map((s) => new URL(s.uri, this.playlistUrl).href)
+        const segments = playlist.segments!.map((s: any) => new URL(s.uri, this.playlistUrl).href)
 
         this.refreshHandle = setTimeout(() => this.refreshPlayList(), interval * 1000)
 
@@ -102,26 +99,10 @@ export class Downloader extends EventEmitter {
         this.onDownloadSegment(buffer)
     }
 
-    public emit(event: DownloaderEvent): boolean {
-        return super.emit(event, this)
-    }
-
-    public on(event: DownloaderEvent, listener: (stream?: Stream) => void): this {
-        return super.on(event, listener)
-    }
-
-    public off(event: DownloaderEvent, listener: (stream?: Stream) => void): this {
-        return super.off(event, listener)
-    }
-
-    public once(event: DownloaderEvent, listener: (stream?: Stream) => void): this {
-        return super.once(event, listener)
-    }
-
     public static async new(streamUrl: string,
                             timeoutDuration: number = 600,
                             playlistRefreshInterval: number = 2,
-                            maxBandwidth: "worst" | "best" | number = "best"): Promise<Downloader> {
+                            maxBandwidth: "worst" | "best" | number = "best"): Promise<LegacyDownloader> {
         const streams: string = await get(streamUrl)
 
         const parser = new m3u8.Parser()
@@ -157,11 +138,9 @@ export class Downloader extends EventEmitter {
             throw Error(`StreamUrl provided is not valid`)
         }
 
-        return new Downloader(playlistUrl,
+        return new LegacyDownloader(playlistUrl,
             timeoutDuration,
             playlistRefreshInterval)
 
     }
 }
-
-export type DownloaderEvent = "downloadedSegment"

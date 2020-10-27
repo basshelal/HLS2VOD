@@ -1,19 +1,16 @@
-import {createReadStream, createWriteStream, WriteStream} from "fs"
-import {fileMoment, json, timer} from "../shared/Utils"
+import {fileMoment, timer} from "../shared/Utils"
 import * as path from "path"
-import {mkdirpSync, removeSync} from "fs-extra"
-import {Ffmpeg} from "./downloader/Ffmpeg"
-import {Show, ShowEntry} from "./Show"
+import {mkdirpSync} from "fs-extra"
+import {SerializedShow, Show} from "./Show"
 import {TimeOut} from "../shared/Types"
 import {StreamDownloader} from "./downloader/StreamDownloader"
 import {Serializable} from "../shared/Serializable"
 
 export interface SerializedStream {
     name: string
-    playlistUrl: string
+    url: string
     state: StreamState
-    schedulePath?: string
-    scheduledShows: Array<ShowEntry>
+    scheduledShows: Array<SerializedShow>
     isForced: boolean
     streamDirectory: string
 }
@@ -32,94 +29,78 @@ export class Stream
     /** Name of stream, must be unique so can be used as identifier */
     public name: string
 
-    /** Url of m3u8 playlist, this is used by {@link downloader} */
-    public playlistUrl: string
+    /** Url of m3u8 playlist, this is used by {@link downloaders} */
+    public url: string
 
     /** The list of shows that have a scheduled time, see {@link Show} */
     public scheduledShows: Array<Show>
 
-    /** The list of shows that are currently active, ie, should be recorded */
-    public activeShows: Array<Show>
-
     /** Has the user forced to record even when no shows active? */
     public isForced: boolean
 
-    /** The {@link FileConcatter} to use when forced to record */
-    public forcedFileConcatter: FileConcatter | null
+    /** The special {@link StreamDownloader} used when {@link isForced} is true */
+    public forcedDownloader: StreamDownloader | undefined
 
     /** Current state of Stream, see {@link StreamState} */
     public state: StreamState
 
     /** The {@link TimeOut} that currently manages {@link activeShows} */
-    public mainTimer: TimeOut
+    public activeShowManager: TimeOut
 
-    /** Milliseconds used for {@link mainTimer}*/
+    /** Milliseconds used for {@link activeShowManager}*/
     public mainTimerIntervalMs: number
 
     /** Directory where this stream will be downloaded */
     public streamDirectory: string
 
-    public forcedDownloader: StreamDownloader
+    public downloaders: Map<string, StreamDownloader>
 
-    /** Private because of async initializer code, use {@link new} instead */
-    public constructor({name, playlistUrl, scheduledShows, offsetSeconds, outputDirectory}: {
+    public constructor({name, url, scheduledShows, offsetSeconds, outputDirectory}: {
         name: string
-        playlistUrl: string
+        url: string
         scheduledShows: Array<Show>
         offsetSeconds: number
         outputDirectory: string
     }) {
         this.name = name
-        this.playlistUrl = playlistUrl
+        this.url = url
         this.scheduledShows = scheduledShows.map(show => show.setOffsetSeconds(offsetSeconds))
-        this.activeShows = new Array<Show>()
         this.isForced = false
-        this.forcedFileConcatter = null
         this.state = "waiting" // anything other than "paused"
         this.mainTimerIntervalMs = 5000
-        this.mainTimer = timer(this.mainTimerIntervalMs, this.mainTimerCallback)
+        this.activeShowManager = timer(this.mainTimerIntervalMs, this.activeShowManagerTimer)
         this.streamDirectory = path.join(outputDirectory, this.name)
         mkdirpSync(this.streamDirectory)
+        this.downloaders = new Map<string, StreamDownloader>()
     }
 
-    private onDownloadSegment = (arrayBuffer: ArrayBuffer) => {
-        // A segment has been downloaded, lets send it to where it needs to go
-        if (this.state !== "paused") {
-            // Send segment to active shows if we're not paused
-            this.activeShows.forEach((show: Show) => {
-                if (show.isActive(true)) // this is just a safety, should always be true
-                    show.fileConcatter.concatData(arrayBuffer)
-            })
-        }
-        if (this.isForced && this.forcedFileConcatter) {
-            this.forcedFileConcatter.concatData(arrayBuffer)
-        }
-    }
-
-    private mainTimerCallback = () => {
-        // Manage active shows
-        this.scheduledShows.forEach((show: Show) => {
-            if (show.isActive(true) && this.activeShows.notContains(show)) {
-                this.activeShows.push(show)
-                // Show has started
-                show.fileConcatter.initialize()
-            } else if (!show.isActive(true) && this.activeShows.contains(show)) {
-                this.activeShows.remove(show)
-                // Show has finished
-                show.fileConcatter.end()
-                Ffmpeg.transmuxTsToMp4(show.fileConcatter.masterFilePath, show.fileConcatter.masterFilePath + ".mp4")
-                removeSync(show.fileConcatter.masterFilePath)
+    private activeShowManagerTimer = () => {
+        this.scheduledShows.forEach(async (show: Show) => {
+            if (show.isActive(true) && this.downloaders.notHas(show.name)) {
+                const showDir: string = path.join(this.streamDirectory, show.name)
+                mkdirpSync(showDir)
+                const downloader: StreamDownloader = new StreamDownloader({
+                    streamUrl: this.url,
+                    outputPath: path.join(showDir, `${fileMoment()}.mp4`)
+                })
+                await downloader.start()
+                this.downloaders.set(show.name, downloader)
+            } else if (!show.isActive(true) && this.downloaders.has(show.name)) {
+                const downloader = this.downloaders.get(show.name)
+                if (downloader) downloader.stop()
+                this.downloaders.delete(show.name)
             }
         })
-        if (this.activeShows.isEmpty() && this.state === "downloading") this.state = "waiting"
-        else if (this.activeShows.isNotEmpty() && this.state === "waiting") this.state = "downloading"
+        if (this.downloaders.isEmpty() && this.state === "downloading") this.state = "waiting"
+        else if (this.downloaders.isNotEmpty() && this.state === "waiting") this.state = "downloading"
     }
 
     /** Indicates we are now ready to begin downloading shows when they become active */
     public async start(): Promise<void> {
-        if (this.state === "paused")
-            if (this.activeShows.isEmpty()) this.state = "waiting"
+        if (this.state === "paused") {
+            if (this.downloaders.isEmpty()) this.state = "waiting"
             else this.state = "downloading"
+        }
     }
 
     /** Indicates we want to pause downloading shows even if they are active */
@@ -129,78 +110,47 @@ export class Stream
 
     /** Indicates we want to download stream anyway even if there are no active shows */
     public async forceRecord(): Promise<void> {
-        await this.start()
-        this.isForced = true
-        this.forcedFileConcatter = new FileConcatter(path.join(this.streamDirectory, `${fileMoment()}.ts`))
-        this.forcedFileConcatter.initialize()
+        if (!this.isForced) {
+            await this.start()
+            this.forcedDownloader = new StreamDownloader({
+                streamUrl: this.url,
+                outputPath: path.join(this.streamDirectory, `${fileMoment()}.mp4`)
+            })
+            await this.forcedDownloader.start()
+            this.isForced = true
+        }
     }
 
     /** Indicates we want to go back to normal behavior, ie download only when there are active shows */
     public async unForceRecord(): Promise<void> {
-        this.isForced = false
-        await this.forcedFileConcatter.end()
-        await Ffmpeg.transmuxTsToMp4(this.forcedFileConcatter.masterFilePath, this.forcedFileConcatter.masterFilePath + ".mp4")
-        removeSync(this.forcedFileConcatter.masterFilePath)
-        this.forcedFileConcatter = null
+        if (this.isForced) {
+            if (this.forcedDownloader) {
+                this.forcedDownloader.stop()
+                this.forcedDownloader = undefined
+            }
+            this.isForced = false
+        }
     }
 
     /*override*/
     public serialize(): SerializedStream {
         return {
             name: this.name,
-            playlistUrl: this.playlistUrl,
+            url: this.url,
             state: this.state,
-            scheduledShows: this.scheduledShows.map(show => show.toShowEntry()),
+            scheduledShows: this.scheduledShows.map(show => show.serialize()),
             isForced: this.isForced,
             streamDirectory: this.streamDirectory
         }
     }
 
-    public toString(): string { return json(this, 2) }
-
-    public static async fromStreamEntry(streamEntry: SerializedStream): Promise<Stream> {
-        return Stream.new({
-            name: streamEntry.name,
-            playlistUrl: streamEntry.playlistUrl,
-            scheduledShows: await Promise.all(streamEntry.scheduledShows.map(async (showEntry) => await Show.fromShowEntry(showEntry))),
-            offsetSeconds: 0
+    public static async fromSerializedStream(serializedStream: SerializedStream, outputDirectory: string): Promise<Stream> {
+        return new Stream({
+            name: serializedStream.name,
+            url: serializedStream.url,
+            scheduledShows: await Promise.all(serializedStream.scheduledShows.map(async (showEntry) => await Show.fromShowEntry(showEntry))),
+            offsetSeconds: 0,
+            outputDirectory: outputDirectory
         })
-    }
-}
-
-// Concats data to a single file
-export class FileConcatter {
-
-    public writeStream: WriteStream
-
-    constructor(public masterFilePath: string) {}
-
-    public initialize(): this {
-        this.writeStream = createWriteStream(this.masterFilePath)
-        return this
-    }
-
-    public async concatFromFile(...filePaths: Array<string>): Promise<this> {
-        await Promise.all(filePaths.map((file: string) => (
-            new Promise((resolve, reject) => {
-                createReadStream(file).pipe(this.writeStream, {end: false})
-                    .on("finish", resolve)
-                    .on("error", reject)
-            }))
-        ))
-        return this
-    }
-
-    public async concatData(data: any): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this.writeStream.write(data, (error: Error) => {
-                if (error) reject(error)
-                else resolve()
-            })
-        })
-    }
-
-    public async end(): Promise<void> {
-        return new Promise<void>((resolve) => this.writeStream.end(() => resolve()))
     }
 }

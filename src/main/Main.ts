@@ -81,7 +81,7 @@ electron.app.whenReady().then(async () => {
 
     await Database.initialize()
     const dbStreamEntries = await Database.Streams.getAllStreams()
-    streams = await Promise.all(dbStreamEntries.map(async (streamEntry) => await Stream.fromStreamEntry(streamEntry)))
+    streams = await Promise.all(dbStreamEntries.map(async (streamEntry) => await Stream.fromSerializedStream(streamEntry)))
 
     // Default settings
     await Database.Settings.setOutputDirectory(getPath("./Streams"))

@@ -34,7 +34,7 @@ test("Stream Initialization", async () => {
 
     expect(stream).toBeDefined()
     expect(stream.name).toBe("Test Stream")
-    expect(stream.playlistUrl).toBe(testStream)
+    expect(stream.url).toBe(testStream)
     expect(stream.scheduledShows).toEqual([])
     expect(stream.activeShows).toEqual([])
     expect(stream.downloader).toBeDefined()

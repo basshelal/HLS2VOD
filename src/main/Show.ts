@@ -1,10 +1,8 @@
 import moment, {duration, Duration, Moment} from "moment"
-import {fileMoment, json, momentFormat} from "../shared/Utils"
-import path from "path"
-import {Database} from "./Database"
-import {FileConcatter} from "./Stream"
+import {json, momentFormat} from "../shared/Utils"
+import {Serializable} from "../shared/Serializable"
 
-export interface ShowEntry {
+export interface SerializedShow {
     name: string
     startTime: number
     offsetStartTime: number
@@ -12,32 +10,41 @@ export interface ShowEntry {
     offsetEndTime: number
 }
 
-export class Show {
+export class Show
+    implements Serializable<SerializedShow> {
 
+    /** Must be unique */
+    public name: string
+    /** Show start time without offset in unix epoch milliseconds format */
     public startTime: number
+    /** Show start time with offset in unix epoch milliseconds format */
     public offsetStartTime: number
+    /** Show end time without offset in unix epoch milliseconds format */
     public endTime: number
+    /** Show end time with offset in unix epoch milliseconds format */
     public offsetEndTime: number
-    public fileConcatter: FileConcatter
 
-    private constructor(public name: string,
-                        public time: Moment,
-                        public duration: Duration,
-                        public offsetSeconds: number = 0) {
-
+    public constructor({name, time, duration, offsetSeconds}: {
+        name: string,
+        time: Moment,
+        duration: Duration,
+        offsetSeconds: number
+    }) {
+        this.name = name
         this.startTime = time.date()
         this.endTime = time.add(duration).date()
-        this.setOffsetSeconds(offsetSeconds)
+        this.offsetStartTime = moment(this.startTime).subtract(offsetSeconds, "seconds").date()
+        this.offsetEndTime = moment(this.endTime).add(offsetSeconds, "seconds").date()
     }
 
     public hasStarted(withOffset: boolean = true): boolean {
-        let now: number = Date.now()
+        let now: number = moment.now()
         if (withOffset) return now >= this.offsetStartTime
         else return now >= this.startTime
     }
 
     public hasEnded(withOffset: boolean = true): boolean {
-        let now: number = Date.now()
+        let now: number = moment.now()
         if (withOffset) return now >= this.offsetEndTime
         else return now >= this.endTime
     }
@@ -47,7 +54,6 @@ export class Show {
     }
 
     public setOffsetSeconds(value: number): this {
-        this.offsetSeconds = value
         this.offsetStartTime = moment(this.startTime).subtract(value, "seconds").date()
         this.offsetEndTime = moment(this.endTime).add(value, "seconds").date()
         return this
@@ -62,12 +68,7 @@ export class Show {
         return json(obj, 2)
     }
 
-    public async initialize(): Promise<this> {
-        this.fileConcatter = new FileConcatter(path.join(await Database.Settings.getOutputDirectory(), this.name, `${fileMoment()}`))
-        return this
-    }
-
-    public toShowEntry(): ShowEntry {
+    public serialize(): SerializedShow {
         return {
             name: this.name,
             startTime: this.startTime,
@@ -77,16 +78,8 @@ export class Show {
         }
     }
 
-    public static async new({name, time, duration, offsetSeconds = 0}: {
-        name: string
-        time: Moment
-        duration: Duration
-        offsetSeconds?: number
-    }): Promise<Show> {
-        return await (new Show(name, time, duration, offsetSeconds)).initialize()
-    }
-
-    public static async fromShowEntry(showEntry: ShowEntry): Promise<Show> {
+    // TODO: Implement or delete
+    public static async fromShowEntry(showEntry: SerializedShow): Promise<Show> {
         const show = await Show.new({
             name: showEntry.name,
             time: moment(showEntry.startTime),
@@ -99,6 +92,7 @@ export class Show {
         return show
     }
 
+    // TODO: Implement or delete
     public static async fromFile({name, time, duration}: { name: string, time: string, duration: string }): Promise<Show> {
         const startTime = moment(time, "dddd HH:mm")
         const momentDuration = moment.duration(duration, "minutes")

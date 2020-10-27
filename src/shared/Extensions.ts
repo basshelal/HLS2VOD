@@ -53,6 +53,12 @@ declare global {
         keysArray(): Array<K>
 
         valuesArray(): Array<V>
+
+        notHas(key: K): boolean
+
+        isEmpty(): boolean
+
+        isNotEmpty(): boolean
     }
 
     interface Set<T> {
@@ -128,13 +134,9 @@ function _array() {
         return this
     })
     protoExtension(Array, "isEmpty",
-        function (this: Array<any>) {
-            return this.length === 0
-        })
+        function (this: Array<any>) { return this.length === 0 })
     protoExtension(Array,
-        "isNotEmpty", function (this: Array<any>) {
-            return this.length !== 0
-        })
+        "isNotEmpty", function (this: Array<any>) { return this.length !== 0 })
     protoExtension(Array, "pushAll",
         function <T>(this: Array<T>, items: Iterable<T>): Array<T> {
             for (let item of items) this.push(item)
@@ -221,6 +223,12 @@ function _map() {
             for (let value of this.values()) result.push(value)
             return result
         })
+    protoExtension(Map, "notHas",
+        function <K>(this: Map<K, any>, key: K): boolean { return !this.has(key) })
+    protoExtension(Map, "isEmpty",
+        function (this: Map<any, any>): boolean { return this.size === 0 })
+    protoExtension(Map, "isNotEmpty",
+        function (this: Map<any, any>): boolean { return this.size !== 0 })
 }
 
 function _set() {
