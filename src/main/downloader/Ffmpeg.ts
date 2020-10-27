@@ -1,5 +1,4 @@
 import {getPath} from "../../shared/Utils"
-import {createReadStream, createWriteStream, WriteStream} from "fs"
 import {ChildProcess, spawn} from "child_process"
 import {logD, logE} from "../../shared/Log"
 
@@ -85,39 +84,5 @@ export class Ffmpeg {
             "-c:v", "copy",
             outputPath
         )
-    }
-
-    public static async transmuxTsToMp4(inputFile: string, outputFile: string): Promise<void> {
-        await Ffmpeg.spawnSync(
-            "-y",
-            "-loglevel", "warning",
-            "-i", inputFile,
-            "-c", "copy",
-            outputFile
-        )
-    }
-
-    public static async copyToStream(inFile: string, outStream: WriteStream): Promise<void> {
-        return new Promise((resolve, reject) => {
-            createReadStream(inFile)
-                .on("error", reject)
-                .on("end", resolve)
-                .pipe(outStream, {end: false})
-        })
-    }
-
-    public static async mergeFiles(files: Array<string>, outputFile: string): Promise<void> {
-        const outStream = createWriteStream(outputFile)
-        const promise = new Promise<void>((resolve, reject) => {
-            outStream.on("finish", resolve).on("error", reject)
-        })
-        for (const file of files) {
-            logD(`Copying ${file}`)
-            await Ffmpeg.copyToStream(file, outStream)
-            logD(`Finished ${file}`)
-        }
-        outStream.end()
-        logD("Returning Promise")
-        return promise
     }
 }

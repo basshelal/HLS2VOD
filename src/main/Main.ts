@@ -1,6 +1,6 @@
 import * as electron from "electron"
 import {BrowserWindow, dialog, IpcMainInvokeEvent, session} from "electron"
-import {Schedule, SerializedStream, Show, Stream} from "./Stream"
+import {SerializedStream, Stream} from "./Stream"
 import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
@@ -11,6 +11,8 @@ import {getPath, json} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {SettingsData} from "../renderer/ui/components/SettingsButton"
 import {RequestHandler} from "./RequestHandler"
+import {Show} from "./Show"
+import {Schedule} from "./Schedule"
 
 Extensions()
 

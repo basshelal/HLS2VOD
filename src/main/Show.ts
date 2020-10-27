@@ -92,9 +92,9 @@ export class Show
         return show
     }
 
-    public static async fromFile({name, time, duration, offsetSeconds}: {
+    public static fromFile({name, time, duration, offsetSeconds}: {
         name: string, time: string, duration: string, offsetSeconds: number
-    }): Promise<Show> {
+    }): Show {
         const startTime = moment(time, "dddd HH:mm")
         const momentDuration = moment.duration(duration, "minutes")
         return new Show({

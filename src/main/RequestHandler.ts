@@ -1,5 +1,4 @@
 import {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
-import {Unit} from "../shared/Utils"
 import {SerializedStream} from "./Stream"
 import {Database, SettingsEntry} from "./Database"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
@@ -22,12 +21,12 @@ export class RequestHandler {
         ipcMain.handle(name, (event, args) => listener(args, event))
     }
 
-    public static getAllStreams(): Unit {
+    public static getAllStreams() {
         this.handle<Array<SerializedStream>>(Requests.GetStreams,
             async (): Promise<Array<SerializedStream>> => await Database.Streams.getAllStreams())
     }
 
-    public static newStream(): Unit {
+    public static newStream() {
         this.handle<DialogStreamEntry>(Requests.NewStream,
             async (streamEntry: DialogStreamEntry): Promise<boolean> => {
                 const schedulePath: string | undefined = streamEntry.schedulePath === "" ? undefined : streamEntry.schedulePath
@@ -36,7 +35,7 @@ export class RequestHandler {
             })
     }
 
-    public static browseOutputDir(): Unit {
+    public static browseOutputDir() {
         this.handle(Requests.BrowseOutputDir,
             async (): Promise<string | undefined> => {
                 const pickerResult: OpenDialogReturnValue = await dialog.showOpenDialog(
@@ -47,7 +46,7 @@ export class RequestHandler {
             })
     }
 
-    public static getAllSettings(): Unit {
+    public static getAllSettings() {
         this.handle<Array<SettingsEntry>>(Requests.GetSettings,
             async (): Promise<Array<SettingsEntry>> => {
                 return await Database.Settings.getAllSettings()

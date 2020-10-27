@@ -1,6 +1,6 @@
 import axios from "axios"
 import {createWriteStream} from "fs"
-import {ReadableStream, WritableStream} from "../../shared/Utils"
+import {ReadableStream, WritableStream} from "../../shared/Types"
 
 export async function get(url: string): Promise<string> {
     return (await axios.get(url, {responseType: "text"})).data
