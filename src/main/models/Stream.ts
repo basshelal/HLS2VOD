@@ -1,10 +1,10 @@
-import {fileMoment, timer} from "../shared/Utils"
+import {fileMoment, timer} from "../../shared/Utils"
 import * as path from "path"
 import {mkdirpSync} from "fs-extra"
 import {SerializedShow, Show} from "./Show"
-import {TimeOut} from "../shared/Types"
-import {StreamDownloader} from "./downloader/StreamDownloader"
-import {Serializable} from "../shared/Serializable"
+import {TimeOut} from "../../shared/Types"
+import {StreamDownloader} from "../downloader/StreamDownloader"
+import {Serializable} from "../../shared/Serializable"
 
 export interface SerializedStream {
     name: string

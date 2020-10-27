@@ -1,5 +1,5 @@
 import {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
-import {SerializedStream} from "./Stream"
+import {SerializedStream} from "./models/Stream"
 import {Database, SettingsEntry} from "./Database"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"

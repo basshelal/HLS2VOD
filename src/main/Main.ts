@@ -1,6 +1,6 @@
 import * as electron from "electron"
 import {BrowserWindow, dialog, IpcMainInvokeEvent, session} from "electron"
-import {SerializedStream, Stream} from "./Stream"
+import {SerializedStream, Stream} from "./models/Stream"
 import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
@@ -11,8 +11,9 @@ import {getPath, json} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {SettingsData} from "../renderer/ui/components/SettingsButton"
 import {RequestHandler} from "./RequestHandler"
-import {Show} from "./Show"
-import {Schedule} from "./Schedule"
+import {Show} from "./models/Show"
+import {Schedule} from "./models/Schedule"
+import {setInterval} from "timers"
 
 Extensions()
 
@@ -21,10 +22,14 @@ let streams: Array<Stream> = []
 function findStream(name: string): Stream | undefined { return streams.find(it => it.name === name) }
 
 let browserWindow: BrowserWindow
+electron.app.allowRendererProcessReuse = true
+electron.app.whenReady().then(onAppReady)
 
 function handleFromBrowser<T>(name: string, listener: (event: IpcMainInvokeEvent, args: T) => Promise<T> | any) {
     electron.ipcMain.handle(name, listener)
 }
+
+function isDevEnv(): boolean { return process.env.NODE_ENV === "development" }
 
 // TODO: This is ugly! Fix!
 export async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
@@ -42,8 +47,7 @@ export async function addStream(name: string, playlistUrl: string, schedulePath?
     return stream
 }
 
-electron.app.allowRendererProcessReuse = true
-electron.app.whenReady().then(async () => {
+async function onAppReady(): Promise<void> {
     browserWindow = new BrowserWindow({
         center: true,
         width: 1200,
@@ -55,25 +59,13 @@ electron.app.whenReady().then(async () => {
     })
     RequestHandler.browserWindow = browserWindow
     RequestHandler.initializeMainHandles()
-    if (process.env.NODE_ENV === "development") {
-        installExtension(REACT_DEVELOPER_TOOLS)
-            .then((name) => console.log(`Added Extension:  ${name}`))
-            .catch((err) => console.log("An error occurred: ", err))
-        installExtension(REDUX_DEVTOOLS)
-            .then((name) => console.log(`Added Extension:  ${name}`))
-            .catch((err) => console.log("An error occurred: ", err))
-    }
 
-    if (process.env.NODE_ENV === "development") {
+    if (isDevEnv()) {
+        installExtension(REACT_DEVELOPER_TOOLS)
+        installExtension(REDUX_DEVTOOLS)
         browserWindow.loadURL("http://localhost:4000")
-        session.defaultSession.webRequest.onBeforeRequest({urls: ["*://*/*"]}, (details, callback) => {
-            logD(json(details))
-            callback({})
-        })
     } else {
-        logD("Loading html")
-        browserWindow.loadURL(
-            url.format({
+        browserWindow.loadURL(url.format({
                 pathname: path.join(__dirname, "renderer/index.html"),
                 protocol: "file:",
                 slashes: true
@@ -95,7 +87,23 @@ electron.app.whenReady().then(async () => {
         browserWindow.close()
         electron.app.quit()
     })
-})
+}
+
+// Web request testing stuff
+function testWebRequest() {
+    session.defaultSession.webRequest.onBeforeRequest({urls: ["*://*/*"]}, (details, callback) => {
+        logD(json(details))
+        callback({})
+    })
+
+    setInterval(() => {
+        electron.net.request({url: "https://www.github.com"}).end()
+    }, 1000)
+
+    setTimeout(() => {
+        session.defaultSession.webRequest.onBeforeRequest({urls: ["*://*/*"]}, null)
+    }, 10_000)
+}
 
 // Start Stream
 handleFromBrowser<SerializedStream>(Requests.StartStream, async (event, streamEntry: SerializedStream) => {

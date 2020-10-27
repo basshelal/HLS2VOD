@@ -17,7 +17,7 @@
     "package": "npm-run-all build package:dist",
     "package:dist": "electron-builder --dir",
     "electron-pack": "build --em.main=build/electron.js",
-    "test": "cross-env NODE_ENV=SKIP_PREFLIGHT_CHECK=true jest"
+    "test": "jest"
   },
   "dependencies": {
     "@material-ui/core": "^4.11.0",

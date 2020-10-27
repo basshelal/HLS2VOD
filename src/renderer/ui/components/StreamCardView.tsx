@@ -7,7 +7,7 @@ import Typography from "@material-ui/core/Typography"
 import {ClassNameMap} from "@material-ui/core/styles/withStyles"
 import {Button} from "@material-ui/core"
 import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
-import {SerializedStream} from "../../../main/Stream"
+import {SerializedStream} from "../../../main/models/Stream"
 import {sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
 

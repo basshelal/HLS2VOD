@@ -1,5 +1,5 @@
 import {ipcRenderer} from "electron"
-import {SerializedStream} from "../main/Stream"
+import {SerializedStream} from "../main/models/Stream"
 import {DialogStreamEntry} from "./ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"
 import {SettingsEntry} from "../main/Database"

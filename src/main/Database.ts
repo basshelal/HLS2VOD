@@ -1,6 +1,6 @@
 import Datastore from "nedb"
 import Nedb from "nedb"
-import {SerializedStream, Stream} from "./Stream"
+import {SerializedStream, Stream} from "./models/Stream"
 import {getPath, promises} from "../shared/Utils"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
@@ -13,8 +13,9 @@ export interface SettingsEntry<T = any> {
 export interface AllSettings {
     outputDirectory: string
     offsetSeconds: number
-    // appTheme: string
-    // fileExtension: string
+    // TODO: Add the below settings
+    //  appTheme: string
+    //  fileExtension: string
 }
 
 export class Settings {

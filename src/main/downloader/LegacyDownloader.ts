@@ -5,6 +5,7 @@ import {URL} from "url"
 import {downloadSegmentData, get} from "./Http"
 import {logD, logE} from "../../shared/Log"
 
+/** No longer used, use {@link StreamDownloader} instead */
 export class LegacyDownloader {
 
     public playlistUrl: string

@@ -3,7 +3,7 @@ import {StreamCardView} from "./StreamCardView"
 import Container from "@material-ui/core/Container"
 import {handleFromMain, sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
-import {SerializedStream} from "../../../main/Stream"
+import {SerializedStream} from "../../../main/models/Stream"
 
 export interface StreamListProps {
 

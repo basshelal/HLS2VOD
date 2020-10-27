@@ -1,5 +1,5 @@
 import {Database} from "../src/main/Database"
-import {Stream} from "../src/main/Stream"
+import {Stream} from "../src/main/models/Stream"
 import {delay} from "../src/shared/Utils"
 import {mkdirpSync, pathExistsSync, removeSync} from "fs-extra"
 import Extensions from "../src/shared/Extensions"

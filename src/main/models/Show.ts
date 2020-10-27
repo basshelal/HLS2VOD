@@ -1,6 +1,6 @@
 import moment, {duration, Duration, Moment} from "moment"
-import {json, momentFormat} from "../shared/Utils"
-import {Serializable} from "../shared/Serializable"
+import {json, momentFormat} from "../../shared/Utils"
+import {Serializable} from "../../shared/Serializable"
 
 export interface SerializedShow {
     name: string
