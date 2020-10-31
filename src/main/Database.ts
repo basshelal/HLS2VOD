@@ -11,8 +11,8 @@ export interface SettingsEntry<T = any> {
 }
 
 export interface AllSettings {
-    outputDirectory: string
-    offsetSeconds: number
+    outputDirectory?: string
+    offsetSeconds?: number
     // TODO: Add the below settings
     //  appTheme: string
     //  fileExtension: string
@@ -23,7 +23,7 @@ export class Settings {
 
     private static settingsDatabase: Nedb<SettingsEntry>
 
-    public static isInitialized = false
+    public static isInitialized: boolean = false
     public static outputDirectory: string
     public static offsetSeconds: number
 
@@ -47,13 +47,31 @@ export class Settings {
 
     // TODO: Make a function that returns an object instead of an array for easy querying
     //  and another to accompany it that allows us to set/update all settings
-    public static async getAllSettings(): Promise<Array<SettingsEntry>> {
+    public static async getAllSettingsArray(): Promise<Array<SettingsEntry>> {
         return new Promise<Array<SettingsEntry>>((resolve, reject) => {
             this.settingsDatabase.find({}, (err: Error | null, documents: Array<SettingsEntry>) => {
                 if (err) reject(err)
                 else resolve(documents)
             })
         })
+    }
+
+    // TODO: Not yet final
+    public static async getAllSettings(): Promise<AllSettings> {
+        const settingsArray: Array<SettingsEntry> = await this.getAllSettingsArray()
+        const foundOutputDir: SettingsEntry | undefined = settingsArray.find(it => it.key === "outputDirectory")
+        const outputDir: string | undefined = foundOutputDir ? foundOutputDir.value : undefined
+        const foundOffsetSeconds: SettingsEntry | undefined = settingsArray.find(it => it.key === "offsetSeconds")
+        const offsetSeconds: number | undefined = foundOffsetSeconds ? Number.parseInt(foundOffsetSeconds.value) : undefined
+        const result: AllSettings = {outputDirectory: outputDir, offsetSeconds: offsetSeconds}
+        return result
+    }
+
+    public static async updateSettings(settings: AllSettings): Promise<void> {
+        const toAwait: Array<Promise<any>> = []
+        if (settings.outputDirectory) toAwait.push(this.setOutputDirectory(settings.outputDirectory))
+        if (settings.offsetSeconds) toAwait.push(this.setOffsetSeconds(settings.offsetSeconds))
+        await promises(...toAwait)
     }
 
     // region outputDirectory

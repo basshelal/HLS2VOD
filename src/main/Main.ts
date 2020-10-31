@@ -1,5 +1,5 @@
 import * as electron from "electron"
-import {BrowserWindow, dialog, IpcMainInvokeEvent, session} from "electron"
+import {BrowserWindow, IpcMainInvokeEvent, session} from "electron"
 import {SerializedStream, Stream} from "./models/Stream"
 import {Database} from "./Database"
 import * as path from "path"
@@ -9,7 +9,6 @@ import Extensions from "../shared/Extensions"
 import {Requests} from "../shared/Requests"
 import {getPath, json} from "../shared/Utils"
 import {logD} from "../shared/Log"
-import {SettingsData} from "../renderer/ui/components/SettingsButton"
 import {RequestHandler} from "./RequestHandler"
 import {Show} from "./models/Show"
 import {Schedule} from "./models/Schedule"
@@ -148,17 +147,4 @@ handleFromBrowser<SerializedStream>(Requests.ViewStreamDir, async (event, stream
         electron.shell.openItem(found.streamDirectory)
         return found.toStreamEntry()
     } else return null
-})
-
-// Browse Schedule
-handleFromBrowser(Requests.BrowseSchedule, async (event) => {
-    const pickerResult = await dialog.showOpenDialog(browserWindow, {properties: ["openFile"]})
-    if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
-    else return pickerResult.filePaths[0]
-})
-
-// Update Settings
-handleFromBrowser(Requests.UpdateSettings, async (event, settingsData: SettingsData) => {
-    await Database.Settings.setOffsetSeconds(settingsData.offsetSeconds)
-    await Database.Settings.setOutputDirectory(settingsData.outputDir)
 })

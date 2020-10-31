@@ -16,7 +16,7 @@ afterAll(async () => {
 
 test("Get All Settings", async () => {
 
-    const allSettings: Array<SettingsEntry> = await Database.Settings.getAllSettings()
+    const allSettings: Array<SettingsEntry> = await Database.Settings.getAllSettingsArray()
     expect(allSettings).not.toEqual([])
     const output = allSettings.find(it => it.key === "outputDirectory")!!.value
     expect(output).toBeDefined()
