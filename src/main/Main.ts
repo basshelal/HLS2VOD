@@ -7,12 +7,11 @@ import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-
 import url from "url"
 import Extensions from "../shared/Extensions"
 import {Requests} from "../shared/Requests"
-import {getPath, json} from "../shared/Utils"
+import {getPath} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {RequestHandler} from "./RequestHandler"
 import {Show} from "./models/Show"
 import {Schedule} from "./models/Schedule"
-import {setInterval} from "timers"
 
 Extensions()
 
@@ -90,18 +89,30 @@ async function onAppReady(): Promise<void> {
 
 // Web request testing stuff
 function testWebRequest() {
-    session.defaultSession.webRequest.onBeforeRequest({urls: ["*://*/*"]}, (details, callback) => {
-        logD(json(details))
-        callback({})
+    let masterPlaylist: string
+    session.defaultSession.webRequest.onBeforeRequest({
+        urls: [
+            "http://*/*.m3u8",
+            "https://*/*.m3u8",
+            "http://*/*.m3u8?*",
+            "https://*/*.m3u8?*"]
+    }, (details, callback) => {
+        if (!masterPlaylist) masterPlaylist = details.url
+        logD(masterPlaylist)
+        // detach listener now
+        session.defaultSession.webRequest.onBeforeRequest(null)
+        // The very first .m3u8 request will be the master playlist, we can remove the webRequest listener after that
+        // callback({}) // We don't need this because we only need to run once!
     })
 
-    setInterval(() => {
-        electron.net.request({url: "https://www.github.com"}).end()
-    }, 1000)
-
-    setTimeout(() => {
-        session.defaultSession.webRequest.onBeforeRequest({urls: ["*://*/*"]}, null)
-    }, 10_000)
+    // Must have autoplay, though most do
+    const streamUrl = "https://www.aljazeera.com/live/"
+    // Using an invisible window will simulate a visit
+    const invisibleWindow = new BrowserWindow({
+        show: false, width: 0, height: 0
+    })
+    invisibleWindow.loadURL(streamUrl)
+    invisibleWindow.webContents.setAudioMuted(true)
 }
 
 // Start Stream
