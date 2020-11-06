@@ -35,14 +35,20 @@ export class Settings {
                                    }: {
         dbPath?: string, initialOutputDir?: string, initialOffsetSeconds?: number
     }): Promise<void> {
-        this.settingsDatabase = new Datastore({
-            filename: dbPath,
-            autoload: true,
-            onload: async (error: Error | null) => {
-                try { this.outputDirectory = await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(initialOutputDir) }
-                try {this.offsetSeconds = await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(initialOffsetSeconds)}
-                this.isInitialized = true
-            }
+        return new Promise((resolve, reject) => {
+            this.settingsDatabase = new Datastore({
+                filename: dbPath,
+                autoload: true,
+                onload: async (error: Error | null) => {
+                    if (error) reject(error)
+                    else {
+                        try { this.outputDirectory = await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(initialOutputDir) }
+                        try {this.offsetSeconds = await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(initialOffsetSeconds)}
+                        this.isInitialized = true
+                        resolve()
+                    }
+                }
+            })
         })
     }
 
@@ -144,19 +150,25 @@ export class Streams {
     public static actualStreams: Array<Stream>
 
     public static async initialize({dbPath = getPath("database/streams.db")}: { dbPath?: string }): Promise<void> {
-        // Settings must be initialized first!
-        if (!Database.Settings.isInitialized) throw Error("Settings Database must be initialized before Streams Database!")
-        this.streamsDatabase = new Datastore({
-            filename: dbPath,
-            autoload: true,
-            onload: async (error: Error | null) => {
-                const outputDirectory: string = await Database.Settings.getOutputDirectory()
-                const offsetSeconds: number = await Database.Settings.getOffsetSeconds()
-                this.serializedStreams = await this.getAllSerializedStreams()
-                this.actualStreams = this.serializedStreams.map(it =>
-                    Stream.fromSerializedStream(it, outputDirectory, offsetSeconds))
-                this.isInitialized = true
-            }
+        return new Promise((resolve, reject) => {
+            // Settings must be initialized first!
+            if (!Database.Settings.isInitialized) throw Error("Settings Database must be initialized before Streams Database!")
+            this.streamsDatabase = new Datastore({
+                filename: dbPath,
+                autoload: true,
+                onload: async (error: Error | null) => {
+                    if (error) reject(error)
+                    else {
+                        const outputDirectory: string = await Database.Settings.getOutputDirectory()
+                        const offsetSeconds: number = await Database.Settings.getOffsetSeconds()
+                        this.serializedStreams = await this.getAllSerializedStreams()
+                        this.actualStreams = this.serializedStreams.map(it =>
+                            Stream.fromSerializedStream(it, outputDirectory, offsetSeconds))
+                        this.isInitialized = true
+                        resolve()
+                    }
+                }
+            })
         })
     }
 
@@ -238,10 +250,8 @@ export class Database {
     public static Streams = Streams
 
     public static async initialize() {
-        await promises(
-            Settings.initialize({}),
-            Streams.initialize({})
-        )
+        await Database.Settings.initialize({})
+        await Database.Streams.initialize({})
         this.isInitialized = true
     }
 }
