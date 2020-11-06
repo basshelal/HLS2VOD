@@ -1,7 +1,8 @@
 import Datastore from "nedb"
 import Nedb from "nedb"
-import {SerializedStream, Stream} from "./models/Stream"
+import {Stream} from "./models/Stream"
 import {getPath, promises} from "../shared/Utils"
+import {SerializedStream} from "../shared/Serialized"
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 
@@ -45,8 +46,6 @@ export class Settings {
         })
     }
 
-    // TODO: Make a function that returns an object instead of an array for easy querying
-    //  and another to accompany it that allows us to set/update all settings
     public static async getAllSettingsArray(): Promise<Array<SettingsEntry>> {
         return new Promise<Array<SettingsEntry>>((resolve, reject) => {
             this.settingsDatabase.find({}, (err: Error | null, documents: Array<SettingsEntry>) => {
@@ -56,15 +55,13 @@ export class Settings {
         })
     }
 
-    // TODO: Not yet final
     public static async getAllSettings(): Promise<AllSettings> {
         const settingsArray: Array<SettingsEntry> = await this.getAllSettingsArray()
         const foundOutputDir: SettingsEntry | undefined = settingsArray.find(it => it.key === "outputDirectory")
         const outputDir: string | undefined = foundOutputDir ? foundOutputDir.value : undefined
         const foundOffsetSeconds: SettingsEntry | undefined = settingsArray.find(it => it.key === "offsetSeconds")
         const offsetSeconds: number | undefined = foundOffsetSeconds ? Number.parseInt(foundOffsetSeconds.value) : undefined
-        const result: AllSettings = {outputDirectory: outputDir, offsetSeconds: offsetSeconds}
-        return result
+        return {outputDirectory: outputDir, offsetSeconds: offsetSeconds}
     }
 
     public static async updateSettings(settings: AllSettings): Promise<void> {
@@ -142,29 +139,37 @@ export class Streams {
 
     private static streamsDatabase: Nedb<SerializedStream>
 
-    public static isInitialized = false
-    public static streams: Array<SerializedStream>
+    public static isInitialized: boolean = false
+    public static serializedStreams: Array<SerializedStream>
+    public static actualStreams: Array<Stream>
 
     public static async initialize({dbPath = getPath("database/streams.db")}: { dbPath?: string }): Promise<void> {
+        // Settings must be initialized first!
+        if (!Database.Settings.isInitialized) throw Error("Settings Database must be initialized before Streams Database!")
         this.streamsDatabase = new Datastore({
             filename: dbPath,
             autoload: true,
             onload: async (error: Error | null) => {
-                this.streams = await this.getAllStreams()
+                const outputDirectory: string = await Database.Settings.getOutputDirectory()
+                const offsetSeconds: number = await Database.Settings.getOffsetSeconds()
+                this.serializedStreams = await this.getAllSerializedStreams()
+                this.actualStreams = this.serializedStreams.map(it =>
+                    Stream.fromSerializedStream(it, outputDirectory, offsetSeconds))
                 this.isInitialized = true
             }
         })
     }
 
     public static async addStream(stream: Stream): Promise<void> {
-        const streamEntry: SerializedStream = stream.toStreamEntry()
+        const streamEntry: SerializedStream = stream.serialize()
         return new Promise<void>((resolve, reject) =>
             this.streamsDatabase.update({name: stream.name}, streamEntry,
                 {upsert: true},
                 (err: Error | null) => {
                     if (err) reject(err)
                     else {
-                        this.streams.push(streamEntry)
+                        this.actualStreams.push(stream)
+                        this.serializedStreams.push(streamEntry)
                         resolve()
                     }
                 }
@@ -172,7 +177,7 @@ export class Streams {
         )
     }
 
-    public static async getAllStreams(): Promise<Array<SerializedStream>> {
+    public static async getAllSerializedStreams(): Promise<Array<SerializedStream>> {
         return new Promise<Array<SerializedStream>>((resolve, reject) =>
             this.streamsDatabase.find<SerializedStream>({}, (err: Error, documents: Array<SerializedStream>) => {
                 if (err) reject(err)
@@ -182,12 +187,13 @@ export class Streams {
     }
 
     public static async deleteStream(stream: Stream): Promise<void> {
-        const streamEntry: SerializedStream = stream.toStreamEntry()
+        const streamEntry: SerializedStream = stream.serialize()
         return new Promise<void>((resolve, reject) =>
             this.streamsDatabase.remove(streamEntry, (err: Error | null) => {
                 if (err) reject(err)
                 else {
-                    this.streams.remove(streamEntry)
+                    this.actualStreams.remove(stream)
+                    this.serializedStreams.remove(streamEntry)
                     resolve()
                 }
             })
@@ -195,20 +201,31 @@ export class Streams {
     }
 
     public static async updateStream(streamName: string, updatedStream: Stream): Promise<SerializedStream> {
-        const streamEntry: SerializedStream = updatedStream.toStreamEntry()
+        const streamEntry: SerializedStream = updatedStream.serialize()
         return new Promise<SerializedStream>((resolve, reject) =>
             this.streamsDatabase.update({name: streamName}, streamEntry,
                 {upsert: false, returnUpdatedDocs: true},
                 (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
                     else {
+                        const oldStream: Stream | undefined = this.getActualStreamByName(streamName)
+                        if (oldStream) this.actualStreams.update(oldStream, updatedStream)
                         const result: SerializedStream = affectedDocuments as SerializedStream
-                        this.streams.push(result)
+                        this.serializedStreams.update(result, streamEntry)
                         resolve(result)
                     }
                 }
             )
         )
+    }
+
+    public static async getSerializedStreamByName(streamName: string): Promise<SerializedStream | undefined> {
+        const allStreams: Array<SerializedStream> = await this.getAllSerializedStreams()
+        return allStreams.find(it => it.name === streamName)
+    }
+
+    public static getActualStreamByName(streamName: string): Stream | undefined {
+        return this.actualStreams.find(it => it.name === streamName)
     }
 }
 

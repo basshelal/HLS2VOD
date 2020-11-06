@@ -1,9 +1,10 @@
-import {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
-import {SerializedStream} from "./models/Stream"
+import electron, {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialogReturnValue} from "electron"
 import {AllSettings, Database} from "./Database"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"
 import {addStream} from "./Main"
+import {SerializedStream} from "../shared/Serialized"
+import {Stream} from "./models/Stream"
 
 export class RequestHandler {
     private constructor() {}
@@ -18,6 +19,11 @@ export class RequestHandler {
         this.browseSchedule()
         this.getAllSettings()
         this.updateSettings()
+        this.startStream()
+        this.pauseStream()
+        this.forceRecordStream()
+        this.unForceRecordStream()
+        this.viewStreamDir()
     }
 
     private static handle<T>(name: string, listener: (args: T, event: IpcMainInvokeEvent) => Promise<T> | any) {
@@ -26,7 +32,7 @@ export class RequestHandler {
 
     public static getAllStreams() {
         this.handle(Requests.GetStreams,
-            async (): Promise<Array<SerializedStream>> => await Database.Streams.getAllStreams())
+            async (): Promise<Array<SerializedStream>> => await Database.Streams.getAllSerializedStreams())
     }
 
     public static newStream() {
@@ -71,4 +77,60 @@ export class RequestHandler {
                 return await Database.Settings.updateSettings(allSettings)
             })
     }
+
+    public static startStream() {
+        this.handle(Requests.StartStream,
+            async (serializedStream: SerializedStream) => {
+                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+                if (found) {
+                    await found.start()
+                    return found.serialize()
+                } else return null
+            })
+    }
+
+    public static pauseStream() {
+        this.handle(Requests.PauseStream,
+            async (serializedStream: SerializedStream) => {
+                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+                if (found) {
+                    await found.pause()
+                    return found.serialize()
+                } else return null
+            })
+    }
+
+    public static forceRecordStream() {
+        this.handle(Requests.ForceRecordStream,
+            async (serializedStream: SerializedStream) => {
+                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+                if (found) {
+                    await found.forceRecord()
+                    return found.serialize()
+                } else return null
+            })
+    }
+
+    public static unForceRecordStream() {
+        this.handle(Requests.UnForceRecordStream,
+            async (serializedStream: SerializedStream) => {
+                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+                if (found) {
+                    await found.unForceRecord()
+                    return found.serialize()
+                } else return null
+            })
+    }
+
+    public static viewStreamDir() {
+        this.handle(Requests.ViewStreamDir,
+            async (serializedStream: SerializedStream) => {
+                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+                if (found) {
+                    electron.shell.openItem(found.streamDirectory)
+                    return found.serialize()
+                } else return null
+            })
+    }
+
 }

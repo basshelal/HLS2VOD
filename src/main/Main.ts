@@ -1,12 +1,11 @@
 import * as electron from "electron"
 import {BrowserWindow, IpcMainInvokeEvent, session} from "electron"
-import {SerializedStream, Stream} from "./models/Stream"
+import {Stream} from "./models/Stream"
 import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
 import Extensions from "../shared/Extensions"
-import {Requests} from "../shared/Requests"
 import {getPath} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {RequestHandler} from "./RequestHandler"
@@ -19,7 +18,7 @@ let streams: Array<Stream> = []
 
 function findStream(name: string): Stream | undefined { return streams.find(it => it.name === name) }
 
-let browserWindow: BrowserWindow
+let mainWindow: BrowserWindow
 electron.app.allowRendererProcessReuse = true
 electron.app.whenReady().then(onAppReady)
 
@@ -46,7 +45,7 @@ export async function addStream(name: string, playlistUrl: string, schedulePath?
 }
 
 async function onAppReady(): Promise<void> {
-    browserWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         center: true,
         width: 1200,
         height: 900,
@@ -55,15 +54,15 @@ async function onAppReady(): Promise<void> {
             nodeIntegration: true
         }
     })
-    RequestHandler.browserWindow = browserWindow
+    RequestHandler.browserWindow = mainWindow
     RequestHandler.initializeMainHandles()
 
     if (isDevEnv()) {
         installExtension(REACT_DEVELOPER_TOOLS)
         installExtension(REDUX_DEVTOOLS)
-        browserWindow.loadURL("http://localhost:4000")
+        mainWindow.loadURL("http://localhost:4000")
     } else {
-        browserWindow.loadURL(url.format({
+        mainWindow.loadURL(url.format({
                 pathname: path.join(__dirname, "renderer/index.html"),
                 protocol: "file:",
                 slashes: true
@@ -72,17 +71,17 @@ async function onAppReady(): Promise<void> {
     }
 
     await Database.initialize()
-    const dbStreamEntries = await Database.Streams.getAllStreams()
+    const dbStreamEntries = await Database.Streams.getAllSerializedStreams()
     streams = await Promise.all(dbStreamEntries.map(async (streamEntry) => await Stream.fromSerializedStream(streamEntry)))
 
     // Default settings
     await Database.Settings.setOutputDirectory(getPath("./Streams"))
     await Database.Settings.setOffsetSeconds(120)
 
-    browserWindow.once("close", async (event: Electron.Event) => {
+    mainWindow.once("close", async (event: Electron.Event) => {
         event.preventDefault()
         // Finalization code here
-        browserWindow.close()
+        mainWindow.close()
         electron.app.quit()
     })
 }
@@ -114,48 +113,3 @@ function testWebRequest() {
     invisibleWindow.loadURL(streamUrl)
     invisibleWindow.webContents.setAudioMuted(true)
 }
-
-// Start Stream
-handleFromBrowser<SerializedStream>(Requests.StartStream, async (event, streamEntry: SerializedStream) => {
-    const found = findStream(streamEntry.name)
-    if (found) {
-        await found.start()
-        return found.toStreamEntry()
-    } else return null
-})
-
-// Pause Stream
-handleFromBrowser<SerializedStream>(Requests.PauseStream, async (event, streamEntry: SerializedStream) => {
-    const found = findStream(streamEntry.name)
-    if (found) {
-        await found.pause()
-        return found.toStreamEntry()
-    } else return null
-})
-
-// Force Record Stream
-handleFromBrowser<SerializedStream>(Requests.ForceRecordStream, async (event, streamEntry: SerializedStream) => {
-    const found = findStream(streamEntry.name)
-    if (found) {
-        await found.forceRecord()
-        return found.toStreamEntry()
-    } else return null
-})
-
-// UnForce Record Stream
-handleFromBrowser<SerializedStream>(Requests.UnForceRecordStream, async (event, streamEntry: SerializedStream) => {
-    const found = findStream(streamEntry.name)
-    if (found) {
-        await found.unForceRecord()
-        return found.toStreamEntry()
-    } else return null
-})
-
-// View Stream Dir
-handleFromBrowser<SerializedStream>(Requests.ViewStreamDir, async (event, streamEntry: SerializedStream) => {
-    const found = findStream(streamEntry.name)
-    if (found) {
-        electron.shell.openItem(found.streamDirectory)
-        return found.toStreamEntry()
-    } else return null
-})

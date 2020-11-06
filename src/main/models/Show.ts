@@ -1,14 +1,6 @@
 import moment, {duration, Duration, Moment} from "moment"
 import {json, momentFormat} from "../../shared/Utils"
-import {Serializable} from "../../shared/Serializable"
-
-export interface SerializedShow {
-    name: string
-    startTime: number
-    offsetStartTime: number
-    endTime: number
-    offsetEndTime: number
-}
+import {Serializable, SerializedShow} from "../../shared/Serialized"
 
 export class Show
     implements Serializable<SerializedShow> {

@@ -41,6 +41,8 @@ declare global {
         shiftRight(fromIndex: number, byAmount: number): Array<T>
 
         addAt(index: number, element: T): Array<T>
+
+        update(oldElement: T, newElement: T): Array<T>
     }
 
     interface ArrayConstructor {
@@ -200,6 +202,11 @@ function _array() {
     protoExtension(Array, "addAt", function <T>(this: Array<T>, index: number, element: T): Array<T> {
         this.shiftRight(index, 1)
         this[index] = element
+        return this
+    })
+    protoExtension(Array, "update", function <T>(this: Array<T>, oldElement: T, newElement: T): Array<T> {
+        const index: number = this.indexOf(oldElement)
+        if (index >= 0) this[index] = newElement
         return this
     })
 }

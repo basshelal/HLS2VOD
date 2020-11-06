@@ -1,19 +1,10 @@
 import {fileMoment, timer} from "../../shared/Utils"
 import * as path from "path"
 import {mkdirpSync} from "fs-extra"
-import {SerializedShow, Show} from "./Show"
+import {Show} from "./Show"
 import {TimeOut} from "../../shared/Types"
 import {StreamDownloader} from "../downloader/StreamDownloader"
-import {Serializable} from "../../shared/Serializable"
-
-export interface SerializedStream {
-    name: string
-    url: string
-    state: StreamState
-    scheduledShows: Array<SerializedShow>
-    isForced: boolean
-    streamDirectory: string
-}
+import {Serializable, SerializedShow, SerializedStream} from "../../shared/Serialized"
 
 export type StreamState =
 /** Actively downloading segments */
@@ -153,8 +144,8 @@ export class Stream
         }
     }
 
-    public static async fromSerializedStream(serializedStream: SerializedStream,
-                                             outputDirectory: string, offsetSeconds: number): Promise<Stream> {
+    public static fromSerializedStream(serializedStream: SerializedStream,
+                                       outputDirectory: string, offsetSeconds: number): Stream {
         return new Stream({
             name: serializedStream.name,
             url: serializedStream.url,
