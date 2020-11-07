@@ -54,8 +54,7 @@ async function onAppReady(): Promise<void> {
             nodeIntegration: true
         }
     })
-    RequestHandler.browserWindow = mainWindow
-    RequestHandler.initializeMainHandles()
+    RequestHandler.initialize({browserWindow: mainWindow})
 
     if (isDevEnv()) {
         installExtension(REACT_DEVELOPER_TOOLS)
@@ -83,6 +82,7 @@ async function onAppReady(): Promise<void> {
         // Finalization code here
         mainWindow.close()
         electron.app.quit()
+        process.exit(0)
     })
 }
 

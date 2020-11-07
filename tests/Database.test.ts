@@ -1,36 +1,54 @@
-import Extensions from "../src/shared/Extensions"
-import {Database, SettingsEntry} from "../src/main/Database"
-import {destroyDatabase, initializeDatabase, outputDir} from "./TestUtils"
-import {delay} from "../src/shared/Utils"
+import {defaultAfterAll, defaultBeforeAll} from "./TestUtils"
+import {AllSettings, Database} from "../src/main/Database"
 
-beforeAll(async () => {
-    Extensions()
-    await initializeDatabase()
-    await delay(1000)
-    Database.isInitialized = true
-})
+beforeAll(defaultBeforeAll)
 
-afterAll(async () => {
-    await destroyDatabase()
+afterAll(defaultAfterAll)
+
+test("Databases Initialized", async () => {
+    expect(Database.Settings.isInitialized).toBeTruthy()
+    expect(Database.Streams.isInitialized).toBeTruthy()
+    expect(Database.isInitialized).toBeTruthy()
+    expect(await Database.Settings.getOutputDirectory()).toBeDefined()
+    expect(await Database.Settings.getOffsetSeconds()).toBeDefined()
+    expect(await Database.Streams.serializedStreams).toBeDefined()
+    expect(await Database.Streams.actualStreams).toBeDefined()
 })
 
 test("Get All Settings", async () => {
-
-    const allSettings: Array<SettingsEntry> = await Database.Settings.getAllSettingsArray()
-    expect(allSettings).not.toEqual([])
-    const output = allSettings.find(it => it.key === "outputDirectory")!!.value
-    expect(output).toBeDefined()
-    expect(output).toEqual(outputDir)
-    const offset = allSettings.find(it => it.key === "offsetSeconds")!!.value
-    expect(offset).toBeDefined()
-    expect(offset).toEqual(60)
-
+    const allSettings: AllSettings = await Database.Settings.getAllSettings()
+    expect(allSettings.outputDirectory).toBeDefined()
+    expect(allSettings.offsetSeconds).toBeDefined()
 })
 
-test("Get and Set Output Directory", () => {
-
+test("Update Settings", async () => {
+    const offsetSeconds: number = 69
+    const outputDirectory: string = "MyOutputDir"
+    const updatedSettings: AllSettings = {offsetSeconds: 69, outputDirectory: "MyOutputDir"}
+    await Database.Settings.updateSettings(updatedSettings)
+    const allSettings: AllSettings = await Database.Settings.getAllSettings()
+    expect(allSettings.outputDirectory).toEqual(outputDirectory)
+    expect(allSettings.offsetSeconds).toEqual(offsetSeconds)
 })
 
-test("Get and Set Offset Seconds", () => {
-
+test("Get and Set Output Directory", async () => {
+    const initialOutputDir: string = await Database.Settings.getOutputDirectory()
+    expect(initialOutputDir).toBeDefined()
+    const newOutputDir: string = "newOutputDir"
+    await Database.Settings.setOutputDirectory(newOutputDir)
+    const updatedOutputDir: string = await Database.Settings.getOutputDirectory()
+    expect(updatedOutputDir).toBeDefined()
+    expect(updatedOutputDir).toEqual(newOutputDir)
 })
+
+test("Get and Set Offset Seconds", async () => {
+    const initialOffsetSeconds: number = await Database.Settings.getOffsetSeconds()
+    expect(initialOffsetSeconds).toBeDefined()
+    const newOffsetSeconds: number = 420
+    await Database.Settings.setOffsetSeconds(newOffsetSeconds)
+    const updatedOffsetSeconds: number = await Database.Settings.getOffsetSeconds()
+    expect(updatedOffsetSeconds).toBeDefined()
+    expect(updatedOffsetSeconds).toEqual(newOffsetSeconds)
+})
+
+test()

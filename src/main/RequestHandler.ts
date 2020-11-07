@@ -12,8 +12,10 @@ export class RequestHandler {
     public static browserWindow: BrowserWindow
 
     /** Initialize and set all handles for main, ie events from renderer to be handled by main */
-    public static initializeMainHandles() {
+    public static initialize({browserWindow}: { browserWindow: BrowserWindow }) {
+        this.browserWindow = browserWindow
         this.getAllStreams()
+        // this.handle(Requests.GetStreams, this._getAllStreams.bind(this))
         this.newStream()
         this.browseOutputDir()
         this.browseSchedule()
@@ -26,13 +28,17 @@ export class RequestHandler {
         this.viewStreamDir()
     }
 
-    private static handle<T>(name: string, listener: (args: T, event: IpcMainInvokeEvent) => Promise<T> | any) {
+    private static handle<T, R>(name: string, listener: (args: T, event: IpcMainInvokeEvent) => Promise<R> | R) {
         ipcMain.handle(name, (event, args) => listener(args, event))
     }
 
     public static getAllStreams() {
         this.handle(Requests.GetStreams,
             async (): Promise<Array<SerializedStream>> => await Database.Streams.getAllSerializedStreams())
+    }
+
+    public static async _getAllStreams(): Promise<Array<SerializedStream>> {
+        return await Database.Streams.getAllSerializedStreams()
     }
 
     public static newStream() {
@@ -85,7 +91,7 @@ export class RequestHandler {
                 if (found) {
                     await found.start()
                     return found.serialize()
-                } else return null
+                } else return undefined
             })
     }
 
@@ -96,7 +102,7 @@ export class RequestHandler {
                 if (found) {
                     await found.pause()
                     return found.serialize()
-                } else return null
+                } else return undefined
             })
     }
 
@@ -107,7 +113,7 @@ export class RequestHandler {
                 if (found) {
                     await found.forceRecord()
                     return found.serialize()
-                } else return null
+                } else return undefined
             })
     }
 
@@ -118,7 +124,7 @@ export class RequestHandler {
                 if (found) {
                     await found.unForceRecord()
                     return found.serialize()
-                } else return null
+                } else return undefined
             })
     }
 
@@ -129,7 +135,7 @@ export class RequestHandler {
                 if (found) {
                     electron.shell.openItem(found.streamDirectory)
                     return found.serialize()
-                } else return null
+                } else return undefined
             })
     }
 

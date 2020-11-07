@@ -25,15 +25,13 @@ export class Settings {
     private static settingsDatabase: Nedb<SettingsEntry>
 
     public static isInitialized: boolean = false
-    public static outputDirectory: string
-    public static offsetSeconds: number
 
     public static async initialize({
                                        dbPath = getPath("database/settings.db"),
-                                       initialOutputDir = getPath("streams"),
-                                       initialOffsetSeconds = 60
+                                       defaultOutputDir = getPath("streams"),
+                                       defaultOffsetSeconds = 60
                                    }: {
-        dbPath?: string, initialOutputDir?: string, initialOffsetSeconds?: number
+        dbPath?: string, defaultOutputDir?: string, defaultOffsetSeconds?: number
     }): Promise<void> {
         return new Promise((resolve, reject) => {
             this.settingsDatabase = new Datastore({
@@ -42,8 +40,8 @@ export class Settings {
                 onload: async (error: Error | null) => {
                     if (error) reject(error)
                     else {
-                        try { this.outputDirectory = await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(initialOutputDir) }
-                        try {this.offsetSeconds = await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(initialOffsetSeconds)}
+                        try { await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(defaultOutputDir) }
+                        try { await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(defaultOffsetSeconds) }
                         this.isInitialized = true
                         resolve()
                     }
@@ -88,7 +86,6 @@ export class Settings {
                     if (err) reject(err)
                     else {
                         const result: string = (affectedDocuments as SettingsEntry<string>).value
-                        this.outputDirectory = result
                         resolve(result)
                     }
                 }))
@@ -119,7 +116,6 @@ export class Settings {
                     if (err) reject(err)
                     else {
                         const result: number = Number.parseInt((affectedDocuments as SettingsEntry).value)
-                        this.offsetSeconds = result
                         resolve(result)
                     }
                 }))
