@@ -14,129 +14,92 @@ export class RequestHandler {
     /** Initialize and set all handles for main, ie events from renderer to be handled by main */
     public static initialize({browserWindow}: { browserWindow: BrowserWindow }) {
         this.browserWindow = browserWindow
-        this.getAllStreams()
-        // this.handle(Requests.GetStreams, this._getAllStreams.bind(this))
-        this.newStream()
-        this.browseOutputDir()
-        this.browseSchedule()
-        this.getAllSettings()
-        this.updateSettings()
-        this.startStream()
-        this.pauseStream()
-        this.forceRecordStream()
-        this.unForceRecordStream()
-        this.viewStreamDir()
+        this.handle(Requests.GetStreams, this.getAllStreams.bind(this))
+        this.handle(Requests.NewStream, this.newStream.bind(this))
+        this.handle(Requests.BrowseOutputDir, this.browseOutputDir.bind(this))
+        this.handle(Requests.BrowseSchedule, this.browseSchedule.bind(this))
+        this.handle(Requests.GetSettings, this.getAllSettings.bind(this))
+        this.handle(Requests.UpdateSettings, this.updateSettings.bind(this))
+        this.handle(Requests.StartStream, this.startStream.bind(this))
+        this.handle(Requests.PauseStream, this.pauseStream.bind(this))
+        this.handle(Requests.ForceRecordStream, this.forceRecordStream.bind(this))
+        this.handle(Requests.UnForceRecordStream, this.unForceRecordStream.bind(this))
+        this.handle(Requests.ViewStreamDir, this.viewStreamDir.bind(this))
     }
 
     private static handle<T, R>(name: string, listener: (args: T, event: IpcMainInvokeEvent) => Promise<R> | R) {
         ipcMain.handle(name, (event, args) => listener(args, event))
     }
 
-    public static getAllStreams() {
-        this.handle(Requests.GetStreams,
-            async (): Promise<Array<SerializedStream>> => await Database.Streams.getAllSerializedStreams())
-    }
-
-    public static async _getAllStreams(): Promise<Array<SerializedStream>> {
+    public static async getAllStreams(): Promise<Array<SerializedStream>> {
         return await Database.Streams.getAllSerializedStreams()
     }
 
-    public static newStream() {
-        this.handle(Requests.NewStream,
-            async (streamEntry: DialogStreamEntry): Promise<boolean> => {
-                const schedulePath: string | undefined = streamEntry.schedulePath === "" ? undefined : streamEntry.schedulePath
-                await addStream(streamEntry.streamName, streamEntry.playlistUrl, schedulePath)
-                return true
-            })
+    public static async newStream(streamEntry: DialogStreamEntry): Promise<boolean> {
+        const schedulePath: string | undefined = streamEntry.schedulePath === "" ? undefined : streamEntry.schedulePath
+        await addStream(streamEntry.streamName, streamEntry.playlistUrl, schedulePath)
+        return true
     }
 
-    public static browseOutputDir() {
-        this.handle(Requests.BrowseOutputDir,
-            async (): Promise<string | undefined> => {
-                const pickerResult: OpenDialogReturnValue = await dialog.showOpenDialog(
-                    this.browserWindow, {properties: ["openDirectory"]}
-                )
-                if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
-                else return pickerResult.filePaths.first()
-            })
+    public static async browseOutputDir(): Promise<string | undefined> {
+        const pickerResult: OpenDialogReturnValue = await dialog.showOpenDialog(
+            this.browserWindow, {properties: ["openDirectory"]})
+        if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
+        else return pickerResult.filePaths.first()
     }
 
-    public static browseSchedule() {
-        this.handle(Requests.BrowseSchedule,
-            async (): Promise<string | undefined> => {
-                const pickerResult = await dialog.showOpenDialog(this.browserWindow, {properties: ["openFile"]})
-                if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
-                else return pickerResult.filePaths[0]
-            })
+    public static async browseSchedule(): Promise<string | undefined> {
+        const pickerResult = await dialog.showOpenDialog(this.browserWindow, {properties: ["openFile"]})
+        if (pickerResult.canceled || !pickerResult.filePaths || pickerResult.filePaths.length === 0) return undefined
+        else return pickerResult.filePaths[0]
     }
 
-    public static getAllSettings() {
-        this.handle(Requests.GetSettings,
-            async (): Promise<AllSettings> => {
-                return await Database.Settings.getAllSettings()
-            })
+    public static async getAllSettings(): Promise<AllSettings> {
+        return await Database.Settings.getAllSettings()
     }
 
-    public static updateSettings() {
-        this.handle(Requests.UpdateSettings,
-            async (allSettings: AllSettings): Promise<void> => {
-                return await Database.Settings.updateSettings(allSettings)
-            })
+    public static async updateSettings(allSettings: AllSettings): Promise<void> {
+        return await Database.Settings.updateSettings(allSettings)
     }
 
-    public static startStream() {
-        this.handle(Requests.StartStream,
-            async (serializedStream: SerializedStream) => {
-                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
-                if (found) {
-                    await found.start()
-                    return found.serialize()
-                } else return undefined
-            })
+    public static async startStream(serializedStream: SerializedStream): Promise<SerializedStream | undefined> {
+        const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+        if (found) {
+            await found.start()
+            return found.serialize()
+        } else return undefined
     }
 
-    public static pauseStream() {
-        this.handle(Requests.PauseStream,
-            async (serializedStream: SerializedStream) => {
-                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
-                if (found) {
-                    await found.pause()
-                    return found.serialize()
-                } else return undefined
-            })
+    public static async pauseStream(serializedStream: SerializedStream): Promise<SerializedStream | undefined> {
+        const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+        if (found) {
+            await found.pause()
+            return found.serialize()
+        } else return undefined
     }
 
-    public static forceRecordStream() {
-        this.handle(Requests.ForceRecordStream,
-            async (serializedStream: SerializedStream) => {
-                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
-                if (found) {
-                    await found.forceRecord()
-                    return found.serialize()
-                } else return undefined
-            })
+    public static async forceRecordStream(serializedStream: SerializedStream): Promise<SerializedStream | undefined> {
+        const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+        if (found) {
+            await found.forceRecord()
+            return found.serialize()
+        } else return undefined
     }
 
-    public static unForceRecordStream() {
-        this.handle(Requests.UnForceRecordStream,
-            async (serializedStream: SerializedStream) => {
-                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
-                if (found) {
-                    await found.unForceRecord()
-                    return found.serialize()
-                } else return undefined
-            })
+    public static async unForceRecordStream(serializedStream: SerializedStream): Promise<SerializedStream | undefined> {
+        const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+        if (found) {
+            await found.unForceRecord()
+            return found.serialize()
+        } else return undefined
     }
 
-    public static viewStreamDir() {
-        this.handle(Requests.ViewStreamDir,
-            async (serializedStream: SerializedStream) => {
-                const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
-                if (found) {
-                    electron.shell.openItem(found.streamDirectory)
-                    return found.serialize()
-                } else return undefined
-            })
+    public static async viewStreamDir(serializedStream: SerializedStream): Promise<SerializedStream | undefined> {
+        const found: Stream | undefined = Database.Streams.getActualStreamByName(serializedStream.name)
+        if (found) {
+            electron.shell.openItem(found.streamDirectory)
+            return found.serialize()
+        } else return undefined
     }
 
 }
