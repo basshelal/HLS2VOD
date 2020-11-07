@@ -2,7 +2,7 @@ import {delay, getPath, removeAllSync} from "../src/shared/Utils"
 import {Database} from "../src/main/Database"
 import path from "path"
 import {mkdirpSync} from "fs-extra"
-import Extensions from "../src/shared/Extensions"
+import {loadExtensions} from "../src/shared/Extensions"
 
 export const databaseDir = getPath("tests/database")
 export const outputDir = getPath("tests/streams")
@@ -22,7 +22,7 @@ export async function initializeDatabase() {
 }
 
 export async function defaultBeforeAll() {
-    Extensions()
+    loadExtensions()
     await initializeDatabase()
     await delay(1000)
     Database.isInitialized = true

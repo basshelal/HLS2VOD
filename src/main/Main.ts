@@ -5,14 +5,14 @@ import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
 import url from "url"
-import Extensions from "../shared/Extensions"
 import {getPath} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {RequestHandler} from "./RequestHandler"
 import {Show} from "./models/Show"
 import {Schedule} from "./models/Schedule"
+import {loadExtensions} from "../shared/Extensions"
 
-Extensions()
+loadExtensions()
 
 let streams: Array<Stream> = []
 

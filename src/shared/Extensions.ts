@@ -43,6 +43,8 @@ declare global {
         addAt(index: number, element: T): Array<T>
 
         update(oldElement: T, newElement: T): Array<T>
+
+        clear(): Array<T>
     }
 
     interface ArrayConstructor {
@@ -209,6 +211,10 @@ function _array() {
         if (index >= 0) this[index] = newElement
         return this
     })
+    protoExtension(Array, "clear", function <T>(this: Array<T>): Array<T> {
+        this.splice(0)
+        return this
+    })
 }
 
 function _map() {
@@ -306,7 +312,7 @@ function _number() {
         })
 }
 
-export default function () {
+export function loadExtensions() {
     _array()
     _map()
     _set()

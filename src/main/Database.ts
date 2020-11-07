@@ -3,6 +3,9 @@ import Nedb from "nedb"
 import {Stream} from "./models/Stream"
 import {getPath, promises} from "../shared/Utils"
 import {SerializedStream} from "../shared/Serialized"
+import {loadExtensions} from "../shared/Extensions"
+
+loadExtensions()
 
 export type SettingsEntryKey = "outputDirectory" | "offsetSeconds"
 
@@ -142,7 +145,6 @@ export class Streams {
     private static streamsDatabase: Nedb<SerializedStream>
 
     public static isInitialized: boolean = false
-    public static serializedStreams: Array<SerializedStream>
     public static actualStreams: Array<Stream>
 
     public static async initialize({dbPath = getPath("database/streams.db")}: { dbPath?: string }): Promise<void> {
@@ -157,8 +159,8 @@ export class Streams {
                     else {
                         const outputDirectory: string = await Database.Settings.getOutputDirectory()
                         const offsetSeconds: number = await Database.Settings.getOffsetSeconds()
-                        this.serializedStreams = await this.getAllSerializedStreams()
-                        this.actualStreams = this.serializedStreams.map(it =>
+                        const serializedStreams: Array<SerializedStream> = await this.getAllSerializedStreams()
+                        this.actualStreams = serializedStreams.map(it =>
                             Stream.fromSerializedStream(it, outputDirectory, offsetSeconds))
                         this.isInitialized = true
                         resolve()
@@ -177,7 +179,6 @@ export class Streams {
                     if (err) reject(err)
                     else {
                         this.actualStreams.push(stream)
-                        this.serializedStreams.push(streamEntry)
                         resolve()
                     }
                 }
@@ -187,25 +188,32 @@ export class Streams {
 
     public static async getAllSerializedStreams(): Promise<Array<SerializedStream>> {
         return new Promise<Array<SerializedStream>>((resolve, reject) =>
-            this.streamsDatabase.find<SerializedStream>({}, (err: Error, documents: Array<SerializedStream>) => {
+            this.streamsDatabase.find<SerializedStream>({}, (err: Error | null, documents: Array<SerializedStream>) => {
                 if (err) reject(err)
-                else resolve(documents)
+                else {
+                    documents.onEach((it: SerializedStream) => {
+                        //@ts-ignore
+                        if (it["_id"]) delete it["_id"]
+                    })
+                    resolve(documents)
+                }
             })
         )
     }
 
-    public static async deleteStream(stream: Stream): Promise<void> {
-        const streamEntry: SerializedStream = stream.serialize()
-        return new Promise<void>((resolve, reject) =>
-            this.streamsDatabase.remove(streamEntry, (err: Error | null) => {
-                if (err) reject(err)
-                else {
-                    this.actualStreams.remove(stream)
-                    this.serializedStreams.remove(streamEntry)
-                    resolve()
-                }
-            })
-        )
+    public static async deleteStream(streamName: string): Promise<void> {
+        const serializedStream: SerializedStream | undefined = await this.getSerializedStreamByName(streamName)
+        const actualStream: Stream | undefined = await this.getActualStreamByName(streamName)
+        if (serializedStream)
+            return new Promise<void>((resolve, reject) =>
+                this.streamsDatabase.remove(serializedStream, (err: Error | null) => {
+                    if (err) reject(err)
+                    else {
+                        if (actualStream) this.actualStreams.remove(actualStream)
+                        resolve()
+                    }
+                })
+            )
     }
 
     public static async updateStream(streamName: string, updatedStream: Stream): Promise<SerializedStream> {
@@ -219,7 +227,6 @@ export class Streams {
                         const oldStream: Stream | undefined = this.getActualStreamByName(streamName)
                         if (oldStream) this.actualStreams.update(oldStream, updatedStream)
                         const result: SerializedStream = affectedDocuments as SerializedStream
-                        this.serializedStreams.update(result, streamEntry)
                         resolve(result)
                     }
                 }
