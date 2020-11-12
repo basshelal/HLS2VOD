@@ -32,7 +32,7 @@ export class StreamList extends Component<StreamListProps, StreamListState> {
         return (
             <Container>
                 {this.state.streamEntries.map((streamEntry: SerializedStream, index: number) => {
-                    return <StreamCardView streamEntry={streamEntry} key={streamEntry.name}/>
+                    return <StreamCardView serializedStream={streamEntry} key={streamEntry.name}/>
                 })}
             </Container>
         )

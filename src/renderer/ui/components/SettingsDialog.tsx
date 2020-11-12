@@ -13,12 +13,12 @@ interface SettingsDialogProps extends DialogProps {
     onSaveSettings?: () => void
 }
 
-export interface SettingsData {
+export interface SettingsDialogState {
     offsetSeconds: number
     outputDir: string
 }
 
-export class SettingsDialog extends Component<SettingsDialogProps, SettingsData> {
+export class SettingsDialog extends Component<SettingsDialogProps, SettingsDialogState> {
 
     constructor(props: SettingsDialogProps) {
         super(props)
@@ -26,7 +26,7 @@ export class SettingsDialog extends Component<SettingsDialogProps, SettingsData>
         this.browseOutputDir = this.browseOutputDir.bind(this)
         this.validateSettings = this.validateSettings.bind(this)
         this.onSubmit = this.onSubmit.bind(this)
-        this.state = {offsetSeconds: 0, outputDir: ""}
+        this.state = {offsetSeconds: -1, outputDir: ""}
         this.fetchSettings()
     }
 

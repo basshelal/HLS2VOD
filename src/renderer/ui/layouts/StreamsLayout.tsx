@@ -8,10 +8,6 @@ import {sendToMain} from "../UICommons"
 import {Requests} from "../../../shared/Requests"
 import {SettingsEntry} from "../../../main/Database"
 
-export interface StreamsLayoutProps {
-
-}
-
 function saveSettings(settings: Array<SettingsEntry>): Promise<Array<SettingsEntry>> {
     return sendToMain(Requests.UpdateSettings, settings)
 }

@@ -2,11 +2,6 @@ import React, {Component} from "react"
 import {Button} from "@material-ui/core"
 import {SettingsDialog} from "./SettingsDialog"
 
-export interface SettingsData {
-    offsetSeconds: number
-    outputDir: string
-}
-
 interface SettingsButtonState {
     isDialogOpen: boolean
 }
