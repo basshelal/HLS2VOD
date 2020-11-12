@@ -1,4 +1,4 @@
-import React, {FC, PropsWithChildren} from "react"
+import React, {Component, ReactNode} from "react"
 import {Typography} from "@material-ui/core"
 import Container from "@material-ui/core/Container"
 import {StreamList} from "../components/StreamList"
@@ -16,13 +16,20 @@ function saveSettings(settings: Array<SettingsEntry>): Promise<Array<SettingsEnt
     return sendToMain(Requests.UpdateSettings, settings)
 }
 
-export const StreamsLayout: FC = (props: PropsWithChildren<StreamsLayoutProps>) => {
-    return (
-        <Container style={{alignItems: "center"}}>
-            <Typography style={{color: "black"}} variant="h4">All Streams</Typography>
-            <SettingsButton/>
-            <StreamList/>
-            <AddStreamButton/>
-        </Container>
-    )
+export class StreamsLayout extends Component<{}, {}> {
+
+    constructor(props: {}) {
+        super(props)
+    }
+
+    public render(): ReactNode {
+        return (
+            <Container style={{alignItems: "center"}}>
+                <Typography style={{color: "black"}} variant="h4">All Streams</Typography>
+                <SettingsButton/>
+                <StreamList/>
+                <AddStreamButton/>
+            </Container>
+        )
+    }
 }

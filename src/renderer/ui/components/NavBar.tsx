@@ -1,4 +1,4 @@
-import React, {FC, PropsWithChildren, ReactElement, useState} from "react"
+import React, {FC, PropsWithChildren, useState} from "react"
 import clsx from "clsx"
 import {createStyles, makeStyles, Theme, useTheme} from "@material-ui/core/styles"
 import Drawer from "@material-ui/core/Drawer"
@@ -21,7 +21,6 @@ import {AppName} from "../UICommons"
 import createPalette from "@material-ui/core/styles/createPalette"
 
 const drawerWidth: number = 240
-const navigationItems: Array<string> = ["Streams", "Settings", "About"]
 
 function styles(): ClassNameMap {
     return makeStyles((theme: Theme) =>
@@ -84,17 +83,7 @@ function styles(): ClassNameMap {
     )()
 }
 
-function resolveIcon(text: string): ReactElement {
-    if (text === "Streams") return <ViewStream/>
-    if (text === "Settings") return <Settings/>
-    if (text === "About") return <Info/>
-}
-
-interface NavBarProps {
-
-}
-
-export const NavBar: FC = (props?: PropsWithChildren<NavBarProps>) => {
+export const NavBar: FC = (props: PropsWithChildren<{}>) => {
     const classes = styles()
     const theme = useTheme()
     theme.palette = createPalette({primary: {main: "#880E4F"}})
@@ -128,12 +117,20 @@ export const NavBar: FC = (props?: PropsWithChildren<NavBarProps>) => {
                     </IconButton>
                 </div>
                 <Divider/>
-                <List>{navigationItems.map((text: string, index: number) => (
-                    <ListItem button key={text}>
-                        <ListItemIcon>{resolveIcon(text)}</ListItemIcon>
-                        <ListItemText primary={text}/>
+                <List>
+                    <ListItem button key="Streams">
+                        <ListItemIcon><ViewStream/></ListItemIcon>
+                        <ListItemText primary="Streams"/>
                     </ListItem>
-                ))}</List>
+                    <ListItem button key="Settings">
+                        <ListItemIcon><Settings/></ListItemIcon>
+                        <ListItemText primary="Settings"/>
+                    </ListItem>
+                    <ListItem button key="About">
+                        <ListItemIcon><Info/></ListItemIcon>
+                        <ListItemText primary="About"/>
+                    </ListItem>
+                </List>
             </Drawer>
             <main className={clsx(classes.content, {[classes.contentShift]: open})}>
                 <div className={classes.drawerHeader}/>
