@@ -5,6 +5,7 @@ import {Show} from "./Show"
 import {TimeOut} from "../../shared/Types"
 import {StreamDownloader} from "../downloader/StreamDownloader"
 import {Serializable, SerializedShow, SerializedStream} from "../../shared/Serialized"
+import {AllSettings} from "../Database"
 
 export type StreamState =
 /** Actively downloading segments */
@@ -18,22 +19,22 @@ export class Stream
     implements Serializable<SerializedStream> {
 
     /** Name of stream, must be unique so can be used as identifier */
-    public name: string
+    public name: string // @Serialized
 
     /** Url of m3u8 playlist, this is used by {@link downloaders} */
-    public url: string
+    public url: string // @Serialized
 
     /** The list of shows that have a scheduled time, see {@link Show} */
-    public scheduledShows: Array<Show>
+    public scheduledShows: Array<Show> // @Serialized
 
     /** Has the user forced to record even when no shows active? */
-    public isForced: boolean
-
-    /** The special {@link StreamDownloader} used when {@link isForced} is true */
-    public forcedDownloader: StreamDownloader | undefined
+    public isForced: boolean // @Serialized
 
     /** Current state of Stream, see {@link StreamState} */
-    public state: StreamState
+    public state: StreamState // @Serialized
+
+    /** Directory where this stream will be downloaded */
+    public streamDirectory: string // @Serialized
 
     /** The {@link TimeOut} that manages the active shows and downloaders in {@link downloaders} */
     public activeShowManager: TimeOut
@@ -41,32 +42,32 @@ export class Stream
     /** Milliseconds used for {@link activeShowManager}*/
     public mainTimerIntervalMs: number
 
-    /** Directory where this stream will be downloaded */
-    public streamDirectory: string
-
     /** Keeps track of active shows and their {@link StreamDownloader} */
     public downloaders: Map<string, StreamDownloader>
 
-    public constructor({name, url, scheduledShows, offsetSeconds, outputDirectory}: {
+    /** The special {@link StreamDownloader} used when {@link isForced} is true */
+    public forcedDownloader: StreamDownloader | undefined
+
+    public constructor({name, url, scheduledShows, allSettings}: {
         name: string
         url: string
         scheduledShows: Array<Show>
-        offsetSeconds: number
-        outputDirectory: string
+        allSettings: AllSettings
     }) {
         this.name = name
         this.url = url
-        this.scheduledShows = scheduledShows.map(show => show.setOffsetSeconds(offsetSeconds))
+        this.scheduledShows = scheduledShows.map(show => show.setOffsetSeconds(allSettings.offsetSeconds))
         this.isForced = false
         this.state = "waiting" // anything other than "paused"
-        this.mainTimerIntervalMs = 5000
-        this.activeShowManager = timer(this.mainTimerIntervalMs, this.activeShowManagerTimer)
-        this.streamDirectory = path.join(outputDirectory, this.name)
-        mkdirpSync(this.streamDirectory)
         this.downloaders = new Map<string, StreamDownloader>()
+        this.mainTimerIntervalMs = 5000
+        this.activeShowManagerTimer = this.activeShowManagerTimer.bind(this)
+        this.activeShowManager = timer(this.mainTimerIntervalMs, this.activeShowManagerTimer)
+        this.streamDirectory = path.join(allSettings.outputDirectory, this.name)
+        mkdirpSync(this.streamDirectory)
     }
 
-    private activeShowManagerTimer = () => {
+    private activeShowManagerTimer() {
         this.scheduledShows.forEach(async (show: Show) => {
             if (show.isActive(true) && this.downloaders.notHas(show.name)) {
                 const showDir: string = path.join(this.streamDirectory, show.name)
@@ -144,15 +145,16 @@ export class Stream
         }
     }
 
-    public static fromSerializedStream(serializedStream: SerializedStream,
-                                       outputDirectory: string, offsetSeconds: number): Stream {
+    public static fromSerializedStream({serializedStream, allSettings}: {
+        serializedStream: SerializedStream
+        allSettings: AllSettings
+    }): Stream {
         return new Stream({
             name: serializedStream.name,
             url: serializedStream.url,
             scheduledShows: serializedStream.scheduledShows.map((serializedShow: SerializedShow) =>
-                Show.fromSerializedShow(serializedShow, offsetSeconds)),
-            offsetSeconds: offsetSeconds,
-            outputDirectory: outputDirectory
+                Show.fromSerializedShow(serializedShow, allSettings.offsetSeconds)),
+            allSettings: allSettings
         })
     }
 }

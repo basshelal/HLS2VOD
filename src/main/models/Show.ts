@@ -1,20 +1,23 @@
 import moment, {duration, Duration, Moment} from "moment"
-import {json, momentFormat} from "../../shared/Utils"
 import {Serializable, SerializedShow} from "../../shared/Serialized"
 
 export class Show
     implements Serializable<SerializedShow> {
 
     /** Must be unique */
-    public name: string
+    public name: string // @Serialized
+
     /** Show start time without offset in unix epoch milliseconds format */
-    public startTime: number
+    public startTime: number // @Serialized
+
     /** Show start time with offset in unix epoch milliseconds format */
-    public offsetStartTime: number
+    public offsetStartTime: number // @Serialized
+
     /** Show end time without offset in unix epoch milliseconds format */
-    public endTime: number
+    public endTime: number // @Serialized
+
     /** Show end time with offset in unix epoch milliseconds format */
-    public offsetEndTime: number
+    public offsetEndTime: number // @Serialized
 
     public constructor({name, startTimeMoment, duration, offsetSeconds}: {
         name: string,
@@ -23,10 +26,10 @@ export class Show
         offsetSeconds: number
     }) {
         this.name = name
-        this.startTime = startTimeMoment.date()
-        this.endTime = startTimeMoment.add(duration).date()
-        this.offsetStartTime = moment(this.startTime).subtract(offsetSeconds, "seconds").date()
-        this.offsetEndTime = moment(this.endTime).add(offsetSeconds, "seconds").date()
+        this.startTime = startTimeMoment.valueOf()
+        this.endTime = startTimeMoment.add(duration).valueOf()
+        this.offsetStartTime = moment(this.startTime).subtract(offsetSeconds, "seconds").valueOf()
+        this.offsetEndTime = moment(this.endTime).add(offsetSeconds, "seconds").valueOf()
     }
 
     public hasStarted(withOffset: boolean = true): boolean {
@@ -46,18 +49,9 @@ export class Show
     }
 
     public setOffsetSeconds(value: number): this {
-        this.offsetStartTime = moment(this.startTime).subtract(value, "seconds").date()
-        this.offsetEndTime = moment(this.endTime).add(value, "seconds").date()
+        this.offsetStartTime = moment(this.startTime).subtract(value, "seconds").valueOf()
+        this.offsetEndTime = moment(this.endTime).add(value, "seconds").valueOf()
         return this
-    }
-
-    public toString(): string {
-        const obj: any = JSON.parse(json(this, 2))
-        obj["startTimeFormatted"] = moment(this.startTime).format(momentFormat)
-        obj["offsetStartTimeFormatted"] = moment(this.offsetStartTime).format(momentFormat)
-        obj["endTimeFormatted"] = moment(this.endTime).format(momentFormat)
-        obj["offsetEndTimeFormatted"] = moment(this.offsetEndTime).format(momentFormat)
-        return json(obj, 2)
     }
 
     public serialize(): SerializedShow {

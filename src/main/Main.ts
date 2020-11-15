@@ -67,7 +67,7 @@ async function onAppReady(): Promise<void> {
 
     await Database.initialize()
     const dbStreamEntries = await Database.Streams.getAllSerializedStreams()
-    streams = await Promise.all(dbStreamEntries.map(async (streamEntry) => await Stream.fromSerializedStream(streamEntry)))
+    streams = await Promise.all(dbStreamEntries.map(async (streamEntry) => await Stream.fromSerializedStream({serializedStream: streamEntry})))
 
     // Default settings
     await Database.Settings.setOutputDirectory(getPath("./Streams"))

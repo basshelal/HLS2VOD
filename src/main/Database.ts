@@ -14,9 +14,14 @@ export interface SettingsEntry<T = any> {
     value: T
 }
 
-export interface AllSettings {
+export interface SomeSettings {
     outputDirectory?: string
     offsetSeconds?: number
+}
+
+export interface AllSettings extends SomeSettings {
+    outputDirectory: string
+    offsetSeconds: number
     // TODO: Add the below settings
     //  appTheme: string
     //  fileExtension: string
@@ -29,13 +34,12 @@ export class Settings {
 
     public static isInitialized: boolean = false
 
-    public static async initialize({
-                                       dbPath = getPath("database/settings.db"),
-                                       defaultOutputDir = getPath("streams"),
-                                       defaultOffsetSeconds = 60
-                                   }: {
-        dbPath?: string, defaultOutputDir?: string, defaultOffsetSeconds?: number
+    private static defaultSettings: AllSettings
+
+    public static async initialize({dbPath = getPath("database/settings.db"), defaultSettings}: {
+        dbPath?: string, defaultSettings: AllSettings
     }): Promise<void> {
+        this.defaultSettings = defaultSettings
         return new Promise((resolve, reject) => {
             this.settingsDatabase = new Datastore({
                 filename: dbPath,
@@ -43,8 +47,8 @@ export class Settings {
                 onload: async (error: Error | null) => {
                     if (error) reject(error)
                     else {
-                        try { await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(defaultOutputDir) }
-                        try { await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(defaultOffsetSeconds) }
+                        try { await this.getOutputDirectory() } catch (e) { await this.setOutputDirectory(defaultSettings.outputDirectory) }
+                        try { await this.getOffsetSeconds() } catch (e) { await this.setOffsetSeconds(defaultSettings.offsetSeconds) }
                         this.isInitialized = true
                         resolve()
                     }
@@ -65,13 +69,13 @@ export class Settings {
     public static async getAllSettings(): Promise<AllSettings> {
         const settingsArray: Array<SettingsEntry> = await this.getAllSettingsArray()
         const foundOutputDir: SettingsEntry | undefined = settingsArray.find(it => it.key === "outputDirectory")
-        const outputDir: string | undefined = foundOutputDir ? foundOutputDir.value : undefined
+        const outputDir: string = foundOutputDir ? foundOutputDir.value : this.defaultSettings.outputDirectory
         const foundOffsetSeconds: SettingsEntry | undefined = settingsArray.find(it => it.key === "offsetSeconds")
-        const offsetSeconds: number | undefined = foundOffsetSeconds ? Number.parseInt(foundOffsetSeconds.value) : undefined
+        const offsetSeconds: number = foundOffsetSeconds ? Number.parseInt(foundOffsetSeconds.value) : this.defaultSettings.offsetSeconds
         return {outputDirectory: outputDir, offsetSeconds: offsetSeconds}
     }
 
-    public static async updateSettings(settings: AllSettings): Promise<void> {
+    public static async updateSettings(settings: SomeSettings): Promise<void> {
         const toAwait: Array<Promise<any>> = []
         if (settings.outputDirectory) toAwait.push(this.setOutputDirectory(settings.outputDirectory))
         if (settings.offsetSeconds) toAwait.push(this.setOffsetSeconds(settings.offsetSeconds))
@@ -157,11 +161,13 @@ export class Streams {
                 onload: async (error: Error | null) => {
                     if (error) reject(error)
                     else {
-                        const outputDirectory: string = await Database.Settings.getOutputDirectory()
-                        const offsetSeconds: number = await Database.Settings.getOffsetSeconds()
+                        const allSettings = await Database.Settings.getAllSettings()
                         const serializedStreams: Array<SerializedStream> = await this.getAllSerializedStreams()
                         this.actualStreams = serializedStreams.map(it =>
-                            Stream.fromSerializedStream(it, outputDirectory, offsetSeconds))
+                            Stream.fromSerializedStream({
+                                serializedStream: it,
+                                allSettings: allSettings
+                            }))
                         this.isInitialized = true
                         resolve()
                     }
@@ -253,7 +259,7 @@ export class Database {
     public static Streams = Streams
 
     public static async initialize() {
-        await Database.Settings.initialize({})
+        await Database.Settings.initialize({defaultSettings: {offsetSeconds: 60, outputDirectory: getPath("streams")}})
         await Database.Streams.initialize({})
         this.isInitialized = true
     }
