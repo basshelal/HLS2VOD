@@ -1,7 +1,7 @@
-import {defaultAfterAll, defaultBeforeAll} from "./TestUtils"
-import {AllSettings, Database} from "../src/main/Database"
-import {Stream} from "../src/main/models/Stream"
-import {SerializedStream} from "../src/shared/Serialized"
+import {defaultAfterAll, defaultBeforeAll} from "../TestUtils"
+import {AllSettings, Database} from "../../src/main/Database"
+import {Stream} from "../../src/main/models/Stream"
+import {SerializedStream} from "../../src/shared/Serialized"
 
 beforeAll(defaultBeforeAll)
 

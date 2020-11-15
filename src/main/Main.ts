@@ -1,5 +1,5 @@
 import * as electron from "electron"
-import {BrowserWindow, IpcMainInvokeEvent, session} from "electron"
+import {BrowserWindow, session} from "electron"
 import {Stream} from "./models/Stream"
 import {Database} from "./Database"
 import * as path from "path"
@@ -22,11 +22,7 @@ let mainWindow: BrowserWindow
 electron.app.allowRendererProcessReuse = true
 electron.app.whenReady().then(onAppReady)
 
-function handleFromBrowser<T>(name: string, listener: (event: IpcMainInvokeEvent, args: T) => Promise<T> | any) {
-    electron.ipcMain.handle(name, listener)
-}
-
-function isDevEnv(): boolean { return process.env.NODE_ENV === "development" }
+function isDev(): boolean { return process.env.NODE_ENV === "development" }
 
 // TODO: This is ugly! Fix!
 export async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
@@ -56,7 +52,7 @@ async function onAppReady(): Promise<void> {
     })
     RequestHandler.initialize({browserWindow: mainWindow})
 
-    if (isDevEnv()) {
+    if (isDev()) {
         installExtension(REACT_DEVELOPER_TOOLS)
         installExtension(REDUX_DEVTOOLS)
         mainWindow.loadURL("http://localhost:4000")
@@ -90,11 +86,7 @@ async function onAppReady(): Promise<void> {
 function testWebRequest() {
     let masterPlaylist: string
     session.defaultSession.webRequest.onBeforeRequest({
-        urls: [
-            "http://*/*.m3u8",
-            "https://*/*.m3u8",
-            "http://*/*.m3u8?*",
-            "https://*/*.m3u8?*"]
+        urls: ["http://*/*.m3u8", "https://*/*.m3u8", "http://*/*.m3u8?*", "https://*/*.m3u8?*"]
     }, (details, callback) => {
         if (!masterPlaylist) masterPlaylist = details.url
         logD(masterPlaylist)

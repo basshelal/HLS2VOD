@@ -1,15 +1,15 @@
-import Extensions from "../src/shared/Extensions"
-import {destroyDatabase, initializeDatabase, outputDir, testStream} from "./TestUtils"
-import {delay} from "../src/shared/Utils"
-import {Database} from "../src/main/Database"
-import {StreamDownloader} from "../src/main/downloader/StreamDownloader"
+import {destroyDatabase, initializeDatabase, outputDir, testStream} from "../TestUtils"
+import {delay} from "../../src/shared/Utils"
+import {Database} from "../../src/main/Database"
+import {StreamDownloader} from "../../src/main/downloader/StreamDownloader"
 import * as path from "path"
-import {logD} from "../src/shared/Log"
+import {logD} from "../../src/shared/Log"
 import {readdirSync} from "fs"
 import {pathExistsSync} from "fs-extra"
+import {loadExtensions} from "../../src/shared/Extensions"
 
 beforeAll(async () => {
-    Extensions()
+    loadExtensions()
     await initializeDatabase()
     await delay(1000)
     Database.isInitialized = true
