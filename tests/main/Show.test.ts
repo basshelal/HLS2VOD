@@ -106,7 +106,7 @@ test("Show Update Offset Seconds", async () => {
     expect(show.offsetEndTime).toEqual(moment(show.endTime).add(newOffsetSeconds, "seconds").valueOf())
 })
 
-test("Show Serialize", async () => {
+test("Show Serialization", async () => {
     const show = new Show({
         name: "My Show",
         startTimeMoment: moment(),
@@ -120,20 +120,8 @@ test("Show Serialize", async () => {
     expect(serializedShow.offsetStartTime).toEqual(show.offsetStartTime)
     expect(serializedShow.endTime).toEqual(show.endTime)
     expect(serializedShow.offsetEndTime).toEqual(show.offsetEndTime)
-})
 
-test("Show from Serialized", async () => {
-    const offsetSeconds = 60
-    const show = new Show({
-        name: "My Show",
-        startTimeMoment: moment(),
-        offsetSeconds: offsetSeconds,
-        duration: duration(1, "hour")
-    })
-
-    const serializedShow = show.serialize()
-
-    const fromSerialized = Show.fromSerializedShow(serializedShow, offsetSeconds)
+    const fromSerialized = Show.fromSerializedShow(serializedShow)
 
     expect(fromSerialized.name).toEqual(show.name)
     expect(fromSerialized.startTime).toEqual(show.startTime)

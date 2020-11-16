@@ -64,12 +64,12 @@ export class Show
         }
     }
 
-    public static fromSerializedShow(serializedShow: SerializedShow, offsetSeconds: number): Show {
+    public static fromSerializedShow(serializedShow: SerializedShow): Show {
         const show = new Show({
             name: serializedShow.name,
             startTimeMoment: moment(serializedShow.startTime),
             duration: duration(),
-            offsetSeconds: offsetSeconds
+            offsetSeconds: 0
         })
         show.startTime = serializedShow.startTime
         show.offsetStartTime = serializedShow.offsetStartTime

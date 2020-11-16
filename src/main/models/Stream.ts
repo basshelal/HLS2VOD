@@ -42,6 +42,12 @@ export class Stream
     /** Milliseconds used for {@link activeShowManager}*/
     public mainTimerIntervalMs: number
 
+    public setMainTimerInterval(millis: number) {
+        this.mainTimerIntervalMs = millis
+        clearInterval(this.activeShowManager)
+        this.activeShowManager = timer(this.mainTimerIntervalMs, this.activeShowManagerTimer)
+    }
+
     /** Keeps track of active shows and their {@link StreamDownloader} */
     public downloaders: Map<string, StreamDownloader>
 
@@ -84,13 +90,15 @@ export class Stream
                 this.downloaders.delete(show.name)
             }
         })
-        if (this.downloaders.isEmpty() && this.state === "downloading") this.state = "waiting"
-        else if (this.downloaders.isNotEmpty() && this.state === "waiting") this.state = "downloading"
+        if (this.state !== "paused") {
+            if (this.downloaders.isEmpty()) this.state = "waiting"
+            else this.state = "downloading"
+        }
     }
 
     /** Indicates we are now ready to begin downloading shows when they become active */
     public async start(): Promise<void> {
-        if (this.state === "paused") {
+        if (this.state !== "waiting" && this.state !== "downloading") {
             if (this.downloaders.isEmpty()) this.state = "waiting"
             else {
                 this.downloaders.forEach((downloader: StreamDownloader) => {
@@ -103,10 +111,12 @@ export class Stream
 
     /** Indicates we want to pause downloading shows even if they are active */
     public async pause(): Promise<void> {
-        this.downloaders.forEach((downloader: StreamDownloader) => {
-            downloader.stop()
-        })
-        this.state = "paused"
+        if (this.state !== "paused") {
+            this.downloaders.forEach((downloader: StreamDownloader) => {
+                downloader.stop()
+            })
+            this.state = "paused"
+        }
     }
 
     /** Indicates we want to download stream anyway even if there are no active shows */
@@ -153,7 +163,7 @@ export class Stream
             name: serializedStream.name,
             url: serializedStream.url,
             scheduledShows: serializedStream.scheduledShows.map((serializedShow: SerializedShow) =>
-                Show.fromSerializedShow(serializedShow, allSettings.offsetSeconds)),
+                Show.fromSerializedShow(serializedShow)),
             allSettings: allSettings
         })
     }
