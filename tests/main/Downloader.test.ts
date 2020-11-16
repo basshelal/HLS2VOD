@@ -1,4 +1,4 @@
-import {destroyDatabase, initializeDatabase, outputDir, testStream} from "../TestUtils"
+import {destroyDatabase, initializeDatabase, outputDir, testStreamUrl} from "../TestUtils"
 import {delay} from "../../src/shared/Utils"
 import {Database} from "../../src/main/Database"
 import {StreamDownloader} from "../../src/main/downloader/StreamDownloader"
@@ -24,7 +24,7 @@ test("Download Stream", async () => {
     const fileName = "test.mkv"
     const outputPath: string = path.resolve(path.join(outputDir, fileName))
     logD(outputPath)
-    const downloader = new StreamDownloader({streamUrl: testStream, outputPath: outputPath})
+    const downloader = new StreamDownloader({streamUrl: testStreamUrl, outputPath: outputPath})
 
     await downloader.start()
     await delay(15_000)

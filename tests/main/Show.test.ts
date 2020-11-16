@@ -122,7 +122,7 @@ test("Show Serialize", async () => {
     expect(serializedShow.offsetEndTime).toEqual(show.offsetEndTime)
 })
 
-test("Show fromSerialized", async () => {
+test("Show from Serialized", async () => {
     const offsetSeconds = 60
     const show = new Show({
         name: "My Show",

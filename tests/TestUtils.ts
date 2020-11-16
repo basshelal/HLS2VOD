@@ -8,15 +8,16 @@ export const databaseDir = getPath("tests/database")
 export const outputDir = getPath("tests/streams")
 export const settingsDatabasePath = path.join(databaseDir, `settings.db`)
 export const streamsDatabasePath = path.join(databaseDir, `streams.db`)
-export const testStream = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
+export const testStreamUrl = "https://live-hls-web-aje.getaj.net/AJE/index.m3u8"
+
+// TODO: We should put tests in here to ensure set up and tear down are successful
 
 export async function initializeDatabase() {
     mkdirpSync(databaseDir)
     mkdirpSync(outputDir)
     await Database.Settings.initialize({
         dbPath: settingsDatabasePath,
-        defaultOutputDir: outputDir,
-        defaultOffsetSeconds: 60
+        defaultSettings: {offsetSeconds: 60, outputDirectory: outputDir}
     })
     await Database.Streams.initialize({dbPath: streamsDatabasePath})
 }

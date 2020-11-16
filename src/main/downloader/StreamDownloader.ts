@@ -13,7 +13,7 @@ export class StreamDownloader {
         this.ffmpegProcess = undefined
     }
 
-    public get isDownloading(): boolean { return !!this.ffmpegProcess }
+    public get isDownloading(): boolean { return !!(this.ffmpegProcess) }
 
     public async start() {
         if (!this.ffmpegProcess) {
