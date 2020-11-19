@@ -37,15 +37,16 @@ export class Stream
     public streamDirectory: string // @Serialized
 
     /** The {@link TimeOut} that manages the active shows and downloaders in {@link downloaders} */
-    public activeShowManager: TimeOut
+    public activeShowManager: TimeOut | undefined
 
     /** Milliseconds used for {@link activeShowManager}*/
     public mainTimerIntervalMs: number
 
+    /** Update {@link mainTimerIntervalMs} the correct way */
     public setMainTimerInterval(millis: number) {
         this.mainTimerIntervalMs = millis
-        clearInterval(this.activeShowManager)
-        this.activeShowManager = timer(this.mainTimerIntervalMs, this.activeShowManagerTimer)
+        if (this.activeShowManager) clearInterval(this.activeShowManager)
+        this.activeShowManager = timer(this.mainTimerIntervalMs, this.refreshActiveShowManager)
     }
 
     /** Keeps track of active shows and their {@link StreamDownloader} */
@@ -67,13 +68,13 @@ export class Stream
         this.state = "waiting" // anything other than "paused"
         this.downloaders = new Map<string, StreamDownloader>()
         this.mainTimerIntervalMs = 5000
-        this.activeShowManagerTimer = this.activeShowManagerTimer.bind(this)
-        this.activeShowManager = timer(this.mainTimerIntervalMs, this.activeShowManagerTimer)
+        this.refreshActiveShowManager = this.refreshActiveShowManager.bind(this)
+        this.activeShowManager = timer(this.mainTimerIntervalMs, this.refreshActiveShowManager)
         this.streamDirectory = path.join(allSettings.outputDirectory, this.name)
         mkdirpSync(this.streamDirectory)
     }
 
-    public activeShowManagerTimer() {
+    public refreshActiveShowManager() {
         this.scheduledShows.forEach(async (show: Show) => {
             if (show.isActive(true) && this.downloaders.notHas(show.name)) {
                 const showDir: string = path.join(this.streamDirectory, show.name)
@@ -83,10 +84,10 @@ export class Stream
                     outputPath: path.join(showDir, `${fileMoment()}.mp4`)
                 })
                 this.downloaders.set(show.name, downloader)
-                if (this.state !== "paused") await downloader.start()
+                if (this.isRunning) await downloader.start()
             } else if (!show.isActive(true) && this.downloaders.has(show.name)) {
                 const downloader = this.downloaders.get(show.name)
-                if (downloader && downloader.isDownloading) downloader.stop()
+                if (downloader) downloader.stop()
                 this.downloaders.delete(show.name)
             }
         })
@@ -94,10 +95,10 @@ export class Stream
             .filter((_, name: string) => this.scheduledShows.map(it => it.name).notContains(name))
             .forEach((_, name: string) => {
                 const downloader = this.downloaders.get(name)
-                if (downloader && downloader.isDownloading) downloader.stop()
+                if (downloader) downloader.stop()
                 this.downloaders.delete(name)
             })
-        if (this.state !== "paused") {
+        if (this.isRunning) {
             if (this.downloaders.isEmpty()) this.state = "waiting"
             else this.state = "downloading"
         }
@@ -118,7 +119,7 @@ export class Stream
 
     /** Indicates we want to pause downloading shows even if they are active */
     public async pause(): Promise<void> {
-        if (this.state !== "paused") {
+        if (this.isRunning) {
             this.downloaders.forEach((downloader: StreamDownloader) => {
                 downloader.stop()
             })
@@ -148,6 +149,17 @@ export class Stream
             }
             this.isForced = false
         }
+    }
+
+    public get isRunning(): boolean { return this.state !== "paused" }
+
+    /** Destroys this stream, this stops all downloaders and the {@link activeShowManager} */
+    public async destroy(): Promise<void> {
+        if (this.activeShowManager) clearInterval(this.activeShowManager)
+        this.activeShowManager = undefined
+        this.downloaders.forEach((downloader: StreamDownloader) => downloader.stop())
+        this.downloaders.clear()
+        await this.unForceRecord()
     }
 
     /** Serialize to a {@link SerializedStream}, implemented from {@link Serializable} */

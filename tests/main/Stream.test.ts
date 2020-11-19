@@ -33,6 +33,8 @@ test("Stream Initialization", async () => {
     expect(stream.mainTimerIntervalMs).toBeDefined()
     expect(stream.downloaders).toBeDefined()
     expect(stream.forcedDownloader).toBeFalsy()
+
+    await stream.destroy()
 })
 
 test("Stream Start/Pause", async () => {
@@ -48,6 +50,8 @@ test("Stream Start/Pause", async () => {
     expect(stream.state).toEqual("paused")
     await stream.start()
     expect(stream.state).toEqual("waiting")
+
+    await stream.destroy()
 })
 
 test("Stream Force/UnForce Record", async () => {
@@ -69,7 +73,7 @@ test("Stream Force/UnForce Record", async () => {
     expect(stream.forcedDownloader).toBeFalsy()
 
     await stream.forceRecord()
-    stream.activeShowManager.refresh()
+    stream.refreshActiveShowManager()
 
     expect(stream.state).toEqual("waiting")
     expect(stream.downloaders.size).toEqual(0)
@@ -82,6 +86,8 @@ test("Stream Force/UnForce Record", async () => {
     expect(stream.downloaders.size).toEqual(0)
     expect(stream.isForced).toBeFalsy()
     expect(stream.forcedDownloader).toBeFalsy()
+
+    await stream.destroy()
 })
 
 test("Stream Active Show Managing", async () => {
@@ -102,17 +108,19 @@ test("Stream Active Show Managing", async () => {
     expect(stream.scheduledShows.first()!!.isActive()).toBeTruthy()
     expect(stream.downloaders.size).toEqual(0)
 
-    stream.activeShowManagerTimer()
+    stream.refreshActiveShowManager()
 
     expect(stream.downloaders.size).toEqual(1)
     expect(stream.state).toEqual("downloading")
 
     await delay(1000)
 
-    stream.activeShowManagerTimer()
+    stream.refreshActiveShowManager()
 
     expect(stream.state).toEqual("waiting")
     expect(stream.downloaders.size).toEqual(0)
+
+    await stream.destroy()
 }, 2000)
 
 test("Stream change schedule", async () => {
@@ -131,7 +139,7 @@ test("Stream change schedule", async () => {
         allSettings: await Database.Settings.getAllSettings()
     })
 
-    stream.activeShowManagerTimer()
+    stream.refreshActiveShowManager()
 
     expect(stream.scheduledShows).toEqual(oldSchedule)
     expect(stream.downloaders.size).toEqual(1)
@@ -144,7 +152,7 @@ test("Stream change schedule", async () => {
         duration: duration(5, "seconds")
     }))
 
-    stream.activeShowManagerTimer()
+    stream.refreshActiveShowManager()
 
     expect(stream.scheduledShows.length).toEqual(2)
     expect(stream.downloaders.size).toEqual(2)
@@ -155,10 +163,12 @@ test("Stream change schedule", async () => {
 
     stream.scheduledShows.clear()
 
-    stream.activeShowManagerTimer()
+    stream.refreshActiveShowManager()
 
     expect(stream.scheduledShows.length).toEqual(0)
     expect(stream.downloaders.size).toEqual(0)
+
+    await stream.destroy()
 })
 
 test("Stream Serialization", async () => {
@@ -199,5 +209,38 @@ test("Stream Serialization", async () => {
     expect(fromSerialized.isForced).toEqual(stream.isForced)
     expect(fromSerialized.streamDirectory).toEqual(stream.streamDirectory)
     expect(fromSerialized.serialize()).toEqual(stream.serialize())
+
+    await fromSerialized.destroy()
+    await stream.destroy()
+})
+
+test("Stream Destroy", async () => {
+    const show = new Show({
+        name: "Test Show",
+        startTimeMoment: moment(),
+        offsetSeconds: 60,
+        duration: duration(1, "hour")
+    })
+    const stream = new Stream({
+        name: "Test Stream",
+        url: testStreamUrl,
+        scheduledShows: [show],
+        allSettings: await Database.Settings.getAllSettings()
+    })
+
+    await stream.forceRecord()
+    stream.refreshActiveShowManager()
+
+    expect(stream.activeShowManager).toBeDefined()
+    expect(stream.isForced).toBeTruthy()
+    expect(stream.forcedDownloader).toBeDefined()
+    expect(stream.downloaders.size).toEqual(1)
+
+    await stream.destroy()
+
+    expect(stream.activeShowManager).toBeUndefined()
+    expect(stream.isForced).toBeFalsy()
+    expect(stream.forcedDownloader).toBeUndefined()
+    expect(stream.downloaders.size).toEqual(0)
 })
 
