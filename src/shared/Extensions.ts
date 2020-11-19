@@ -63,6 +63,8 @@ declare global {
         isEmpty(): boolean
 
         isNotEmpty(): boolean
+
+        filter(callback: (value: V, key: K) => boolean): Map<K, V>
     }
 
     interface Set<T> {
@@ -242,6 +244,14 @@ function _map() {
         function (this: Map<any, any>): boolean { return this.size === 0 })
     protoExtension(Map, "isNotEmpty",
         function (this: Map<any, any>): boolean { return this.size !== 0 })
+    protoExtension(Map, "filter",
+        function <K, V>(this: Map<K, V>, callback: (value: V, key: K) => boolean): Map<K, V> {
+            const result = new Map<K, V>()
+            this.forEach((value: V, key: K) => {
+                if (callback(value, key)) result.set(key, value)
+            })
+            return result
+        })
 }
 
 function _set() {

@@ -62,7 +62,7 @@ export class Stream
     }) {
         this.name = name
         this.url = url
-        this.scheduledShows = scheduledShows.map(show => show.setOffsetSeconds(allSettings.offsetSeconds))
+        this.scheduledShows = scheduledShows
         this.isForced = false
         this.state = "waiting" // anything other than "paused"
         this.downloaders = new Map<string, StreamDownloader>()
@@ -73,7 +73,7 @@ export class Stream
         mkdirpSync(this.streamDirectory)
     }
 
-    private activeShowManagerTimer() {
+    public activeShowManagerTimer() {
         this.scheduledShows.forEach(async (show: Show) => {
             if (show.isActive(true) && this.downloaders.notHas(show.name)) {
                 const showDir: string = path.join(this.streamDirectory, show.name)
@@ -90,6 +90,13 @@ export class Stream
                 this.downloaders.delete(show.name)
             }
         })
+        this.downloaders
+            .filter((_, name: string) => this.scheduledShows.map(it => it.name).notContains(name))
+            .forEach((_, name: string) => {
+                const downloader = this.downloaders.get(name)
+                if (downloader && downloader.isDownloading) downloader.stop()
+                this.downloaders.delete(name)
+            })
         if (this.state !== "paused") {
             if (this.downloaders.isEmpty()) this.state = "waiting"
             else this.state = "downloading"

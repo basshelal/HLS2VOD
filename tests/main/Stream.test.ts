@@ -5,6 +5,7 @@ import path from "path"
 import {pathExistsSync} from "fs-extra"
 import {Show} from "../../src/main/models/Show"
 import moment, {duration} from "moment/moment"
+import {delay} from "../../src/shared/Utils"
 
 beforeAll(defaultBeforeAll)
 
@@ -91,7 +92,7 @@ test("Stream Active Show Managing", async () => {
             name: "Test Show",
             startTimeMoment: moment(),
             offsetSeconds: 0,
-            duration: duration(5, "seconds")
+            duration: duration(1, "seconds")
         })],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -101,14 +102,62 @@ test("Stream Active Show Managing", async () => {
     expect(stream.scheduledShows.first()!!.isActive()).toBeTruthy()
     expect(stream.downloaders.size).toEqual(0)
 
-    stream.activeShowManager.refresh()
+    stream.activeShowManagerTimer()
 
     expect(stream.downloaders.size).toEqual(1)
     expect(stream.state).toEqual("downloading")
 
-    stream.activeShowManager.refresh()
+    await delay(1000)
+
+    stream.activeShowManagerTimer()
 
     expect(stream.state).toEqual("waiting")
+    expect(stream.downloaders.size).toEqual(0)
+}, 2000)
+
+test("Stream change schedule", async () => {
+    const oldSchedule: Array<Show> = [
+        new Show({
+            name: "Test Show",
+            startTimeMoment: moment(),
+            offsetSeconds: 0,
+            duration: duration(5, "seconds")
+        })
+    ]
+    const stream = new Stream({
+        name: "Test Stream",
+        url: testStreamUrl,
+        scheduledShows: oldSchedule,
+        allSettings: await Database.Settings.getAllSettings()
+    })
+
+    stream.activeShowManagerTimer()
+
+    expect(stream.scheduledShows).toEqual(oldSchedule)
+    expect(stream.downloaders.size).toEqual(1)
+    expect(stream.scheduledShows.first()!!.isActive).toBeTruthy()
+
+    stream.scheduledShows.push(new Show({
+        name: "Another Show",
+        startTimeMoment: moment(),
+        offsetSeconds: 0,
+        duration: duration(5, "seconds")
+    }))
+
+    stream.activeShowManagerTimer()
+
+    expect(stream.scheduledShows.length).toEqual(2)
+    expect(stream.downloaders.size).toEqual(2)
+    stream.scheduledShows.forEach((show: Show) => {
+        expect(show.isActive()).toBeTruthy()
+        expect(stream.downloaders.get(show.name)).toBeDefined()
+    })
+
+    stream.scheduledShows.clear()
+
+    stream.activeShowManagerTimer()
+
+    expect(stream.scheduledShows.length).toEqual(0)
     expect(stream.downloaders.size).toEqual(0)
 })
 
