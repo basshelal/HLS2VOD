@@ -5,6 +5,8 @@ import {logD, logE} from "../../shared/Log"
 export class Ffmpeg {
     private constructor() {}
 
+    // TODO: Allow to customize logging behavior
+
     private static resolveBin(): string | null {
         if (process.platform === "win32")
             return getPath("ffmpeg/bin/win32/ffmpeg.exe")

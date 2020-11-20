@@ -1,4 +1,4 @@
-import {defaultAfterAll, defaultBeforeAll} from "../TestUtils"
+import {defaultAfterAll, defaultBeforeAll, defaultOffsetSeconds, outputDir, testStreamUrl} from "../TestUtils"
 import {AllSettings, Database} from "../../src/main/Database"
 import {Stream} from "../../src/main/models/Stream"
 import {SerializedStream} from "../../src/shared/Serialized"
@@ -6,6 +6,10 @@ import {SerializedStream} from "../../src/shared/Serialized"
 beforeAll(defaultBeforeAll)
 
 afterAll(defaultAfterAll)
+
+beforeEach(async () => {
+    await Database.Settings.updateSettings({offsetSeconds: defaultOffsetSeconds, outputDirectory: outputDir})
+})
 
 afterEach(async () => {
     for (const stream of Database.Streams.actualStreams) {
@@ -31,11 +35,12 @@ test("Get All Settings", async () => {
 test("Update Settings", async () => {
     const offsetSeconds: number = 69
     const outputDirectory: string = "MyOutputDir"
-    const updatedSettings: AllSettings = {offsetSeconds: 69, outputDirectory: "MyOutputDir"}
+    const updatedSettings: AllSettings = {offsetSeconds: offsetSeconds, outputDirectory: outputDirectory}
     await Database.Settings.updateSettings(updatedSettings)
     const allSettings: AllSettings = await Database.Settings.getAllSettings()
     expect(allSettings.outputDirectory).toEqual(outputDirectory)
     expect(allSettings.offsetSeconds).toEqual(offsetSeconds)
+    expect(allSettings).toEqual(updatedSettings)
 })
 
 test("Get and Set Output Directory", async () => {
@@ -61,7 +66,7 @@ test("Get and Set Offset Seconds", async () => {
 test("Add Stream and Get serialized and actual", async () => {
     const newStream = new Stream({
         name: "Test Stream",
-        url: "example.com",
+        url: testStreamUrl,
         scheduledShows: [],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -77,14 +82,14 @@ test("Add Stream and Get serialized and actual", async () => {
 test("Update Stream", async () => {
     const newStream = new Stream({
         name: "Test Stream",
-        url: "example.com",
+        url: testStreamUrl,
         scheduledShows: [],
         allSettings: await Database.Settings.getAllSettings()
     })
     await Database.Streams.addStream(newStream)
     const updatedStream = new Stream({
         name: "Updated Stream",
-        url: "example.org",
+        url: testStreamUrl,
         scheduledShows: [],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -100,7 +105,7 @@ test("Update Stream", async () => {
 test("Delete Stream", async () => {
     const newStream = new Stream({
         name: "Test Stream",
-        url: "example.com",
+        url: testStreamUrl,
         scheduledShows: [],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -115,13 +120,13 @@ test("Delete Stream", async () => {
 test("Get Stream by name", async () => {
     const stream0 = new Stream({
         name: "Stream 0",
-        url: "example.com",
+        url: testStreamUrl,
         scheduledShows: [],
         allSettings: await Database.Settings.getAllSettings()
     })
     const stream1 = new Stream({
         name: "Stream 1",
-        url: "example.com",
+        url: testStreamUrl,
         scheduledShows: [],
         allSettings: await Database.Settings.getAllSettings()
     })

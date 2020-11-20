@@ -15,13 +15,13 @@ export class StreamDownloader {
 
     public get isDownloading(): boolean { return !!(this.ffmpegProcess) }
 
-    public async start() {
+    public async start(): Promise<void> {
         if (!this.ffmpegProcess) {
             this.ffmpegProcess = await Ffmpeg.downloadStream(this.streamUrl, this.outputPath)
         }
     }
 
-    public stop() {
+    public stop(): void {
         if (this.ffmpegProcess) {
             this.ffmpegProcess.kill()
             this.ffmpegProcess = undefined
