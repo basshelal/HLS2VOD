@@ -33,13 +33,13 @@ export class Show
     }
 
     public hasStarted(withOffset: boolean = true): boolean {
-        let now: number = moment.now()
+        const now: number = moment.now()
         if (withOffset) return now >= this.offsetStartTime
         else return now >= this.startTime
     }
 
     public hasEnded(withOffset: boolean = true): boolean {
-        let now: number = moment.now()
+        const now: number = moment.now()
         if (withOffset) return now >= this.offsetEndTime
         else return now >= this.endTime
     }

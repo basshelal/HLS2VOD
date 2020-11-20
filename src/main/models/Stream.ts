@@ -36,7 +36,7 @@ export class Stream
     /** Directory where this stream will be downloaded */
     public streamDirectory: string // @Serialized
 
-    /** The {@link TimeOut} that manages the active shows and downloaders in {@link downloaders} */
+    /** The {@link TimeOut} that calls {@link refreshActiveShowManager} to manage active shows and downloaders */
     public activeShowManager: TimeOut | undefined
 
     /** Milliseconds used for {@link activeShowManager}*/
@@ -74,7 +74,12 @@ export class Stream
         mkdirpSync(this.streamDirectory)
     }
 
-    public refreshActiveShowManager() {
+    /**
+     * This is called by the {@link activeShowManager} but can also be called directly if needed
+     * This function manages active shows and their respective {@link downloaders} as well as maintaining
+     * this Stream's {@link state}, this does not deal with the forced state of the Stream
+     */
+    public refreshActiveShowManager(): void {
         this.scheduledShows.forEach(async (show: Show) => {
             if (show.isActive(true) && this.downloaders.notHas(show.name)) {
                 const showDir: string = path.join(this.streamDirectory, show.name)
@@ -151,6 +156,7 @@ export class Stream
         }
     }
 
+    /** True if {@link state} is not "paused" */
     public get isRunning(): boolean { return this.state !== "paused" }
 
     /** Destroys this stream, this stops all downloaders and the {@link activeShowManager} */
@@ -174,6 +180,7 @@ export class Stream
         }
     }
 
+    /** Creates a new {@link Stream} from a {@link SerializedStream} */
     public static fromSerializedStream({serializedStream, allSettings}: {
         serializedStream: SerializedStream
         allSettings: AllSettings

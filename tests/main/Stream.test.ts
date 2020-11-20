@@ -20,7 +20,7 @@ test("Stream Initialization", async () => {
         scheduledShows: [],
         allSettings: allSettings
     })
-    const streamDir = path.join(allSettings.outputDirectory, stream.name)
+    const streamDir: string = path.join(allSettings.outputDirectory, stream.name)
 
     expect(stream.name).toEqual(name)
     expect(stream.url).toEqual(testStreamUrl)

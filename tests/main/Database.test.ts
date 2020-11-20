@@ -8,9 +8,9 @@ beforeAll(defaultBeforeAll)
 afterAll(defaultAfterAll)
 
 afterEach(async () => {
-    Database.Streams.actualStreams.forEach(async (stream: Stream) => {
+    for (const stream of Database.Streams.actualStreams) {
         await Database.Streams.deleteStream(stream.name)
-    })
+    }
 })
 
 test("Databases Initialized", async () => {
@@ -63,8 +63,7 @@ test("Add Stream and Get serialized and actual", async () => {
         name: "Test Stream",
         url: "example.com",
         scheduledShows: [],
-        offsetSeconds: await Database.Settings.getOffsetSeconds(),
-        outputDirectory: await Database.Settings.getOutputDirectory()
+        allSettings: await Database.Settings.getAllSettings()
     })
     await Database.Streams.addStream(newStream)
     const allSerializedStreamsFromDb: Array<SerializedStream> = await Database.Streams.getAllSerializedStreams()
@@ -80,16 +79,14 @@ test("Update Stream", async () => {
         name: "Test Stream",
         url: "example.com",
         scheduledShows: [],
-        offsetSeconds: await Database.Settings.getOffsetSeconds(),
-        outputDirectory: await Database.Settings.getOutputDirectory()
+        allSettings: await Database.Settings.getAllSettings()
     })
     await Database.Streams.addStream(newStream)
     const updatedStream = new Stream({
         name: "Updated Stream",
         url: "example.org",
         scheduledShows: [],
-        offsetSeconds: await Database.Settings.getOffsetSeconds(),
-        outputDirectory: await Database.Settings.getOutputDirectory()
+        allSettings: await Database.Settings.getAllSettings()
     })
     await Database.Streams.updateStream(newStream.name, updatedStream)
     const allSerializedStreamsFromDb: Array<SerializedStream> = await Database.Streams.getAllSerializedStreams()
@@ -105,8 +102,7 @@ test("Delete Stream", async () => {
         name: "Test Stream",
         url: "example.com",
         scheduledShows: [],
-        offsetSeconds: await Database.Settings.getOffsetSeconds(),
-        outputDirectory: await Database.Settings.getOutputDirectory()
+        allSettings: await Database.Settings.getAllSettings()
     })
     await Database.Streams.addStream(newStream)
     await Database.Streams.deleteStream(newStream.name)
@@ -121,15 +117,13 @@ test("Get Stream by name", async () => {
         name: "Stream 0",
         url: "example.com",
         scheduledShows: [],
-        offsetSeconds: await Database.Settings.getOffsetSeconds(),
-        outputDirectory: await Database.Settings.getOutputDirectory()
+        allSettings: await Database.Settings.getAllSettings()
     })
     const stream1 = new Stream({
         name: "Stream 1",
         url: "example.com",
         scheduledShows: [],
-        offsetSeconds: await Database.Settings.getOffsetSeconds(),
-        outputDirectory: await Database.Settings.getOutputDirectory()
+        allSettings: await Database.Settings.getAllSettings()
     })
     await Database.Streams.addStream(stream0)
     await Database.Streams.addStream(stream1)
