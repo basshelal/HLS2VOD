@@ -73,7 +73,7 @@ test("Stream Force/UnForce Record", async () => {
     expect(stream.forcedDownloader).toBeFalsy()
 
     await stream.forceRecord()
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.state).toEqual("waiting")
     expect(stream.downloaders.size).toEqual(0)
@@ -108,14 +108,14 @@ test("Stream Active Show Managing", async () => {
     expect(stream.scheduledShows.first()!!.isActive()).toBeTruthy()
     expect(stream.downloaders.size).toEqual(0)
 
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.downloaders.size).toEqual(1)
     expect(stream.state).toEqual("downloading")
 
     await delay(1000)
 
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.state).toEqual("waiting")
     expect(stream.downloaders.size).toEqual(0)
@@ -139,7 +139,7 @@ test("Stream change schedule", async () => {
         allSettings: await Database.Settings.getAllSettings()
     })
 
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.scheduledShows).toEqual(oldSchedule)
     expect(stream.downloaders.size).toEqual(1)
@@ -152,7 +152,7 @@ test("Stream change schedule", async () => {
         duration: duration(5, "seconds")
     }))
 
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.scheduledShows.length).toEqual(2)
     expect(stream.downloaders.size).toEqual(2)
@@ -163,7 +163,7 @@ test("Stream change schedule", async () => {
 
     stream.scheduledShows.clear()
 
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.scheduledShows.length).toEqual(0)
     expect(stream.downloaders.size).toEqual(0)
@@ -229,7 +229,7 @@ test("Stream Destroy", async () => {
     })
 
     await stream.forceRecord()
-    stream.refreshActiveShowManager()
+    await stream.refreshActiveShowManager()
 
     expect(stream.activeShowManager).toBeDefined()
     expect(stream.isForced).toBeTruthy()

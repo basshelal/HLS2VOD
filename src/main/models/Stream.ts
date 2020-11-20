@@ -79,8 +79,8 @@ export class Stream
      * This function manages active shows and their respective {@link downloaders} as well as maintaining
      * this Stream's {@link state}, this does not deal with the forced state of the Stream
      */
-    public refreshActiveShowManager(): void {
-        this.scheduledShows.forEach(async (show: Show) => {
+    public async refreshActiveShowManager(): Promise<void> {
+        await this.scheduledShows.awaitForEach(async (show: Show) => {
             if (show.isActive(true) && this.downloaders.notHas(show.name)) {
                 const showDir: string = path.join(this.streamDirectory, show.name)
                 mkdirpSync(showDir)

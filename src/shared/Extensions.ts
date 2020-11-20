@@ -45,6 +45,8 @@ declare global {
         update(oldElement: T, newElement: T): Array<T>
 
         clear(): Array<T>
+
+        awaitForEach<R>(callback: (value: T, index: number) => PromiseLike<R> | R): Promise<Array<T>>
     }
 
     interface ArrayConstructor {
@@ -217,6 +219,15 @@ function _array() {
         this.splice(0)
         return this
     })
+    protoExtension(Array, "awaitForEach",
+        async function <T, R>(this: Array<T>, callback: (value: T, index: number) => PromiseLike<R> | R): Promise<Array<T>> {
+            let index: number = 0
+            for (const value of this) {
+                await callback(value, index)
+                index++
+            }
+            return this
+        })
 }
 
 function _map() {
