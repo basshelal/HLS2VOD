@@ -5,7 +5,8 @@ import {SerializedStream} from "../../../shared/Serialized"
 import {RequestSender} from "../../RequestSender"
 
 export interface StreamListProps {
-
+    needsRefresh: boolean
+    onRefresh?: () => void
 }
 
 export interface StreamListState {
@@ -18,15 +19,18 @@ export class StreamList extends Component<StreamListProps, StreamListState> {
         super(props)
         this.fetchData = this.fetchData.bind(this)
         this.state = {streamEntries: []}
-        this.fetchData()
     }
 
     public async fetchData(): Promise<void> {
-        const allStreams: Array<SerializedStream> = await RequestSender.getAllStreams()
-        this.setState({streamEntries: allStreams})
+        if (this.props.needsRefresh) {
+            const allStreams: Array<SerializedStream> = await RequestSender.getAllStreams()
+            this.setState({streamEntries: allStreams})
+            if (this.props.onRefresh) this.props.onRefresh()
+        }
     }
 
     public render(): ReactNode {
+        this.fetchData()
         return (
             <Container>
                 {this.state.streamEntries.map((streamEntry: SerializedStream, index: number) => {

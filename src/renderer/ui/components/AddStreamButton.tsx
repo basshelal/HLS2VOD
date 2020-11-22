@@ -1,17 +1,22 @@
 import React, {Component, ReactNode} from "react"
 import {Button} from "@material-ui/core"
-import {AddStreamDialog} from "./AddStreamDialog"
+import {AddStreamDialog, DialogStreamEntry} from "./AddStreamDialog"
+
+export interface AddStreamButtonProps {
+    onAddStream?: (streamEntry: DialogStreamEntry) => void
+}
 
 export interface AddStreamButtonState {
     isDialogOpen: boolean
 }
 
-export class AddStreamButton extends Component<{}, AddStreamButtonState> {
+export class AddStreamButton extends Component<AddStreamButtonProps, AddStreamButtonState> {
 
-    constructor(props: {}) {
+    constructor(props: AddStreamButtonProps) {
         super(props)
         this.showDialog = this.showDialog.bind(this)
         this.hideDialog = this.hideDialog.bind(this)
+        this.onAddStream = this.onAddStream.bind(this)
         this.state = {isDialogOpen: false}
     }
 
@@ -19,13 +24,18 @@ export class AddStreamButton extends Component<{}, AddStreamButtonState> {
 
     public hideDialog() { this.setState({isDialogOpen: false}) }
 
+    public onAddStream(streamEntry: DialogStreamEntry) {
+        if (this.props.onAddStream) this.props.onAddStream(streamEntry)
+        this.hideDialog()
+    }
+
     public render(): ReactNode {
         return (
             <div>
                 <Button variant="outlined" color="primary" onClick={this.showDialog}>
                     New Stream
                 </Button>
-                <AddStreamDialog onAddStream={this.hideDialog} open={this.state.isDialogOpen}
+                <AddStreamDialog onAddStream={this.onAddStream} open={this.state.isDialogOpen}
                                  onClose={this.hideDialog}/>
             </div>
         )

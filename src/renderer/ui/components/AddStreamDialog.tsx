@@ -34,7 +34,7 @@ export class AddStreamDialog extends Component<AddStreamDialogProps, DialogStrea
         if (this.validateStreamEntry()) {
             if (await RequestSender.newStream(this.state)) {
                 if (this.props.onAddStream) this.props.onAddStream(this.state)
-                this.setState({})
+                this.setState({name: "", url: ""})
             }
         }
     }
