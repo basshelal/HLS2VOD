@@ -5,8 +5,6 @@ import {logD, logE} from "../../shared/Log"
 export class Ffmpeg {
     private constructor() {}
 
-    // TODO: Allow to customize logging behavior
-
     private static resolveBin(): string | null {
         if (process.platform === "win32")
             return getPath("ffmpeg/bin/win32/ffmpeg.exe")
@@ -17,6 +15,7 @@ export class Ffmpeg {
         else return null
     }
 
+    public static loggingEnabled: boolean = true
     public static binPath = Ffmpeg.resolveBin()
 
     // Resolves when ffmpeg closes
@@ -44,8 +43,10 @@ export class Ffmpeg {
                     resolve()
                 }
             })
-            if (ffmpeg.stdout) ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
-            if (ffmpeg.stderr) ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
+            if (ffmpeg.stdout && this.loggingEnabled)
+                ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+            if (ffmpeg.stderr && this.loggingEnabled)
+                ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
         })
     }
 
@@ -72,8 +73,10 @@ export class Ffmpeg {
                     reject(`ffmpeg closed with status ${code}, signal ${signal}`)
                 }
             })
-            if (ffmpeg.stdout) ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
-            if (ffmpeg.stderr) ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
+            if (ffmpeg.stdout && this.loggingEnabled)
+                ffmpeg.stdout.on("data", (data) => logD(`ffmpeg stdout: ${data}`))
+            if (ffmpeg.stderr && this.loggingEnabled)
+                ffmpeg.stderr.on("data", (data) => logD(`ffmpeg stderr: ${data}`))
             resolve(ffmpeg)
         })
     }

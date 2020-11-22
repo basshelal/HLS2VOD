@@ -19,6 +19,7 @@ import {
 } from "../../../shared/Requests"
 import {SerializedStream} from "../../../shared/Serialized"
 import {RequestSender} from "../../RequestSender"
+import {json} from "../../../shared/Utils"
 
 interface StreamCardViewProps {
     serializedStream: SerializedStream
@@ -26,6 +27,7 @@ interface StreamCardViewProps {
 
 interface StreamCardViewState {
     isRaised: boolean
+    serializedStream: SerializedStream
 }
 
 export class StreamCardView extends Component<StreamCardViewProps, StreamCardViewState> {
@@ -36,32 +38,72 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
         this.pauseStream = this.pauseStream.bind(this)
         this.forceRecordStream = this.forceRecordStream.bind(this)
         this.unForceRecordStream = this.unForceRecordStream.bind(this)
+        this.pauseUnpauseButton = this.pauseUnpauseButton.bind(this)
+        this.forceUnForceButton = this.forceUnForceButton.bind(this)
         this.viewDir = this.viewDir.bind(this)
-        this.state = {isRaised: false}
+        this.state = {isRaised: false, serializedStream: props.serializedStream}
     }
 
     public async startStream(stream: StartStreamArgsType): Promise<StartStreamReturnType> {
-        return await RequestSender.startStream(stream)
+        const result: StartStreamReturnType = await RequestSender.startStream(stream)
+        if (result) this.setState({serializedStream: result})
+        return result
     }
 
     public async pauseStream(stream: PauseStreamArgsType): Promise<PauseStreamReturnType> {
-        return await RequestSender.pauseStream(stream)
+        const result: PauseStreamReturnType = await RequestSender.pauseStream(stream)
+        if (result) this.setState({serializedStream: result})
+        return result
     }
 
     public async forceRecordStream(stream: ForceRecordStreamArgsType): Promise<ForceRecordStreamReturnType> {
-        return await RequestSender.forceRecordStream(stream)
+        const result: ForceRecordStreamReturnType = await RequestSender.forceRecordStream(stream)
+        if (result) this.setState({serializedStream: result})
+        return result
     }
 
     public async unForceRecordStream(stream: UnForceRecordStreamArgsType): Promise<UnForceRecordStreamReturnType> {
-        return await RequestSender.unForceRecordStream(stream)
+        const result: UnForceRecordStreamReturnType = await RequestSender.unForceRecordStream(stream)
+        if (result) this.setState({serializedStream: result})
+        return result
     }
 
     public async viewDir(stream: ViewStreamDirArgsType): Promise<ViewStreamDirReturnType> {
-        return await RequestSender.viewStreamDir(stream)
+        const result: ViewStreamDirReturnType = await RequestSender.viewStreamDir(stream)
+        if (result) this.setState({serializedStream: result})
+        return result
+    }
+
+    public pauseUnpauseButton(serializedStream: SerializedStream): ReactNode {
+        if (serializedStream.state === "paused") {
+            return (
+                <Button onClick={() => this.startStream(serializedStream)}><Pause/>Start Recording</Button>
+            )
+        } else {
+            return (
+                <Button onClick={() => this.pauseStream(serializedStream)}><Pause/>Pause Recording</Button>
+            )
+        }
+    }
+
+    public forceUnForceButton(serializedStream: SerializedStream): ReactNode {
+        if (serializedStream.isForced) {
+            return (
+                <Button onClick={() => this.unForceRecordStream(serializedStream)}><FiberManualRecord/>
+                    UnForce Record</Button>
+            )
+        } else {
+            return (
+                <Button onClick={() => this.forceRecordStream(serializedStream)}><FiberManualRecord/>
+                    Force Record</Button>
+            )
+        }
     }
 
     public render(): ReactNode {
-        const serializedStream: SerializedStream = this.props.serializedStream
+        const serializedStream: SerializedStream | undefined = this.state.serializedStream
+
+        console.log(`render!:\n${json(serializedStream)}`)
 
         return (
             <Card raised={this.state.isRaised} onMouseOver={() => this.setState({isRaised: true})}
@@ -73,12 +115,8 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
                 </CardContent>
                 <CardActions>
                     <Button><Edit/>Edit Stream</Button>
-                    <Button onClick={() => this.startStream(serializedStream)}><Pause/>Start Recording</Button>
-                    <Button onClick={() => this.pauseStream(serializedStream)}><Pause/>Pause Recording</Button>
-                    <Button onClick={() => this.forceRecordStream(serializedStream)}><FiberManualRecord/>Force
-                        Record</Button>
-                    <Button onClick={() => this.unForceRecordStream(serializedStream)}><FiberManualRecord/>UnForce
-                        Record</Button>
+                    {this.pauseUnpauseButton(serializedStream)}
+                    {this.forceUnForceButton(serializedStream)}
                     <Button onClick={() => this.viewDir(serializedStream)}><FolderOpen/>View Output</Button>
                 </CardActions>
             </Card>

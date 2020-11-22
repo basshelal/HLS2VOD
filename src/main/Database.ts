@@ -5,6 +5,7 @@ import {getPath, promises} from "../shared/Utils"
 import {SerializedStream} from "../shared/Serialized"
 import {loadExtensions} from "../shared/Extensions"
 import path from "path"
+import {mkdirpSync} from "fs-extra"
 
 loadExtensions()
 
@@ -87,7 +88,6 @@ export class Settings {
     // region outputDirectory
 
     public static async setOutputDirectory(newOutputDirectory: string): Promise<string> {
-        // TODO: mkdirpSync the dir?
         return new Promise<string>((resolve, reject) =>
             this.settingsDatabase.update<SettingsEntry<string>>({key: "outputDirectory"},
                 {key: "outputDirectory", value: newOutputDirectory},
@@ -96,6 +96,7 @@ export class Settings {
                     if (err) reject(err)
                     else {
                         const result: string = (affectedDocuments as SettingsEntry<string>).value
+                        mkdirpSync(result)
                         resolve(result)
                     }
                 }))

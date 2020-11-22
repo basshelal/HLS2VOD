@@ -25,6 +25,7 @@ import {
 } from "../shared/Requests"
 import {Stream} from "./models/Stream"
 import {logD, logE} from "../shared/Log"
+import {json} from "../shared/Utils"
 
 export class RequestHandler {
     private constructor() {}
@@ -48,7 +49,7 @@ export class RequestHandler {
         ipcMain.handle(name, (event, args) => listener(args, event))
     }
 
-    private static log(request: string, args: any): void { logD(`Received Request ${request}\nargs:\n${args}`) }
+    private static log(request: string, args: any): void { logD(`Received Request ${request}\nargs:\n${json(args)}`) }
 
     /** Initialize and set all handles for main, ie events from renderer to be handled by main */
     public static initialize({browserWindow}: { browserWindow: BrowserWindow }) {

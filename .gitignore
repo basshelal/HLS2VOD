@@ -2,6 +2,7 @@ node_modules
 build
 dist
 database
+Streams
 npm-debug.log
 .env
 .DS_Store
