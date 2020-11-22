@@ -1,34 +1,73 @@
 import {ipcRenderer} from "electron"
-import {DialogStreamEntry} from "./ui/components/AddStreamDialog"
-import {Requests} from "../shared/Requests"
-import {AllSettings} from "../main/Database"
-import {SerializedStream} from "../shared/Serialized"
+import {
+    BrowseOutputDirArgsType,
+    BrowseOutputDirReturnType,
+    ForceRecordStreamArgsType,
+    ForceRecordStreamReturnType,
+    GetSettingsArgsType,
+    GetSettingsReturnType,
+    GetStreamsArgsType,
+    GetStreamsReturnType,
+    NewStreamArgsType,
+    NewStreamReturnType,
+    PauseStreamArgsType,
+    PauseStreamReturnType,
+    Requests,
+    StartStreamArgsType,
+    StartStreamReturnType,
+    UnForceRecordStreamArgsType,
+    UnForceRecordStreamReturnType,
+    UpdateSettingsArgsType,
+    UpdateSettingsReturnType,
+    ViewStreamDirArgsType,
+    ViewStreamDirReturnType
+} from "../shared/Requests"
 
 export class RequestSender {
     private constructor() {}
 
-    private static send<R>(name: string, args?: any): Promise<R> {
+    private static send<R>(name: string, args: any): Promise<R> {
         return ipcRenderer.invoke(name, args)
     }
 
-    public static async getAllStreams(): Promise<Array<SerializedStream>> {
-        return this.send<Array<SerializedStream>>(Requests.GetStreams)
+    public static async getAllStreams(args: GetStreamsArgsType): Promise<GetStreamsReturnType> {
+        return this.send(Requests.GetAllStreams, args)
     }
 
-    public static async newStream(stream: DialogStreamEntry): Promise<boolean> {
-        return this.send<boolean>(Requests.NewStream, stream)
+    public static async newStream(args: NewStreamArgsType): Promise<NewStreamReturnType> {
+        return this.send(Requests.NewStream, args)
     }
 
-    public static async browseOutputDir(): Promise<string | undefined> {
-        return this.send<string | undefined>(Requests.BrowseOutputDir)
+    public static async browseOutputDir(args: BrowseOutputDirArgsType): Promise<BrowseOutputDirReturnType> {
+        return this.send(Requests.BrowseOutputDir, args)
     }
 
-    public static async getAllSettings(): Promise<AllSettings> {
-        return this.send<AllSettings>(Requests.GetSettings)
+    public static async getAllSettings(args: GetSettingsArgsType): Promise<GetSettingsReturnType> {
+        return this.send(Requests.GetSettings, args)
     }
 
-    public static async updateSettings(allSettings: AllSettings): Promise<AllSettings> {
-        return this.send<AllSettings>(Requests.UpdateSettings, allSettings)
+    public static async updateSettings(args: UpdateSettingsArgsType): Promise<UpdateSettingsReturnType> {
+        return this.send(Requests.UpdateSettings, args)
+    }
+
+    public static async startStream(args: StartStreamArgsType): Promise<StartStreamReturnType> {
+        return this.send(Requests.StartStream, args)
+    }
+
+    public static async pauseStream(args: PauseStreamArgsType): Promise<PauseStreamReturnType> {
+        return this.send(Requests.PauseStream, args)
+    }
+
+    public static async forceRecordStream(args: ForceRecordStreamArgsType): Promise<ForceRecordStreamReturnType> {
+        return this.send(Requests.ForceRecordStream, args)
+    }
+
+    public static async unForceRecordStream(args: UnForceRecordStreamArgsType): Promise<UnForceRecordStreamReturnType> {
+        return this.send(Requests.UnForceRecordStream, args)
+    }
+
+    public static async viewStreamDir(args: ViewStreamDirArgsType): Promise<ViewStreamDirReturnType> {
+        return this.send(Requests.ViewStreamDir, args)
     }
 
 }

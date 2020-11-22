@@ -5,19 +5,20 @@ import CardActions from "@material-ui/core/CardActions"
 import Typography from "@material-ui/core/Typography"
 import {Button} from "@material-ui/core"
 import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
-import {sendToMain} from "../UICommons"
-import {Requests} from "../../../shared/Requests"
+import {
+    ForceRecordStreamArgsType,
+    ForceRecordStreamReturnType,
+    PauseStreamArgsType,
+    PauseStreamReturnType,
+    StartStreamArgsType,
+    StartStreamReturnType,
+    UnForceRecordStreamArgsType,
+    UnForceRecordStreamReturnType,
+    ViewStreamDirArgsType,
+    ViewStreamDirReturnType
+} from "../../../shared/Requests"
 import {SerializedStream} from "../../../shared/Serialized"
-
-function startStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.StartStream, stream) }
-
-function pauseStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.PauseStream, stream) }
-
-function forceRecordStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.ForceRecordStream, stream) }
-
-function unForceRecordStream(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.UnForceRecordStream, stream) }
-
-function viewDir(stream: SerializedStream): Promise<SerializedStream> { return sendToMain(Requests.ViewStreamDir, stream) }
+import {RequestSender} from "../../RequestSender"
 
 interface StreamCardViewProps {
     serializedStream: SerializedStream
@@ -31,7 +32,32 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
 
     constructor(props: StreamCardViewProps) {
         super(props)
+        this.startStream = this.startStream.bind(this)
+        this.pauseStream = this.pauseStream.bind(this)
+        this.forceRecordStream = this.forceRecordStream.bind(this)
+        this.unForceRecordStream = this.unForceRecordStream.bind(this)
+        this.viewDir = this.viewDir.bind(this)
         this.state = {isRaised: false}
+    }
+
+    public async startStream(stream: StartStreamArgsType): Promise<StartStreamReturnType> {
+        return await RequestSender.startStream(stream)
+    }
+
+    public async pauseStream(stream: PauseStreamArgsType): Promise<PauseStreamReturnType> {
+        return await RequestSender.pauseStream(stream)
+    }
+
+    public async forceRecordStream(stream: ForceRecordStreamArgsType): Promise<ForceRecordStreamReturnType> {
+        return await RequestSender.forceRecordStream(stream)
+    }
+
+    public async unForceRecordStream(stream: UnForceRecordStreamArgsType): Promise<UnForceRecordStreamReturnType> {
+        return await RequestSender.unForceRecordStream(stream)
+    }
+
+    public async viewDir(stream: ViewStreamDirArgsType): Promise<ViewStreamDirReturnType> {
+        return await RequestSender.viewStreamDir(stream)
     }
 
     public render(): ReactNode {
@@ -47,13 +73,13 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
                 </CardContent>
                 <CardActions>
                     <Button><Edit/>Edit Stream</Button>
-                    <Button onClick={() => startStream(serializedStream)}><Pause/>Start Recording</Button>
-                    <Button onClick={() => pauseStream(serializedStream)}><Pause/>Pause Recording</Button>
-                    <Button onClick={() => forceRecordStream(serializedStream)}><FiberManualRecord/>Force
+                    <Button onClick={() => this.startStream(serializedStream)}><Pause/>Start Recording</Button>
+                    <Button onClick={() => this.pauseStream(serializedStream)}><Pause/>Pause Recording</Button>
+                    <Button onClick={() => this.forceRecordStream(serializedStream)}><FiberManualRecord/>Force
                         Record</Button>
-                    <Button onClick={() => unForceRecordStream(serializedStream)}><FiberManualRecord/>UnForce
+                    <Button onClick={() => this.unForceRecordStream(serializedStream)}><FiberManualRecord/>UnForce
                         Record</Button>
-                    <Button onClick={() => viewDir(serializedStream)}><FolderOpen/>View Output</Button>
+                    <Button onClick={() => this.viewDir(serializedStream)}><FolderOpen/>View Output</Button>
                 </CardActions>
             </Card>
         )
