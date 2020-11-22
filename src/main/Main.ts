@@ -1,6 +1,5 @@
 import * as electron from "electron"
 import {BrowserWindow, session} from "electron"
-import {Stream} from "./models/Stream"
 import {Database} from "./Database"
 import * as path from "path"
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from "electron-devtools-installer"
@@ -8,37 +7,15 @@ import url from "url"
 import {getPath} from "../shared/Utils"
 import {logD} from "../shared/Log"
 import {RequestHandler} from "./RequestHandler"
-import {Show} from "./models/Show"
-import {Schedule} from "./models/Schedule"
 import {loadExtensions} from "../shared/Extensions"
 
 loadExtensions()
-
-let streams: Array<Stream> = []
-
-function findStream(name: string): Stream | undefined { return streams.find(it => it.name === name) }
 
 let mainWindow: BrowserWindow
 electron.app.allowRendererProcessReuse = true
 electron.app.whenReady().then(onAppReady)
 
 function isDev(): boolean { return process.env.NODE_ENV === "development" }
-
-// TODO: This is ugly! Fix!
-export async function addStream(name: string, playlistUrl: string, schedulePath?: string): Promise<Stream> {
-    const offsetSeconds = await Database.Settings.getOffsetSeconds()
-    const schedule: Array<Show> = schedulePath ? await Schedule.fromCSV(schedulePath) : []
-
-    const stream = await Stream.new({
-        name: name,
-        playlistUrl: playlistUrl,
-        scheduledShows: schedule,
-        offsetSeconds: offsetSeconds
-    })
-    await Database.Streams.addStream(stream)
-    if (!findStream(stream.name)) streams.push(stream)
-    return stream
-}
 
 async function onAppReady(): Promise<void> {
     mainWindow = new BrowserWindow({
@@ -65,13 +42,7 @@ async function onAppReady(): Promise<void> {
         )
     }
 
-    await Database.initialize()
-    const dbStreamEntries = await Database.Streams.getAllSerializedStreams()
-    streams = await Promise.all(dbStreamEntries.map(async (streamEntry) => await Stream.fromSerializedStream({serializedStream: streamEntry})))
-
-    // Default settings
-    await Database.Settings.setOutputDirectory(getPath("./Streams"))
-    await Database.Settings.setOffsetSeconds(120)
+    await Database.initialize({defaultSettings: {outputDirectory: getPath("Streams"), offsetSeconds: 120}})
 
     mainWindow.once("close", async (event: Electron.Event) => {
         event.preventDefault()

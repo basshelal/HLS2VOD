@@ -2,29 +2,44 @@ import electron, {BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, OpenDialog
 import {AllSettings, Database} from "./Database"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
 import {Requests} from "../shared/Requests"
-import {addStream} from "./Main"
 import {SerializedStream} from "../shared/Serialized"
 import {Stream} from "./models/Stream"
+import {logE} from "../shared/Log"
 
 export class RequestHandler {
     private constructor() {}
 
     public static browserWindow: BrowserWindow
 
+    private static bindAll() {
+        this.getAllStreams = this.getAllStreams.bind(this)
+        this.newStream = this.newStream.bind(this)
+        this.browseOutputDir = this.browseOutputDir.bind(this)
+        this.browseSchedule = this.browseSchedule.bind(this)
+        this.getAllSettings = this.getAllSettings.bind(this)
+        this.updateSettings = this.updateSettings.bind(this)
+        this.startStream = this.startStream.bind(this)
+        this.pauseStream = this.pauseStream.bind(this)
+        this.forceRecordStream = this.forceRecordStream.bind(this)
+        this.unForceRecordStream = this.unForceRecordStream.bind(this)
+        this.viewStreamDir = this.viewStreamDir.bind(this)
+    }
+
     /** Initialize and set all handles for main, ie events from renderer to be handled by main */
     public static initialize({browserWindow}: { browserWindow: BrowserWindow }) {
         this.browserWindow = browserWindow
-        this.handle(Requests.GetStreams, this.getAllStreams.bind(this))
-        this.handle(Requests.NewStream, this.newStream.bind(this))
-        this.handle(Requests.BrowseOutputDir, this.browseOutputDir.bind(this))
-        this.handle(Requests.BrowseSchedule, this.browseSchedule.bind(this))
-        this.handle(Requests.GetSettings, this.getAllSettings.bind(this))
-        this.handle(Requests.UpdateSettings, this.updateSettings.bind(this))
-        this.handle(Requests.StartStream, this.startStream.bind(this))
-        this.handle(Requests.PauseStream, this.pauseStream.bind(this))
-        this.handle(Requests.ForceRecordStream, this.forceRecordStream.bind(this))
-        this.handle(Requests.UnForceRecordStream, this.unForceRecordStream.bind(this))
-        this.handle(Requests.ViewStreamDir, this.viewStreamDir.bind(this))
+        this.bindAll()
+        this.handle(Requests.GetStreams, this.getAllStreams)
+        this.handle(Requests.NewStream, this.newStream)
+        this.handle(Requests.BrowseOutputDir, this.browseOutputDir)
+        this.handle(Requests.BrowseSchedule, this.browseSchedule)
+        this.handle(Requests.GetSettings, this.getAllSettings)
+        this.handle(Requests.UpdateSettings, this.updateSettings)
+        this.handle(Requests.StartStream, this.startStream)
+        this.handle(Requests.PauseStream, this.pauseStream)
+        this.handle(Requests.ForceRecordStream, this.forceRecordStream)
+        this.handle(Requests.UnForceRecordStream, this.unForceRecordStream)
+        this.handle(Requests.ViewStreamDir, this.viewStreamDir)
     }
 
     private static handle<T, R>(name: string, listener: (args: T, event: IpcMainInvokeEvent) => Promise<R> | R) {
@@ -36,9 +51,19 @@ export class RequestHandler {
     }
 
     public static async newStream(streamEntry: DialogStreamEntry): Promise<boolean> {
-        const schedulePath: string | undefined = streamEntry.schedulePath === "" ? undefined : streamEntry.schedulePath
-        await addStream(streamEntry.streamName, streamEntry.playlistUrl, schedulePath)
-        return true
+        const stream = new Stream({
+            name: streamEntry.name,
+            url: streamEntry.url,
+            scheduledShows: [],
+            allSettings: await Database.Settings.getAllSettings()
+        })
+        try {
+            await Database.Streams.addStream(stream)
+            return true
+        } catch (e) {
+            logE(`Could not add new stream.\nStream:\n${streamEntry}\nReason:\n${e}`)
+            return false
+        }
     }
 
     public static async browseOutputDir(): Promise<string | undefined> {
@@ -58,7 +83,7 @@ export class RequestHandler {
         return await Database.Settings.getAllSettings()
     }
 
-    public static async updateSettings(allSettings: AllSettings): Promise<void> {
+    public static async updateSettings(allSettings: AllSettings): Promise<AllSettings> {
         return await Database.Settings.updateSettings(allSettings)
     }
 

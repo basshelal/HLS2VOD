@@ -11,7 +11,7 @@ beforeAll(defaultBeforeAll)
 
 afterAll(defaultAfterAll)
 
-test("Stream Initialization", async () => {
+test("Stream initialization", async () => {
     const name = "Test Stream"
     const allSettings = await Database.Settings.getAllSettings()
     const stream = new Stream({
@@ -171,7 +171,7 @@ test("Stream change schedule", async () => {
     await stream.destroy()
 })
 
-test("Stream Serialization", async () => {
+test("Stream serialization & deserialization", async () => {
     const show = new Show({
         name: "Test Show",
         startTimeMoment: moment(),
@@ -214,7 +214,7 @@ test("Stream Serialization", async () => {
     await stream.destroy()
 })
 
-test("Stream Destroy", async () => {
+test("Stream destroy", async () => {
     const show = new Show({
         name: "Test Show",
         startTimeMoment: moment(),

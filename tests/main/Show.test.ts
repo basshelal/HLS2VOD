@@ -8,7 +8,7 @@ beforeAll(defaultBeforeAll)
 
 afterAll(defaultAfterAll)
 
-test("Show Initialization", async () => {
+test("Show initialization", async () => {
     const now: Moment = moment()
     const nowValue = now.valueOf()
     const anHour = duration(1, "hour")
@@ -26,7 +26,7 @@ test("Show Initialization", async () => {
     expect(show.offsetEndTime).toEqual(moment(show.endTime).add(60, "seconds").valueOf())
 })
 
-test("Show is Active", async () => {
+test("Active Show", async () => {
     const now: Moment = moment()
     const show = new Show({
         name: "My Show",
@@ -43,7 +43,7 @@ test("Show is Active", async () => {
     expect(show.isActive(false)).toBeTruthy()
 })
 
-test("Show is not Active", async () => {
+test("Non-active Show", async () => {
     const start: Moment = moment(new Date(1999, 12, 31, 12, 30))
     const show = new Show({
         name: "My Show",
@@ -60,7 +60,7 @@ test("Show is not Active", async () => {
     expect(show.isActive(false)).toBeFalsy()
 })
 
-test("Show changed active", async () => {
+test("Show changed active state", async () => {
     const now: Moment = moment().add(1, "seconds")
     const aSecond = duration(1, "seconds")
     const show = new Show({
@@ -87,7 +87,12 @@ test("Show changed active", async () => {
     expect(show.isActive()).toBeFalsy()
 })
 
-test("Show Update Offset Seconds", async () => {
+test("Show active state with offset seconds", async () => {
+    // TODO: Implement!
+    //  test isActive with offset and without on an edge case show
+})
+
+test("Show update offset seconds", async () => {
     const now: Moment = moment()
     const oldOffsetSeconds = 60
     const show = new Show({
@@ -106,7 +111,7 @@ test("Show Update Offset Seconds", async () => {
     expect(show.offsetEndTime).toEqual(moment(show.endTime).add(newOffsetSeconds, "seconds").valueOf())
 })
 
-test("Show Serialization", async () => {
+test("Show serialization & deserialization", async () => {
     const show = new Show({
         name: "My Show",
         startTimeMoment: moment(),

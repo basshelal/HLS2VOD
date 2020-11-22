@@ -4,6 +4,7 @@ import {Stream} from "./models/Stream"
 import {getPath, promises} from "../shared/Utils"
 import {SerializedStream} from "../shared/Serialized"
 import {loadExtensions} from "../shared/Extensions"
+import path from "path"
 
 loadExtensions()
 
@@ -17,14 +18,14 @@ export interface SettingsEntry<T = any> {
 export interface SomeSettings {
     outputDirectory?: string
     offsetSeconds?: number
+    // TODO: Add the below settings later at some point
+    //  appTheme: AppTheme
+    //  fileExtension: string
 }
 
 export interface AllSettings extends SomeSettings {
     outputDirectory: string
     offsetSeconds: number
-    // TODO: Add the below settings
-    //  appTheme: string
-    //  fileExtension: string
 }
 
 export class Settings {
@@ -75,16 +76,18 @@ export class Settings {
         return {outputDirectory: outputDir, offsetSeconds: offsetSeconds}
     }
 
-    public static async updateSettings(settings: SomeSettings): Promise<void> {
+    public static async updateSettings(settings: SomeSettings): Promise<AllSettings> {
         const toAwait: Array<Promise<any>> = []
         if (settings.outputDirectory) toAwait.push(this.setOutputDirectory(settings.outputDirectory))
         if (settings.offsetSeconds) toAwait.push(this.setOffsetSeconds(settings.offsetSeconds))
         await promises(...toAwait)
+        return await this.getAllSettings()
     }
 
     // region outputDirectory
 
     public static async setOutputDirectory(newOutputDirectory: string): Promise<string> {
+        // TODO: mkdirpSync the dir?
         return new Promise<string>((resolve, reject) =>
             this.settingsDatabase.update<SettingsEntry<string>>({key: "outputDirectory"},
                 {key: "outputDirectory", value: newOutputDirectory},
@@ -258,9 +261,17 @@ export class Database {
     public static Settings = Settings
     public static Streams = Streams
 
-    public static async initialize() {
-        await Database.Settings.initialize({defaultSettings: {offsetSeconds: 60, outputDirectory: getPath("streams")}})
-        await Database.Streams.initialize({})
+    public static async initialize({databasePath = getPath("database/"), defaultSettings}: {
+        databasePath?: string, defaultSettings: AllSettings
+    }): Promise<void> {
+        const settingsDbPath = path.join(databasePath, "settings.db")
+        const streamsDbPath = path.join(databasePath, "streams.db")
+        await Database.Settings.initialize({dbPath: settingsDbPath, defaultSettings: defaultSettings})
+        await Database.Streams.initialize({dbPath: streamsDbPath})
         this.isInitialized = true
+    }
+
+    public static async destroy(): Promise<void> {
+
     }
 }
