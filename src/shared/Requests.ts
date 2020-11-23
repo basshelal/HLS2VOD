@@ -36,12 +36,12 @@ export type NewStreamArgsType = DialogStreamEntry
 export type NewStreamReturnType = boolean
 
 // UpdateStream
-export type UpdateStreamArgsType = void
-export type UpdateStreamReturnType = void
+export type UpdateStreamArgsType = { streamName: string, updatedStream: SerializedStream }
+export type UpdateStreamReturnType = SerializedStream | undefined
 
 // DeleteStream
-export type DeleteStreamArgsType = void
-export type DeleteStreamReturnType = void
+export type DeleteStreamArgsType = string
+export type DeleteStreamReturnType = boolean
 
 // ForceRecordStream
 export type ForceRecordStreamArgsType = SerializedStream

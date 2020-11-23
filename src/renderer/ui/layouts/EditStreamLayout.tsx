@@ -4,6 +4,7 @@ import {SerializedShow, SerializedStream} from "../../../shared/Serialized"
 import {ArrowBack, Delete, Save} from "@material-ui/icons"
 import {AppContext, AppContextType} from "../UICommons"
 import TextField from "@material-ui/core/TextField"
+import {RequestSender} from "../../RequestSender"
 
 
 interface EditStreamLayoutProps {
@@ -39,10 +40,22 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
 
     public async onSubmit(): Promise<void> {
         // TODO: Validate
+        await RequestSender.updateStream({
+            streamName: this.props.serializedStream.name,
+            updatedStream: {
+                name: this.state.name,
+                url: this.state.url,
+                streamDirectory: this.state.streamDirectory,
+                scheduledShows: this.state.scheduledShows,
+                state: this.props.serializedStream.state,
+                isForced: this.props.serializedStream.isForced
+            }
+        })
         if (this.props.onSubmit) this.props.onSubmit(this.state)
     }
 
     public async onDelete(): Promise<void> {
+        await RequestSender.deleteStream(this.state.name)
         if (this.props.onDelete) this.props.onDelete(this.state)
     }
 

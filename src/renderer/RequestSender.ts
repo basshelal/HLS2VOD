@@ -2,6 +2,8 @@ import {ipcRenderer} from "electron"
 import {
     BrowseOutputDirArgsType,
     BrowseOutputDirReturnType,
+    DeleteStreamArgsType,
+    DeleteStreamReturnType,
     ForceRecordStreamArgsType,
     ForceRecordStreamReturnType,
     GetSettingsArgsType,
@@ -19,6 +21,7 @@ import {
     UnForceRecordStreamReturnType,
     UpdateSettingsArgsType,
     UpdateSettingsReturnType,
+    UpdateStreamArgsType,
     ViewStreamDirArgsType,
     ViewStreamDirReturnType
 } from "../shared/Requests"
@@ -64,6 +67,14 @@ export class RequestSender {
 
     public static async unForceRecordStream(args: UnForceRecordStreamArgsType): Promise<UnForceRecordStreamReturnType> {
         return this.send(Requests.UnForceRecordStream, args)
+    }
+
+    public static async deleteStream(args: DeleteStreamArgsType): Promise<DeleteStreamReturnType> {
+        return this.send(Requests.DeleteStream, args)
+    }
+
+    public static async updateStream(args: UpdateStreamArgsType): Promise<UpdateSettingsReturnType> {
+        return this.send(Requests.UpdateStream, args)
     }
 
     public static async viewStreamDir(args: ViewStreamDirArgsType): Promise<ViewStreamDirReturnType> {

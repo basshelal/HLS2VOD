@@ -3,6 +3,8 @@ import {Database} from "./Database"
 import {
     BrowseOutputDirArgsType,
     BrowseOutputDirReturnType,
+    DeleteStreamArgsType,
+    DeleteStreamReturnType,
     ForceRecordStreamArgsType,
     ForceRecordStreamReturnType,
     GetSettingsArgsType,
@@ -20,6 +22,8 @@ import {
     UnForceRecordStreamReturnType,
     UpdateSettingsArgsType,
     UpdateSettingsReturnType,
+    UpdateStreamArgsType,
+    UpdateStreamReturnType,
     ViewStreamDirArgsType,
     ViewStreamDirReturnType
 } from "../shared/Requests"
@@ -42,6 +46,8 @@ export class RequestHandler {
         this.pauseStream = this.pauseStream.bind(this)
         this.forceRecordStream = this.forceRecordStream.bind(this)
         this.unForceRecordStream = this.unForceRecordStream.bind(this)
+        this.updateStream = this.updateStream.bind(this)
+        this.deleteStream = this.deleteStream.bind(this)
         this.viewStreamDir = this.viewStreamDir.bind(this)
     }
 
@@ -64,6 +70,8 @@ export class RequestHandler {
         this.handle(Requests.PauseStream, this.pauseStream)
         this.handle(Requests.ForceRecordStream, this.forceRecordStream)
         this.handle(Requests.UnForceRecordStream, this.unForceRecordStream)
+        this.handle(Requests.UpdateStream, this.updateStream)
+        this.handle(Requests.DeleteStream, this.deleteStream)
         this.handle(Requests.ViewStreamDir, this.viewStreamDir)
     }
 
@@ -141,6 +149,25 @@ export class RequestHandler {
             await found.unForceRecord()
             return found.serialize()
         } else return undefined
+    }
+
+    public static async updateStream(args: UpdateStreamArgsType): Promise<UpdateStreamReturnType> {
+        this.log(Requests.UpdateStream, args)
+        try {
+            return await Database.Streams.updateStream(args.streamName, args.updatedStream)
+        } catch (e) {
+            return undefined
+        }
+    }
+
+    public static async deleteStream(streamName: DeleteStreamArgsType): Promise<DeleteStreamReturnType> {
+        this.log(Requests.DeleteStream, streamName)
+        try {
+            await Database.Streams.deleteStream(streamName)
+            return true
+        } catch (e) {
+            return false
+        }
     }
 
     public static async viewStreamDir(serializedStream: ViewStreamDirArgsType): Promise<ViewStreamDirReturnType> {

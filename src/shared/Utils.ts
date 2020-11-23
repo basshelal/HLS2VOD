@@ -115,3 +115,13 @@ export function delay(millis: number): Promise<TimeOut> { return new Promise(res
 export async function promises(...promises: Array<PromiseLike<any>>): Promise<Array<any>> { return Promise.all(promises) }
 
 export function removeAllSync(...paths: Array<string>) { paths.forEach(it => removeSync(it)) }
+
+export function update<T extends object, K extends keyof T>(original: T, to: Pick<T, K>): T {
+    const result: T = original
+    for (const key in to) {
+        if (to.hasOwnProperty(key) && result.hasOwnProperty(key)) {
+            result[key] = to[key]
+        }
+    }
+    return result
+}

@@ -219,23 +219,27 @@ export class Streams {
                 this.streamsDatabase.remove(serializedStream, (err: Error | null) => {
                     if (err) reject(err)
                     else {
-                        if (actualStream) this.actualStreams.remove(actualStream)
+                        if (actualStream) {
+                            actualStream.destroy()
+                            this.actualStreams.remove(actualStream)
+                        }
                         resolve()
                     }
                 })
             )
     }
 
-    public static async updateStream(streamName: string, updatedStream: Stream): Promise<SerializedStream> {
-        const streamEntry: SerializedStream = updatedStream.serialize()
+    public static async updateStream(streamName: string, updated: SerializedStream): Promise<SerializedStream> {
         return new Promise<SerializedStream>((resolve, reject) =>
-            this.streamsDatabase.update({name: streamName}, streamEntry,
+            this.streamsDatabase.update({name: streamName}, updated,
                 {upsert: false, returnUpdatedDocs: true},
                 (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
                     if (err) reject(err)
                     else {
                         const oldStream: Stream | undefined = this.getActualStreamByName(streamName)
-                        if (oldStream) this.actualStreams.update(oldStream, updatedStream)
+                        if (oldStream) {
+                            this.actualStreams.update(oldStream, oldStream.updateFromSerializedStream(updated))
+                        }
                         const result: SerializedStream = affectedDocuments as SerializedStream
                         resolve(result)
                     }

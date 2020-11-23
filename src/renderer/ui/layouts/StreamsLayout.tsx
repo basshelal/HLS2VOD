@@ -42,7 +42,8 @@ export class StreamsLayout extends Component<{}, StreamsLayoutState> {
                 return (<div>
                     <EditStreamLayout serializedStream={this.state.focusedStream}
                                       onBack={() => this.setState({isEdit: false, needsRefresh: true})}
-                                      onSubmit={() => this.setState({isEdit: false, needsRefresh: true})}/>
+                                      onSubmit={() => this.setState({isEdit: false, needsRefresh: true})}
+                                      onDelete={() => this.setState({isEdit: false, needsRefresh: true})}/>
                 </div>)
         } else return (<div>
             <Typography style={{color: "black"}} variant="h4">All Streams</Typography>

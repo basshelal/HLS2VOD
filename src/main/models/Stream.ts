@@ -180,6 +180,17 @@ export class Stream
         }
     }
 
+    public updateFromSerializedStream(serializedStream: SerializedStream): Stream {
+        this.name = serializedStream.name
+        this.url = serializedStream.url
+        this.streamDirectory = serializedStream.streamDirectory
+        this.state = serializedStream.state
+        this.isForced = serializedStream.isForced
+        this.scheduledShows = serializedStream.scheduledShows.map((serializedShow: SerializedShow) =>
+            Show.fromSerializedShow(serializedShow))
+        return this
+    }
+
     /** Creates a new {@link Stream} from a {@link SerializedStream} */
     public static fromSerializedStream({serializedStream, allSettings}: {
         serializedStream: SerializedStream
