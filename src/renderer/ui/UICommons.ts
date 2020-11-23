@@ -2,7 +2,7 @@ import {Context, createContext} from "react"
 
 export const AppName: string = "HLS2VOD"
 
-export type LayoutType = "StreamsLayout" | "EditStreamScheduleLayout"
+export type LayoutType = "StreamsLayout" | "EditStreamLayout"
 
 export interface SomeAppContextType {
     layout?: LayoutType

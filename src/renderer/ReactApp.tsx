@@ -5,7 +5,6 @@ import {NavBar} from "./ui/components/NavBar"
 import {StreamsLayout} from "./ui/layouts/StreamsLayout"
 import {Footer} from "./ui/components/Footer"
 import {AppContext, AppContextType, LayoutType, SomeAppContextType} from "./ui/UICommons"
-import {EditStreamScheduleLayout} from "./ui/layouts/EditStreamScheduleLayout"
 
 interface AppState {
     appContext: AppContextType
@@ -20,11 +19,7 @@ class ReactApp extends Component<{}, AppState> {
         this.state = {
             appContext: {
                 layout: "StreamsLayout",
-                setLayout: (newLayout: LayoutType) => {
-                    this.setAppContext({layout: newLayout})
-                    console.log(`Layout from inside ReactApp`)
-                    console.log(this.state.appContext.layout)
-                }
+                setLayout: (newLayout: LayoutType) => this.setAppContext({layout: newLayout})
             }
         }
     }
@@ -41,10 +36,7 @@ class ReactApp extends Component<{}, AppState> {
 
     public resolveLayout(): ReactNode {
         const layout: LayoutType = this.state.appContext.layout
-        console.log(`Layout from inside Resolve Layout`)
-        console.log(layout)
         if (layout === "StreamsLayout") return (<StreamsLayout/>)
-        else if (layout === "EditStreamScheduleLayout") return (<EditStreamScheduleLayout/>)
         else return null
     }
 

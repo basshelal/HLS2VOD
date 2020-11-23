@@ -1,12 +1,12 @@
 import React, {Component, ReactNode} from "react"
 import {StreamCardView} from "./StreamCardView"
-import Container from "@material-ui/core/Container"
 import {SerializedStream} from "../../../shared/Serialized"
 import {RequestSender} from "../../RequestSender"
 
 export interface StreamListProps {
     needsRefresh: boolean
     onRefresh?: () => void
+    onEditStream?: (serializedStream: SerializedStream) => void
 }
 
 export interface StreamListState {
@@ -32,11 +32,10 @@ export class StreamList extends Component<StreamListProps, StreamListState> {
     public render(): ReactNode {
         this.fetchData()
         return (
-            <Container>
-                {this.state.streamEntries.map((streamEntry: SerializedStream, index: number) => {
-                    return <StreamCardView serializedStream={streamEntry} key={streamEntry.name}/>
-                })}
-            </Container>
+            <div>{this.state.streamEntries.map((streamEntry: SerializedStream, index: number) => {
+                return <StreamCardView serializedStream={streamEntry} key={streamEntry.name}
+                                       onEditStreamClicked={this.props.onEditStream}/>
+            })}</div>
         )
     }
 

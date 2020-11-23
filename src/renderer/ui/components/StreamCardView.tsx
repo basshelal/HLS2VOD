@@ -19,14 +19,14 @@ import {
 } from "../../../shared/Requests"
 import {SerializedStream} from "../../../shared/Serialized"
 import {RequestSender} from "../../RequestSender"
-import {json} from "../../../shared/Utils"
 
 interface StreamCardViewProps {
     serializedStream: SerializedStream
+    onEditStreamClicked?: (serializedStream: SerializedStream) => void
 }
 
 interface StreamCardViewState {
-    isRaised: boolean
+    isRaised: boolean // TODO: Really expensive (because triggers re-draw)! See if CSS can do this better
     serializedStream: SerializedStream
 }
 
@@ -41,6 +41,7 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
         this.pauseUnpauseButton = this.pauseUnpauseButton.bind(this)
         this.forceUnForceButton = this.forceUnForceButton.bind(this)
         this.viewDir = this.viewDir.bind(this)
+        this.editStream = this.editStream.bind(this)
         this.state = {isRaised: false, serializedStream: props.serializedStream}
     }
 
@@ -100,21 +101,23 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
         }
     }
 
+    public editStream(serializedStream: SerializedStream) {
+        if (this.props.onEditStreamClicked) this.props.onEditStreamClicked(serializedStream)
+    }
+
     public render(): ReactNode {
         const serializedStream: SerializedStream | undefined = this.state.serializedStream
-
-        console.log(`render!:\n${json(serializedStream)}`)
-
         return (
             <Card raised={this.state.isRaised} onMouseOver={() => this.setState({isRaised: true})}
                   onMouseLeave={() => this.setState({isRaised: false})}
                   style={{maxWidth: 700, margin: "12px"}}>
                 <CardContent>
                     <Typography align="center" variant="h4" title="Stream Name">{serializedStream.name}</Typography>
-                    <Typography align="center" variant="h6">{serializedStream.state}</Typography>
+                    <Typography align="center" variant="h6" title="Stream Url">{serializedStream.url}</Typography>
+                    <Typography align="center" variant="h6" title="Stream State">{serializedStream.state}</Typography>
                 </CardContent>
                 <CardActions>
-                    <Button><Edit/>Edit Stream</Button>
+                    <Button onClick={() => this.editStream(serializedStream)}><Edit/>Edit Stream</Button>
                     {this.pauseUnpauseButton(serializedStream)}
                     {this.forceUnForceButton(serializedStream)}
                     <Button onClick={() => this.viewDir(serializedStream)}><FolderOpen/>View Output</Button>

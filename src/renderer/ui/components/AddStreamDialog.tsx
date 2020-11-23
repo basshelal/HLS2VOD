@@ -25,6 +25,8 @@ export class AddStreamDialog extends Component<AddStreamDialogProps, DialogStrea
     }
 
     public validateStreamEntry(): boolean {
+        // TODO: We need proper validators!
+        //  ideally these should be in the main process for more easy control
         let isValid: boolean = false
         if (this.state.name !== "" && this.state.url !== "") isValid = true
         return isValid
