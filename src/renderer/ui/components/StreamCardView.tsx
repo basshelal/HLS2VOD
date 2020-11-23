@@ -26,7 +26,6 @@ interface StreamCardViewProps {
 }
 
 interface StreamCardViewState {
-    isRaised: boolean // TODO: Really expensive (because triggers re-draw)! See if CSS can do this better
     serializedStream: SerializedStream
 }
 
@@ -42,7 +41,7 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
         this.forceUnForceButton = this.forceUnForceButton.bind(this)
         this.viewDir = this.viewDir.bind(this)
         this.editStream = this.editStream.bind(this)
-        this.state = {isRaised: false, serializedStream: props.serializedStream}
+        this.state = {serializedStream: props.serializedStream}
     }
 
     public async startStream(stream: StartStreamArgsType): Promise<StartStreamReturnType> {
@@ -108,9 +107,7 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
     public render(): ReactNode {
         const serializedStream: SerializedStream | undefined = this.state.serializedStream
         return (
-            <Card raised={this.state.isRaised} onMouseOver={() => this.setState({isRaised: true})}
-                  onMouseLeave={() => this.setState({isRaised: false})}
-                  style={{maxWidth: 700, margin: "12px"}}>
+            <Card style={{maxWidth: 700, margin: "12px"}}>
                 <CardContent>
                     <Typography align="center" variant="h4" title="Stream Name">{serializedStream.name}</Typography>
                     <Typography align="center" variant="h6" title="Stream Url">{serializedStream.url}</Typography>
