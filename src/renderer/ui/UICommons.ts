@@ -4,7 +4,13 @@ export const AppName: string = "HLS2VOD"
 
 export type LayoutType = "StreamsLayout" | "EditStreamScheduleLayout"
 
-export interface AppContextType {
+export interface SomeAppContextType {
+    layout?: LayoutType
+
+    setLayout?(newLayout: LayoutType): void
+}
+
+export interface AppContextType extends SomeAppContextType {
     layout: LayoutType
 
     setLayout(newLayout: LayoutType): void
