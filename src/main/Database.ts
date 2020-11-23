@@ -273,6 +273,6 @@ export class Database {
     }
 
     public static async destroy(): Promise<void> {
-
+        await Database.Streams.actualStreams.awaitForEach((stream: Stream) => stream.destroy())
     }
 }

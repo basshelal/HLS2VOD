@@ -43,10 +43,14 @@ async function onAppReady(): Promise<void> {
     mainWindow.once("close", async (event: Electron.Event) => {
         event.preventDefault()
         // Finalization code here
+        await Database.destroy()
         mainWindow.close()
         electron.app.quit()
         process.exit(0)
     })
+
+    // TODO: Better on exit handling that will be safe no matter the exit reason
+    //  such as sigterm, user exit, process exit etc
 
     await Database.initialize({defaultSettings: {outputDirectory: getPath("Streams"), offsetSeconds: 120}})
     RequestHandler.initialize({browserWindow: mainWindow})
