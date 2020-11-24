@@ -80,8 +80,6 @@ declare global {
         toJson(space: number): string
 
         properties(): Array<{ key: string, value: any, type: any }>
-
-        also(block: (it: this) => any): Object
     }
 
     interface Number {
@@ -290,11 +288,6 @@ function _object() {
                     return {key: key, value: this[key], type: typeof this[key]}
                 })
             else return []
-        })
-    protoExtension(Object, "also",
-        function (this: Object, block: (it: Object) => void): Object {
-            if (this) block(this)
-            return this
         })
 }
 

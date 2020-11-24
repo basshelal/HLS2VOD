@@ -3,7 +3,7 @@ import * as path from "path"
 import moment from "moment"
 import {setInterval} from "timers"
 import {removeSync} from "fs-extra"
-import {Day, TimeOut} from "./Types"
+import {Day, TimeOut, TimeUnit} from "./Types"
 
 export const momentFormat = "dddd Do MMMM YYYY, HH:mm:ss"
 export const momentFormatSafe = "dddd Do MMMM YYYY HH-mm-ss"
@@ -127,3 +127,6 @@ export function update<T extends object, K extends keyof T>(original: T, to: Pic
 }
 
 export const allDays: Array<Day> = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+export const allTimeUnits: Array<TimeUnit> = ["Minutes", "Hours"]
+
+export function todayDay(): Day { return moment().format("dddd") as Day }

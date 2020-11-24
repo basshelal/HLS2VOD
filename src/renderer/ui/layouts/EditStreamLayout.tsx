@@ -78,7 +78,13 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
                 <Typography style={{color: "black"}} variant="h4">Schedule</Typography>
                 <div>
                     {this.state.scheduledShows.map((show: SerializedShow, index: number) => {
-                        return <ShowForm serializedShow={show} key={show.name}/>
+                        return <ShowForm serializedShow={show} key={show.name}
+                                         onChange={(serializedShow: SerializedShow) => {
+                                             const scheduledShows = this.state.scheduledShows
+                                             const index: number = scheduledShows.indexOf(serializedShow)
+                                             if (index >= 0) scheduledShows[index] = show
+                                             this.setState({scheduledShows: scheduledShows})
+                                         }}/>
                     })}
                 </div>
                 <Button onClick={() => this.setState((prevState: EditStreamLayoutState) => {
