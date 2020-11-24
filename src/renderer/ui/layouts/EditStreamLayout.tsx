@@ -5,6 +5,7 @@ import {ArrowBack, Delete, Save} from "@material-ui/icons"
 import {AppContext, AppContextType} from "../UICommons"
 import TextField from "@material-ui/core/TextField"
 import {RequestSender} from "../../RequestSender"
+import {ShowForm} from "../components/ShowForm"
 
 
 interface EditStreamLayoutProps {
@@ -74,7 +75,21 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
                            label="Stream Url"
                            value={this.state.url}
                            onChange={event => this.setState({url: event.target.value})}/>
-                {/*TODO Schedule is list of Shows, a show being: name, Day, hour, minute, duration*/}
+                <Typography style={{color: "black"}} variant="h4">Schedule</Typography>
+                <div>
+                    {this.state.scheduledShows.map((show: SerializedShow, index: number) => {
+                        return <ShowForm serializedShow={show} key={show.name}/>
+                    })}
+                </div>
+                <Button onClick={() => this.setState((prevState: EditStreamLayoutState) => {
+                        prevState.scheduledShows.push({
+                            name: "", startTime: -1, endTime: -1, offsetEndTime: -1, offsetStartTime: -1
+                        })
+                        return {
+                            scheduledShows: prevState.scheduledShows
+                        }
+                    }
+                )}>New Show</Button>
                 <Button onClick={this.onSubmit}><Save/>Save Stream</Button>
                 <Button onClick={this.onDelete}><Delete/>Delete Stream</Button>
             </div>

@@ -6,6 +6,7 @@ import {SerializedStream} from "../shared/Serialized"
 import {loadExtensions} from "../shared/Extensions"
 import path from "path"
 import {mkdirpSync} from "fs-extra"
+import trash from "trash"
 
 loadExtensions()
 
@@ -223,7 +224,7 @@ export class Streams {
                             actualStream.destroy()
                             this.actualStreams.remove(actualStream)
                         }
-                        resolve()
+                        trash(serializedStream.streamDirectory).then(() => resolve())
                     }
                 })
             )
