@@ -88,6 +88,14 @@ export class ShowForm extends Component <ShowFormProps, ShowFormState> {
                     label="24 hours"
                     value={this.state.startTimeMoment}
                     onChange={(date: MaterialUiPickersDate) => {
+                        if (date) {
+                            const obj = date.toObject()
+                            console.log(obj)
+                            const mom = moment(obj)
+                            const oobj = mom.toObject()
+                            console.log(oobj)
+                            console.log(obj == oobj)
+                        }
                         if (date) this.setState({startTimeMoment: date})
                     }}
                 />

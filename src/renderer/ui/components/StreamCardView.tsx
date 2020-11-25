@@ -110,8 +110,9 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
             <Card style={{maxWidth: 700, margin: "12px"}}>
                 <CardContent>
                     <Typography align="center" variant="h4" title="Stream Name">{serializedStream.name}</Typography>
-                    <Typography align="center" variant="h6" title="Stream Url">{serializedStream.url}</Typography>
-                    <Typography align="center" variant="h6" title="Stream State">{serializedStream.state}</Typography>
+                    <Typography align="center" variant="h6" title="Stream Url">Url: {serializedStream.url}</Typography>
+                    <Typography align="center" variant="h6"
+                                title="Stream State">State: {serializedStream.state}</Typography>
                 </CardContent>
                 <CardActions>
                     <Button onClick={() => this.editStream(serializedStream)}><Edit/>Edit Stream</Button>
