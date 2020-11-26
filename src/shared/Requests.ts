@@ -1,6 +1,7 @@
 import {AllSettings} from "../main/Database"
 import {SerializedStream} from "./Serialized"
 import {DialogStreamEntry} from "../renderer/ui/components/AddStreamDialog"
+import {StreamState} from "../main/models/Stream"
 
 export class Requests {
     private constructor() {}
@@ -17,6 +18,7 @@ export class Requests {
     public static StartStream = "StartStream"
     public static ViewStreamDir = "ViewStreamDir"
     public static BrowseOutputDir = "BrowseOutputDir"
+    public static GetStreamState = "GetStreamState"
 }
 
 // Get Settings
@@ -66,3 +68,7 @@ export type ViewStreamDirReturnType = SerializedStream | undefined
 // BrowseOutputDir
 export type BrowseOutputDirArgsType = void
 export type BrowseOutputDirReturnType = string | undefined
+
+// GetStreamState
+export type GetStreamStateArgsType = string
+export type GetStreamStateReturnType = StreamState | undefined

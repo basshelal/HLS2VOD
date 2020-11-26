@@ -1,4 +1,3 @@
-import {StreamState} from "../main/models/Stream"
 import {Day, HMTime, SDuration} from "./Types"
 
 /** The {@link serialize} method is used for IPC and Database to transfer and write objects */
@@ -18,8 +17,6 @@ export interface SerializedShow {
 export interface SerializedStream {
     name: string
     url: string
-    state: StreamState
     scheduledShows: Array<SerializedShow>
     isForced: boolean
-    streamDirectory: string
 }

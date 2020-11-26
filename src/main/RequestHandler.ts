@@ -11,6 +11,8 @@ import {
     GetSettingsReturnType,
     GetStreamsArgsType,
     GetStreamsReturnType,
+    GetStreamStateArgsType,
+    GetStreamStateReturnType,
     NewStreamArgsType,
     NewStreamReturnType,
     PauseStreamArgsType,
@@ -49,6 +51,7 @@ export class RequestHandler {
         this.updateStream = this.updateStream.bind(this)
         this.deleteStream = this.deleteStream.bind(this)
         this.viewStreamDir = this.viewStreamDir.bind(this)
+        this.getStreamState = this.getStreamState.bind(this)
     }
 
     private static handle<T, R>(name: string, listener: (args: T, event: IpcMainInvokeEvent) => Promise<R> | R) {
@@ -73,6 +76,7 @@ export class RequestHandler {
         this.handle(Requests.UpdateStream, this.updateStream)
         this.handle(Requests.DeleteStream, this.deleteStream)
         this.handle(Requests.ViewStreamDir, this.viewStreamDir)
+        this.handle(Requests.GetStreamState, this.getStreamState)
     }
 
     public static async getAllStreams(_: GetStreamsArgsType): Promise<GetStreamsReturnType> {
@@ -176,6 +180,14 @@ export class RequestHandler {
         if (found) {
             electron.shell.openItem(found.streamDirectory)
             return found.serialize()
+        } else return undefined
+    }
+
+    public static async getStreamState(streamName: GetStreamStateArgsType): Promise<GetStreamStateReturnType> {
+        this.log(Requests.GetStreamState, streamName)
+        const found: Stream | undefined = Database.Streams.getActualStreamByName(streamName)
+        if (found) {
+            return found.state
         } else return undefined
     }
 

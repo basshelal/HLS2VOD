@@ -201,9 +201,7 @@ test("Stream serialization & deserialization", async () => {
     expect(serialized.url).toEqual(stream.url)
     expect(serialized.scheduledShows).toEqual(stream.scheduledShows)
     expect(serialized.scheduledShows).toEqual([show])
-    expect(serialized.state).toEqual(stream.state)
     expect(serialized.isForced).toEqual(stream.isForced)
-    expect(serialized.streamDirectory).toEqual(stream.streamDirectory)
     expect(serialized).toEqual(stream.serialize())
 
     const fromSerialized = Stream.fromSerializedStream({

@@ -223,8 +223,8 @@ export class Streams {
                         if (actualStream) {
                             actualStream.destroy()
                             this.actualStreams.remove(actualStream)
+                            trash(actualStream.streamDirectory).then(() => resolve())
                         }
-                        trash(serializedStream.streamDirectory).then(() => resolve())
                     }
                 })
             )

@@ -4,7 +4,7 @@ import CardContent from "@material-ui/core/CardContent"
 import CardActions from "@material-ui/core/CardActions"
 import Typography from "@material-ui/core/Typography"
 import {Button} from "@material-ui/core"
-import {Edit, FiberManualRecord, FolderOpen, Pause} from "@material-ui/icons"
+import {Edit, FiberManualRecord, FolderOpen, Pause, PlayArrow} from "@material-ui/icons"
 import {
     ForceRecordStreamArgsType,
     ForceRecordStreamReturnType,
@@ -19,6 +19,10 @@ import {
 } from "../../../shared/Requests"
 import {SerializedStream} from "../../../shared/Serialized"
 import {RequestSender} from "../../RequestSender"
+import {StreamState} from "../../../main/models/Stream"
+import {TimeOut} from "../../../shared/Types"
+import {clearInterval, setInterval} from "timers"
+import {now} from "../../../shared/Utils"
 
 interface StreamCardViewProps {
     serializedStream: SerializedStream
@@ -27,12 +31,16 @@ interface StreamCardViewProps {
 
 interface StreamCardViewState {
     serializedStream: SerializedStream
+    streamState: StreamState
 }
 
 export class StreamCardView extends Component<StreamCardViewProps, StreamCardViewState> {
 
+    private interval: TimeOut
+
     constructor(props: StreamCardViewProps) {
         super(props)
+        this.refreshStream = this.refreshStream.bind(this)
         this.startStream = this.startStream.bind(this)
         this.pauseStream = this.pauseStream.bind(this)
         this.forceRecordStream = this.forceRecordStream.bind(this)
@@ -41,7 +49,21 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
         this.forceUnForceButton = this.forceUnForceButton.bind(this)
         this.viewDir = this.viewDir.bind(this)
         this.editStream = this.editStream.bind(this)
-        this.state = {serializedStream: props.serializedStream}
+        this.state = {serializedStream: props.serializedStream, streamState: "waiting"}
+        this.refreshStream()
+        this.interval = setInterval(this.refreshStream, 5_000)
+    }
+
+    public componentWillUnmount(): void {
+        clearInterval(this.interval)
+    }
+
+    public async refreshStream(): Promise<void> {
+        console.log(now())
+        const state: StreamState | undefined = await RequestSender.getStreamState(this.state.serializedStream.name)
+        if (state && this.state.streamState !== state) {
+            this.setState({streamState: state})
+        }
     }
 
     public async startStream(stream: StartStreamArgsType): Promise<StartStreamReturnType> {
@@ -75,9 +97,9 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
     }
 
     public pauseUnpauseButton(serializedStream: SerializedStream): ReactNode {
-        if (serializedStream.state === "paused") {
+        if (this.state.streamState === "paused") {
             return (
-                <Button onClick={() => this.startStream(serializedStream)}><Pause/>Start Recording</Button>
+                <Button onClick={() => this.startStream(serializedStream)}><PlayArrow/>Start Recording</Button>
             )
         } else {
             return (
@@ -112,7 +134,7 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
                     <Typography align="center" variant="h4" title="Stream Name">{serializedStream.name}</Typography>
                     <Typography align="center" variant="h6" title="Stream Url">Url: {serializedStream.url}</Typography>
                     <Typography align="center" variant="h6"
-                                title="Stream State">State: {serializedStream.state}</Typography>
+                                title="Stream State">State: {this.state.streamState}</Typography>
                 </CardContent>
                 <CardActions>
                     <Button onClick={() => this.editStream(serializedStream)}><Edit/>Edit Stream</Button>

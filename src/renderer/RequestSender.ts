@@ -10,6 +10,8 @@ import {
     GetSettingsReturnType,
     GetStreamsArgsType,
     GetStreamsReturnType,
+    GetStreamStateArgsType,
+    GetStreamStateReturnType,
     NewStreamArgsType,
     NewStreamReturnType,
     PauseStreamArgsType,
@@ -79,6 +81,10 @@ export class RequestSender {
 
     public static async viewStreamDir(args: ViewStreamDirArgsType): Promise<ViewStreamDirReturnType> {
         return this.send(Requests.ViewStreamDir, args)
+    }
+
+    public static async getStreamState(args: GetStreamStateArgsType): Promise<GetStreamStateReturnType> {
+        return this.send(Requests.GetStreamState, args)
     }
 
 }

@@ -173,18 +173,14 @@ export class Stream
         return {
             name: this.name,
             url: this.url,
-            state: this.state,
             scheduledShows: this.scheduledShows.map(show => show.serialize()),
-            isForced: this.isForced,
-            streamDirectory: this.streamDirectory
+            isForced: this.isForced
         }
     }
 
     public updateFromSerializedStream(serializedStream: SerializedStream): Stream {
         this.name = serializedStream.name
         this.url = serializedStream.url
-        this.streamDirectory = serializedStream.streamDirectory
-        this.state = serializedStream.state
         this.isForced = serializedStream.isForced
         this.scheduledShows = serializedStream.scheduledShows.map((serializedShow: SerializedShow) =>
             Show.fromSerializedShow(serializedShow))

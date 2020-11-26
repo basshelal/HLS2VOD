@@ -21,7 +21,6 @@ interface EditStreamLayoutState {
     name: string
     url: string
     scheduledShows: Array<SerializedShow>
-    streamDirectory: string
 }
 
 export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStreamLayoutState> {
@@ -44,9 +43,7 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
             updatedStream: {
                 name: this.state.name,
                 url: this.state.url,
-                streamDirectory: this.state.streamDirectory,
                 scheduledShows: this.state.scheduledShows,
-                state: this.props.serializedStream.state,
                 isForced: this.props.serializedStream.isForced
             }
         })
