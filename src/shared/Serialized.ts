@@ -1,6 +1,5 @@
 import {StreamState} from "../main/models/Stream"
-import {Day, HMTime} from "./Types"
-import {Duration} from "moment/moment"
+import {Day, HMTime, SDuration} from "./Types"
 
 /** The {@link serialize} method is used for IPC and Database to transfer and write objects */
 export interface Serializable<S> {
@@ -12,8 +11,8 @@ export interface SerializedShow {
     name: string
     day: Day
     startTime: HMTime
-    duration: Duration
-    offsetDuration: Duration
+    duration: SDuration
+    offsetDuration: SDuration
 }
 
 export interface SerializedStream {

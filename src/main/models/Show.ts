@@ -1,6 +1,6 @@
-import moment, {Duration, Moment} from "moment"
+import moment, {duration, Duration, Moment} from "moment"
 import {Serializable, SerializedShow} from "../../shared/Serialized"
-import {Day, HMTime} from "../../shared/Types"
+import {Day, HMTime, SDuration} from "../../shared/Types"
 
 export class Show
     implements Serializable<SerializedShow> {
@@ -12,16 +12,16 @@ export class Show
 
     public startTime: HMTime // @Serialized
 
-    public duration: Duration // @Serialized
+    public duration: SDuration // @Serialized
 
-    public offsetDuration: Duration// @Serialized
+    public offsetDuration: SDuration // @Serialized
 
     public constructor({name, day, startTime, duration, offsetDuration}: {
         name: string,
         day: Day
         startTime: HMTime,
-        duration: Duration,
-        offsetDuration: Duration
+        duration: SDuration,
+        offsetDuration: SDuration
     }) {
         this.name = name
         this.day = day
@@ -30,13 +30,17 @@ export class Show
         this.offsetDuration = offsetDuration
     }
 
+    public get momentDuration(): Duration { return duration(this.duration.amount, this.duration.unit) }
+
+    public get momentOffsetDuration(): Duration { return duration(this.offsetDuration.amount, this.offsetDuration.unit) }
+
     public get startTimeMoment(): Moment { return moment(this.startTime).day(this.day) }
 
-    public get offsetStartTime(): Moment { return this.startTimeMoment.subtract(this.offsetDuration) }
+    public get offsetStartTime(): Moment { return this.startTimeMoment.subtract(duration(this.momentOffsetDuration)) }
 
-    public get endTimeMoment(): Moment { return this.startTimeMoment.add(this.duration) }
+    public get endTimeMoment(): Moment { return this.startTimeMoment.add(this.momentDuration) }
 
-    public get offsetEndTime(): Moment { return this.endTimeMoment.add(this.offsetDuration) }
+    public get offsetEndTime(): Moment { return this.endTimeMoment.add(this.momentOffsetDuration) }
 
     public hasStarted(withOffset: boolean = true): boolean {
         const now: Moment = moment()

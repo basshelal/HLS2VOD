@@ -1,9 +1,9 @@
 import {defaultAfterAll, defaultBeforeAll} from "../TestUtils"
 import {Show} from "../../src/main/models/Show"
-import {Duration, duration} from "moment"
+import {duration} from "moment"
 import moment, {Moment} from "moment/moment"
 import {todayDay} from "../../src/shared/Utils"
-import {Day, HMTime} from "../../src/shared/Types"
+import {Day, HMTime, SDuration} from "../../src/shared/Types"
 
 beforeAll(defaultBeforeAll)
 
@@ -14,8 +14,8 @@ test("Show initialization", async () => {
     const now: Moment = moment()
     const day: Day = todayDay()
     const startTime: HMTime = {h: now.hours(), m: now.minutes()}
-    const duration0: Duration = duration(1, "hour")
-    const offsetDuration: Duration = duration(60, "seconds")
+    const duration0: SDuration = {amount: 1, unit: "hours"}
+    const offsetDuration: SDuration = {amount: 60, unit: "seconds"}
     const show = new Show({
         name: name,
         day: day,
@@ -35,8 +35,8 @@ test("Active Show", async () => {
     const now: Moment = moment()
     const day: Day = todayDay()
     const startTime: HMTime = {h: now.hours(), m: now.minutes()}
-    const duration0: Duration = duration(1, "hour")
-    const offsetDuration: Duration = duration(60, "seconds")
+    const duration0: SDuration = {amount: 1, unit: "hour"}
+    const offsetDuration: SDuration = {amount: 60, unit: "seconds"}
     const show = new Show({
         name: "My Show",
         day: day,
@@ -56,8 +56,8 @@ test("Active Show", async () => {
 test("Non-active Show", async () => {
     const start: Moment = moment().subtract(2, "minute")
     const startTime: HMTime = {h: start.hours(), m: start.minutes()}
-    const duration0: Duration = duration(1, "minute")
-    const offsetDuration: Duration = duration(5, "seconds")
+    const duration0: SDuration = {amount: 1, unit: "minute"}
+    const offsetDuration: SDuration = {amount: 5, unit: "seconds"}
     const show = new Show({
         name: "My Show",
         day: todayDay(),
@@ -77,13 +77,13 @@ test("Non-active Show", async () => {
 test("Show changed active state", async () => {
     const start: Moment = moment().add(2, "minutes")
     const startTime: HMTime = {h: start.hours(), m: start.minutes()}
-    const duration0: Duration = duration(10, "minutes")
+    const duration0: SDuration = {amount: 10, unit: "minutes"}
     const show = new Show({
         name: "My Show",
         day: todayDay(),
         startTime: startTime,
         duration: duration0,
-        offsetDuration: duration(0)
+        offsetDuration: {amount: 0, unit: "milliseconds"}
     })
 
     expect(show.hasStarted()).toBeFalsy()
@@ -97,7 +97,7 @@ test("Show changed active state", async () => {
     expect(show.hasEnded()).toBeFalsy()
     expect(show.isActive()).toBeTruthy()
 
-    show.duration = duration(1, "minute")
+    show.duration = {amount: 1, unit: "minute"}
 
     expect(show.hasStarted()).toBeTruthy()
     expect(show.hasEnded()).toBeTruthy()
@@ -112,8 +112,8 @@ test("Show active state with offset seconds", async () => {
 test("Show update offset seconds", async () => {
     const now: Moment = moment()
     const startTime: HMTime = {h: now.hours(), m: now.minutes()}
-    const duration0 = duration(1, "hour")
-    const oldOffsetDuration: Duration = duration(60, "seconds")
+    const duration0: SDuration = {amount: 1, unit: "hour"}
+    const oldOffsetDuration: SDuration = {amount: 60, unit: "seconds"}
     const show = new Show({
         name: "My Show",
         day: todayDay(),
@@ -122,13 +122,15 @@ test("Show update offset seconds", async () => {
         offsetDuration: oldOffsetDuration
     })
 
-    expect(show.offsetStartTime).toEqual(moment(show.startTime).subtract(oldOffsetDuration))
-    expect(show.offsetEndTime).toEqual(show.endTimeMoment.add(oldOffsetDuration))
+    let momentDuration = duration(oldOffsetDuration.amount, oldOffsetDuration.unit)
+    expect(show.offsetStartTime).toEqual(moment(show.startTime).subtract(momentDuration))
+    expect(show.offsetEndTime).toEqual(show.endTimeMoment.add(momentDuration))
 
-    const newOffsetDuration: Duration = duration(30, "seconds")
+    const newOffsetDuration: SDuration = {amount: 30, unit: "seconds"}
     show.offsetDuration = newOffsetDuration
-    expect(show.offsetStartTime).toEqual(moment(show.startTime).subtract(newOffsetDuration))
-    expect(show.offsetEndTime).toEqual(show.endTimeMoment.add(newOffsetDuration))
+    momentDuration = duration(newOffsetDuration.amount, newOffsetDuration.unit)
+    expect(show.offsetStartTime).toEqual(moment(show.startTime).subtract(momentDuration))
+    expect(show.offsetEndTime).toEqual(show.endTimeMoment.add(momentDuration))
 })
 
 test("Show serialization & deserialization", async () => {
@@ -136,8 +138,8 @@ test("Show serialization & deserialization", async () => {
     const now: Moment = moment()
     const day: Day = todayDay()
     const startTime: HMTime = {h: now.hours(), m: now.minutes()}
-    const duration0: Duration = duration(1, "hour")
-    const offsetDuration: Duration = duration(60, "seconds")
+    const duration0: SDuration = {amount: 1, unit: "hour"}
+    const offsetDuration: SDuration = {amount: 60, unit: "seconds"}
     const show = new Show({
         name: name,
         day: day,

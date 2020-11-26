@@ -237,7 +237,7 @@ export class Streams {
             this.streamsDatabase.update({name: streamName}, updated,
                 {upsert: false, returnUpdatedDocs: true},
                 (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
-                    if (err) reject(`DBError: ${err}`)
+                    if (err) reject(err)
                     else {
                         const oldStream: Stream | undefined = this.getActualStreamByName(streamName)
                         if (oldStream) {

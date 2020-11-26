@@ -4,7 +4,7 @@ import {Database} from "../../src/main/Database"
 import path from "path"
 import {pathExistsSync} from "fs-extra"
 import {Show} from "../../src/main/models/Show"
-import moment, {duration} from "moment/moment"
+import moment from "moment/moment"
 import {todayDay} from "../../src/shared/Utils"
 import {Moment} from "moment"
 
@@ -64,8 +64,8 @@ test("Stream Force/UnForce Record", async () => {
             name: "Test Show",
             day: todayDay(),
             startTime: {h: start.hours(), m: start.minutes()},
-            duration: duration(1, "hour"),
-            offsetDuration: duration(0)
+            duration: {amount: 1, unit: "hour"},
+            offsetDuration: {amount: 0, unit: "seconds"}
         })],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -102,8 +102,8 @@ test("Stream Active Show Managing", async () => {
             name: "Test Show",
             day: todayDay(),
             startTime: {h: start.hours(), m: start.minutes()},
-            duration: duration(5, "minutes"),
-            offsetDuration: duration(0)
+            duration: {amount: 5, unit: "minutes"},
+            offsetDuration: {amount: 0, unit: "seconds"}
         })],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -136,8 +136,8 @@ test("Stream change schedule", async () => {
             name: "Test Show",
             day: todayDay(),
             startTime: {h: start.hours(), m: start.minutes()},
-            duration: duration(5, "minutes"),
-            offsetDuration: duration(0)
+            duration: {amount: 5, unit: "minutes"},
+            offsetDuration: {amount: 0, unit: "seconds"}
         })
     ]
     const stream = new Stream({
@@ -157,8 +157,8 @@ test("Stream change schedule", async () => {
         name: "Another Show",
         day: todayDay(),
         startTime: {h: start.hours(), m: start.minutes()},
-        duration: duration(5, "minutes"),
-        offsetDuration: duration(0)
+        duration: {amount: 5, unit: "minutes"},
+        offsetDuration: {amount: 0, unit: "seconds"}
     }))
 
     await stream.refreshActiveShowManager()
@@ -185,8 +185,8 @@ test("Stream serialization & deserialization", async () => {
         name: "Test Show",
         day: todayDay(),
         startTime: {h: 0, m: 0},
-        duration: duration(1, "hour"),
-        offsetDuration: duration(0)
+        duration: {amount: 1, unit: "hour"},
+        offsetDuration: {amount: 0, unit: "seconds"}
     })
     const stream = new Stream({
         name: "Test Stream",
@@ -230,8 +230,8 @@ test("Stream destroy", async () => {
         name: "Test Show",
         day: todayDay(),
         startTime: {h: start.hours(), m: start.minutes()},
-        duration: duration(1, "hour"),
-        offsetDuration: duration(0)
+        duration: {amount: 1, unit: "hour"},
+        offsetDuration: {amount: 0, unit: "seconds"}
     })
     const stream = new Stream({
         name: "Test Stream",
