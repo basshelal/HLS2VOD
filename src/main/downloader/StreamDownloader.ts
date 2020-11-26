@@ -22,9 +22,12 @@ export class StreamDownloader {
     }
 
     public stop(): void {
-        if (this.ffmpegProcess) {
-            this.ffmpegProcess.kill()
-            this.ffmpegProcess = undefined
+        if (this.ffmpegProcess && this.ffmpegProcess.stdin) {
+            this.ffmpegProcess.stdin.write("q", (err: Error | null | undefined) => {
+                if (!err && this.ffmpegProcess) {
+                    this.ffmpegProcess = undefined
+                }
+            })
         }
     }
 

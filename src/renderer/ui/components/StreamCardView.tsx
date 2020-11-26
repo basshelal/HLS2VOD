@@ -51,7 +51,7 @@ export class StreamCardView extends Component<StreamCardViewProps, StreamCardVie
         this.editStream = this.editStream.bind(this)
         this.state = {serializedStream: props.serializedStream, streamState: "waiting"}
         this.refreshStream()
-        this.interval = setInterval(this.refreshStream, 5_000)
+        this.interval = setInterval(this.refreshStream, 5000)
     }
 
     public componentWillUnmount(): void {
