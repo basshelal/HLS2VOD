@@ -1,8 +1,7 @@
-import React, {Component, Context, ContextType} from "react"
+import React, {Component} from "react"
 import {Button, Typography} from "@material-ui/core"
 import {SerializedShow, SerializedStream} from "../../../shared/Serialized"
 import {ArrowBack, Delete, Save} from "@material-ui/icons"
-import {AppContext, AppContextType} from "../UICommons"
 import TextField from "@material-ui/core/TextField"
 import {RequestSender} from "../../RequestSender"
 import {ShowForm} from "../components/ShowForm"
@@ -29,6 +28,7 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
 
     constructor(props: EditStreamLayoutProps) {
         super(props)
+        this.updateStream = this.updateStream.bind(this)
         this.onBack = this.onBack.bind(this)
         this.onSubmit = this.onSubmit.bind(this)
         this.onDeleteStream = this.onDeleteStream.bind(this)
@@ -38,15 +38,7 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
         this.state = props.serializedStream
     }
 
-    static contextType: Context<AppContextType> = AppContext
-    declare context: ContextType<typeof AppContext>
-
-    public onBack() {
-        if (this.props.onBack) this.props.onBack(this.state)
-    }
-
-    public async onSubmit(): Promise<void> {
-        // TODO: Validate
+    public async updateStream(): Promise<void> {
         await RequestSender.updateStream({
             streamName: this.props.serializedStream.name,
             updatedStream: {
@@ -58,6 +50,15 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
                 isForced: this.props.serializedStream.isForced
             }
         })
+    }
+
+    public async onBack(): Promise<void> {
+        await this.updateStream()
+        if (this.props.onBack) this.props.onBack(this.state)
+    }
+
+    public async onSubmit(): Promise<void> {
+        await this.updateStream()
         if (this.props.onSubmit) this.props.onSubmit(this.state)
     }
 
@@ -67,8 +68,8 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
     }
 
     public newShow() {
-        this.setState((prevState: EditStreamLayoutState) => {
-            if (!this.state.scheduledShows.find(it => it.name === "")) {
+        if (!this.state.scheduledShows.find(it => it.name === "")) {
+            this.setState((prevState: EditStreamLayoutState) => {
                 const now: Moment = moment()
                 prevState.scheduledShows.push({
                     name: "",
@@ -77,11 +78,9 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
                     duration: {amount: 0, unit: "seconds"},
                     offsetDuration: {amount: 0, unit: "seconds"}
                 })
-            }
-            return {
-                scheduledShows: prevState.scheduledShows
-            }
-        })
+                return {scheduledShows: prevState.scheduledShows}
+            })
+        }
     }
 
     public onShowChanged(originalName: string, serializedShow: SerializedShow) {
@@ -122,8 +121,7 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
                 <Typography style={{color: "black"}} variant="h4">Schedule</Typography>
                 <div>
                     {this.state.scheduledShows.map((show: SerializedShow) => {
-                        return <ShowForm serializedShow={show} key={show.name}
-                                         onChange={this.onShowChanged}
+                        return <ShowForm serializedShow={show} key={show.name} onChange={this.onShowChanged}
                                          onDelete={this.onShowDeleted}/>
                     })}
                 </div>
