@@ -231,11 +231,13 @@ export class Streams {
     }
 
     public static async updateStream(streamName: string, updated: SerializedStream): Promise<SerializedStream> {
+        // noinspection SuspiciousTypeOfGuard
+        if (updated instanceof Stream) updated = updated.serialize()
         return new Promise<SerializedStream>((resolve, reject) =>
             this.streamsDatabase.update({name: streamName}, updated,
                 {upsert: false, returnUpdatedDocs: true},
                 (err: Error | null, numberOfUpdated: number, affectedDocuments: any) => {
-                    if (err) reject(err)
+                    if (err) reject(`DBError: ${err}`)
                     else {
                         const oldStream: Stream | undefined = this.getActualStreamByName(streamName)
                         if (oldStream) {

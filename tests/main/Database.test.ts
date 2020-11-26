@@ -34,7 +34,7 @@ test("Get All Settings", async () => {
 
 test("Update Settings", async () => {
     const offsetSeconds: number = 69
-    const outputDirectory: string = "MyOutputDir"
+    const outputDirectory: string = "tests/tmp/MyOutputDir"
     const updatedSettings: AllSettings = {offsetSeconds: offsetSeconds, outputDirectory: outputDirectory}
     await Database.Settings.updateSettings(updatedSettings)
     const allSettings: AllSettings = await Database.Settings.getAllSettings()
@@ -46,7 +46,7 @@ test("Update Settings", async () => {
 test("Get and Set Output Directory", async () => {
     const initialOutputDir: string = await Database.Settings.getOutputDirectory()
     expect(initialOutputDir).toBeDefined()
-    const newOutputDir: string = "newOutputDir"
+    const newOutputDir: string = "tests/tmp/newOutputDir"
     await Database.Settings.setOutputDirectory(newOutputDir)
     const updatedOutputDir: string = await Database.Settings.getOutputDirectory()
     expect(updatedOutputDir).toBeDefined()
@@ -99,7 +99,7 @@ test("Update Stream", async () => {
     expect(allSerializedStreamsFromDb.first()).toEqual(updatedStream.serialize())
     const actualStreams: Array<Stream> = Database.Streams.actualStreams
     expect(actualStreams.length).toEqual(1)
-    expect(actualStreams.first()).toEqual(updatedStream)
+    expect(actualStreams.first()!!.serialize()).toEqual(updatedStream.serialize())
 })
 
 test("Delete Stream", async () => {

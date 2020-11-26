@@ -5,7 +5,8 @@ import path from "path"
 import {pathExistsSync} from "fs-extra"
 import {Show} from "../../src/main/models/Show"
 import moment, {duration} from "moment/moment"
-import {delay} from "../../src/shared/Utils"
+import {todayDay} from "../../src/shared/Utils"
+import {Moment} from "moment"
 
 beforeAll(defaultBeforeAll)
 
@@ -55,14 +56,16 @@ test("Stream Start/Pause", async () => {
 })
 
 test("Stream Force/UnForce Record", async () => {
+    const start = moment().add(5, "minutes")
     const stream = new Stream({
         name: "Test Stream",
         url: testStreamUrl,
         scheduledShows: [new Show({
             name: "Test Show",
-            startTime: moment().subtract(1, "days"),
-            offsetSeconds: 60,
-            duration: duration(1, "hour")
+            day: todayDay(),
+            startTime: {h: start.hours(), m: start.minutes()},
+            duration: duration(1, "hour"),
+            offsetDuration: duration(0)
         })],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -91,14 +94,16 @@ test("Stream Force/UnForce Record", async () => {
 })
 
 test("Stream Active Show Managing", async () => {
+    const start: Moment = moment()
     const stream = new Stream({
         name: "Test Stream",
         url: testStreamUrl,
         scheduledShows: [new Show({
             name: "Test Show",
-            startTime: moment(),
-            offsetSeconds: 0,
-            duration: duration(1, "seconds")
+            day: todayDay(),
+            startTime: {h: start.hours(), m: start.minutes()},
+            duration: duration(5, "minutes"),
+            offsetDuration: duration(0)
         })],
         allSettings: await Database.Settings.getAllSettings()
     })
@@ -113,7 +118,8 @@ test("Stream Active Show Managing", async () => {
     expect(stream.downloaders.size).toEqual(1)
     expect(stream.state).toEqual("downloading")
 
-    await delay(1000)
+    const past = moment().subtract(10, "minutes")
+    stream.scheduledShows.first()!!.startTime = {h: past.hours(), m: past.minutes()}
 
     await stream.refreshActiveShowManager()
 
@@ -124,12 +130,14 @@ test("Stream Active Show Managing", async () => {
 }, 2000)
 
 test("Stream change schedule", async () => {
+    const start: Moment = moment()
     const oldSchedule: Array<Show> = [
         new Show({
             name: "Test Show",
-            startTime: moment(),
-            offsetSeconds: 0,
-            duration: duration(5, "seconds")
+            day: todayDay(),
+            startTime: {h: start.hours(), m: start.minutes()},
+            duration: duration(5, "minutes"),
+            offsetDuration: duration(0)
         })
     ]
     const stream = new Stream({
@@ -147,9 +155,10 @@ test("Stream change schedule", async () => {
 
     stream.scheduledShows.push(new Show({
         name: "Another Show",
-        startTime: moment(),
-        offsetSeconds: 0,
-        duration: duration(5, "seconds")
+        day: todayDay(),
+        startTime: {h: start.hours(), m: start.minutes()},
+        duration: duration(5, "minutes"),
+        offsetDuration: duration(0)
     }))
 
     await stream.refreshActiveShowManager()
@@ -174,9 +183,10 @@ test("Stream change schedule", async () => {
 test("Stream serialization & deserialization", async () => {
     const show = new Show({
         name: "Test Show",
-        startTime: moment(),
-        offsetSeconds: 60,
-        duration: duration(1, "hour")
+        day: todayDay(),
+        startTime: {h: 0, m: 0},
+        duration: duration(1, "hour"),
+        offsetDuration: duration(0)
     })
     const stream = new Stream({
         name: "Test Stream",
@@ -215,11 +225,13 @@ test("Stream serialization & deserialization", async () => {
 })
 
 test("Stream destroy", async () => {
+    const start: Moment = moment()
     const show = new Show({
         name: "Test Show",
-        startTime: moment(),
-        offsetSeconds: 60,
-        duration: duration(1, "hour")
+        day: todayDay(),
+        startTime: {h: start.hours(), m: start.minutes()},
+        duration: duration(1, "hour"),
+        offsetDuration: duration(0)
     })
     const stream = new Stream({
         name: "Test Stream",
