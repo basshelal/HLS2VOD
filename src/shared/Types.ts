@@ -4,4 +4,4 @@ export type ReadableStream = NodeJS.ReadableStream
 
 export type Day = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday"
 export type TimeUnit = "Minutes" | "Hours"
-export type EpochTime = number
+export type HMTime = { h: number, m: number }

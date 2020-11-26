@@ -60,7 +60,7 @@ test("Stream Force/UnForce Record", async () => {
         url: testStreamUrl,
         scheduledShows: [new Show({
             name: "Test Show",
-            startTimeMoment: moment().subtract(1, "days"),
+            startTime: moment().subtract(1, "days"),
             offsetSeconds: 60,
             duration: duration(1, "hour")
         })],
@@ -96,7 +96,7 @@ test("Stream Active Show Managing", async () => {
         url: testStreamUrl,
         scheduledShows: [new Show({
             name: "Test Show",
-            startTimeMoment: moment(),
+            startTime: moment(),
             offsetSeconds: 0,
             duration: duration(1, "seconds")
         })],
@@ -127,7 +127,7 @@ test("Stream change schedule", async () => {
     const oldSchedule: Array<Show> = [
         new Show({
             name: "Test Show",
-            startTimeMoment: moment(),
+            startTime: moment(),
             offsetSeconds: 0,
             duration: duration(5, "seconds")
         })
@@ -147,7 +147,7 @@ test("Stream change schedule", async () => {
 
     stream.scheduledShows.push(new Show({
         name: "Another Show",
-        startTimeMoment: moment(),
+        startTime: moment(),
         offsetSeconds: 0,
         duration: duration(5, "seconds")
     }))
@@ -174,7 +174,7 @@ test("Stream change schedule", async () => {
 test("Stream serialization & deserialization", async () => {
     const show = new Show({
         name: "Test Show",
-        startTimeMoment: moment(),
+        startTime: moment(),
         offsetSeconds: 60,
         duration: duration(1, "hour")
     })
@@ -217,7 +217,7 @@ test("Stream serialization & deserialization", async () => {
 test("Stream destroy", async () => {
     const show = new Show({
         name: "Test Show",
-        startTimeMoment: moment(),
+        startTime: moment(),
         offsetSeconds: 60,
         duration: duration(1, "hour")
     })

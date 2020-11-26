@@ -1,5 +1,5 @@
 import React, {Component} from "react"
-import {SerializedShow} from "../../../shared/Serialized"
+import {OldSerializedShow} from "../../../shared/Serialized"
 import {MuiPickersUtilsProvider, TimePicker} from "@material-ui/pickers"
 import {MaterialUiPickersDate} from "@material-ui/pickers/typings/date"
 import MomentUtils from "@date-io/moment"
@@ -15,9 +15,9 @@ import {Show} from "../../../main/models/Show"
 import {duration} from "moment"
 
 interface ShowFormProps {
-    serializedShow: SerializedShow
-    onChange?: (serializedShow: SerializedShow) => void
-    onDelete?: (serializedShow: SerializedShow) => void
+    serializedShow: OldSerializedShow
+    onChange?: (serializedShow: OldSerializedShow) => void
+    onDelete?: (serializedShow: OldSerializedShow) => void
 }
 
 interface ShowFormState {
@@ -28,7 +28,7 @@ interface ShowFormState {
     offsetSeconds: number
 }
 
-function SerializedShowToShowFormState(serializedShow: SerializedShow): ShowFormState {
+function SerializedShowToShowFormState(serializedShow: OldSerializedShow): ShowFormState {
     const startTime: Moment = moment(serializedShow.startTime)
     const durationMinutes: number = duration({from: serializedShow.startTime, to: serializedShow.endTime}).asMinutes()
     const offsetSeconds: number = duration({
@@ -45,10 +45,10 @@ function SerializedShowToShowFormState(serializedShow: SerializedShow): ShowForm
     }
 }
 
-function ShowFormStateToSerializedShow(showFormState: ShowFormState): SerializedShow {
+function ShowFormStateToSerializedShow(showFormState: ShowFormState): OldSerializedShow {
     return new Show({
         name: showFormState.name,
-        startTimeMoment: showFormState.startTimeMoment,
+        startTime: showFormState.startTimeMoment,
         duration: duration(showFormState.durationAmount, "minutes"),
         offsetSeconds: showFormState.offsetSeconds
     }).serialize()

@@ -1,6 +1,6 @@
 import React, {Component, Context, ContextType} from "react"
 import {Button, Typography} from "@material-ui/core"
-import {SerializedShow, SerializedStream} from "../../../shared/Serialized"
+import {OldSerializedShow, SerializedStream} from "../../../shared/Serialized"
 import {ArrowBack, Delete, Save} from "@material-ui/icons"
 import {AppContext, AppContextType} from "../UICommons"
 import TextField from "@material-ui/core/TextField"
@@ -18,7 +18,7 @@ interface EditStreamLayoutProps {
 interface EditStreamLayoutState {
     name: string
     url: string
-    scheduledShows: Array<SerializedShow>
+    scheduledShows: Array<OldSerializedShow>
     streamDirectory: string
 }
 
@@ -77,9 +77,9 @@ export class EditStreamLayout extends Component<EditStreamLayoutProps, EditStrea
                            onChange={event => this.setState({url: event.target.value})}/>
                 <Typography style={{color: "black"}} variant="h4">Schedule</Typography>
                 <div>
-                    {this.state.scheduledShows.map((show: SerializedShow, index: number) => {
+                    {this.state.scheduledShows.map((show: OldSerializedShow, index: number) => {
                         return <ShowForm serializedShow={show} key={show.name}
-                                         onChange={(serializedShow: SerializedShow) => {
+                                         onChange={(serializedShow: OldSerializedShow) => {
                                              const scheduledShows = this.state.scheduledShows
                                              const index: number = scheduledShows.indexOf(serializedShow)
                                              if (index >= 0) scheduledShows[index] = show

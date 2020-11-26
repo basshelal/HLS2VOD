@@ -1,5 +1,6 @@
-import moment, {duration, Duration, Moment} from "moment"
+import moment, {Duration, Moment} from "moment"
 import {Serializable, SerializedShow} from "../../shared/Serialized"
+import {Day, HMTime} from "../../shared/Types"
 
 export class Show
     implements Serializable<SerializedShow> {
@@ -7,87 +8,69 @@ export class Show
     /** Must be unique */
     public name: string // @Serialized
 
-    /** Show start time without offset in unix epoch milliseconds format */
-    public startTime: number // @Serialized
+    public day: Day // @Serialized
 
-    /** Show start time with offset in unix epoch milliseconds format */
-    public offsetStartTime: number // @Serialized
+    public startTime: HMTime // @Serialized
 
-    /** Show end time without offset in unix epoch milliseconds format */
-    public endTime: number // @Serialized
+    public duration: Duration // @Serialized
 
-    /** Show end time with offset in unix epoch milliseconds format */
-    public offsetEndTime: number // @Serialized
+    public offsetDuration: Duration// @Serialized
 
-    public constructor({name, startTimeMoment, duration, offsetSeconds}: {
+    public constructor({name, day, startTime, duration, offsetDuration}: {
         name: string,
-        startTimeMoment: Moment,
+        day: Day
+        startTime: HMTime,
         duration: Duration,
-        offsetSeconds: number
+        offsetDuration: Duration
     }) {
         this.name = name
-        this.startTime = startTimeMoment.valueOf()
-        this.endTime = startTimeMoment.add(duration).valueOf()
-        this.offsetStartTime = moment(this.startTime).subtract(offsetSeconds, "seconds").valueOf()
-        this.offsetEndTime = moment(this.endTime).add(offsetSeconds, "seconds").valueOf()
+        this.day = day
+        this.startTime = startTime
+        this.duration = duration
+        this.offsetDuration = offsetDuration
     }
 
+    public get startTimeMoment(): Moment { return moment(this.startTime).day(this.day) }
+
+    public get offsetStartTime(): Moment { return this.startTimeMoment.subtract(this.offsetDuration) }
+
+    public get endTimeMoment(): Moment { return this.startTimeMoment.add(this.duration) }
+
+    public get offsetEndTime(): Moment { return this.endTimeMoment.add(this.offsetDuration) }
+
     public hasStarted(withOffset: boolean = true): boolean {
-        const now: number = moment.now()
-        if (withOffset) return now >= this.offsetStartTime
-        else return now >= this.startTime
+        const now: Moment = moment()
+        if (withOffset) return now.isAfter(this.offsetStartTime)
+        else return now.isAfter(this.startTimeMoment)
     }
 
     public hasEnded(withOffset: boolean = true): boolean {
-        const now: number = moment.now()
-        if (withOffset) return now >= this.offsetEndTime
-        else return now >= this.endTime
+        const now: Moment = moment()
+        if (withOffset) return now.isAfter(this.offsetEndTime)
+        else return now.isAfter(this.endTimeMoment)
     }
 
     public isActive(withOffset: boolean = true): boolean {
         return this.hasStarted(withOffset) && !this.hasEnded(withOffset)
     }
 
-    public setOffsetSeconds(value: number): this {
-        this.offsetStartTime = moment(this.startTime).subtract(value, "seconds").valueOf()
-        this.offsetEndTime = moment(this.endTime).add(value, "seconds").valueOf()
-        return this
-    }
-
     public serialize(): SerializedShow {
         return {
             name: this.name,
+            day: this.day,
             startTime: this.startTime,
-            offsetStartTime: this.offsetStartTime,
-            endTime: this.endTime,
-            offsetEndTime: this.offsetEndTime
+            duration: this.duration,
+            offsetDuration: this.offsetDuration
         }
     }
 
     public static fromSerializedShow(serializedShow: SerializedShow): Show {
-        const show = new Show({
-            name: serializedShow.name,
-            startTimeMoment: moment(serializedShow.startTime),
-            duration: duration(),
-            offsetSeconds: 0
-        })
-        show.startTime = serializedShow.startTime
-        show.offsetStartTime = serializedShow.offsetStartTime
-        show.endTime = serializedShow.endTime
-        show.offsetEndTime = serializedShow.offsetEndTime
-        return show
-    }
-
-    public static fromFile({name, time, duration, offsetSeconds}: {
-        name: string, time: string, duration: string, offsetSeconds: number
-    }): Show {
-        const startTime = moment(time, "dddd HH:mm")
-        const momentDuration = moment.duration(duration, "minutes")
         return new Show({
-            name: name,
-            startTimeMoment: startTime,
-            duration: momentDuration,
-            offsetSeconds: offsetSeconds
+            name: serializedShow.name,
+            day: serializedShow.day,
+            startTime: serializedShow.startTime,
+            duration: serializedShow.duration,
+            offsetDuration: serializedShow.offsetDuration
         })
     }
 }
