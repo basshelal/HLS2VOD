@@ -3,6 +3,7 @@ build
 dist
 database
 Streams
+packaged
 npm-debug.log
 .env
 .DS_Store

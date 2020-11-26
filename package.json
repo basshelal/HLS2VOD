@@ -94,12 +94,8 @@
     "asar": false,
     "extends": null,
     "appId": "com.github.basshelal.hls2vod",
-    "files": [
-      "dist/**/*",
-      "node_modules/**/*"
-    ],
     "directories": {
-      "buildResources": "assets"
+      "output": "packaged/${os}"
     }
   }
 }
